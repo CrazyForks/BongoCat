@@ -223,7 +223,7 @@ reach model parameters or shortcuts. No platform listener calls Live2D,
 overlay, or UI code directly.
 
 Some games still interrupt background input delivery on certain systems.
-Version 1.4.3 improves input handling and diagnostics, but does not resolve
+Version 1.6.0 improves input handling and diagnostics, but does not resolve
 all reported game compatibility issues. See
 [Windows input and game compatibility](SECURITY.md#windows-input-and-game-compatibility)
 for the implementation boundaries and remaining limitations.

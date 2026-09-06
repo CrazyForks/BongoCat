@@ -17,7 +17,7 @@ of the application target or its installation rules.
 
 Some game and system combinations still stop delivering background input
 while the game has focus. This remains an unresolved compatibility issue;
-version 1.4.3 does not claim to fix it for every game. Registration success
+version 1.6.0 does not claim to fix it for every game. Registration success
 alone does not establish that input messages are arriving. BongoCat does
 not attempt to bypass a game's input restrictions.
 
