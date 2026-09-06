@@ -176,8 +176,13 @@ bool bongo_cat_window_geometry_self_test(BongoCatApp *app) {
         &app->platform) - 0.5f) < 0.02f;
     app->settings.window.hide_on_hover = true;
     app->settings.window.hide_delay_seconds = 0.0f;
-    app->settings.window.pass_through = false;
+    app->settings.window.pass_through = true;
+    app->settings.window.always_on_top = true;
+    app->settings.window.obs_background = true;
+    app->settings.window.rounded_corners = false;
     app->session.window.opacity_percent = 100.0f;
+    bongo_cat_window_sync_click_through(app);
+    bongo_cat_app_render_now(app);
     bongo_cat_app_track_hover(app, x + 10, y + 10);
     bongo_cat_app_update_hover(app, SDL_GetTicksNS() + 1);
     bool hidden = app->hover_hidden &&
@@ -185,6 +190,22 @@ bool bongo_cat_window_geometry_self_test(BongoCatApp *app) {
     bongo_cat_app_track_hover(app, bounds.x - 10, bounds.y - 10);
     bool restored = !app->hover_hidden &&
         SDL_fabsf(bongo_cat_platform_get_opacity(&app->platform) - 1.0f) < 0.02f;
+    bongo_cat_app_track_hover(app, x + 10, y + 10);
+    app->settings.window.always_on_top = false;
+    bongo_cat_app_update_hover(app, SDL_GetTicksNS());
+    restored = restored && !app->hover_hidden;
+    app->settings.window.always_on_top = true;
+    bongo_cat_app_update_hover(app, SDL_GetTicksNS());
+    hidden = hidden && app->hover_hidden;
+    app->settings.window.pass_through = false;
+    bongo_cat_app_update_hover(app, SDL_GetTicksNS());
+    restored = restored && !app->hover_hidden;
+    app->settings.window.pass_through = true;
+    bongo_cat_app_update_hover(app, SDL_GetTicksNS());
+    hidden = hidden && app->hover_hidden;
+    app->settings.window.hide_on_hover = false;
+    bongo_cat_app_update_hover(app, SDL_GetTicksNS());
+    restored = restored && !app->hover_hidden;
     float safe_scale;
     int safe_width, safe_height;
     bool bounded = bongo_cat_window_scaled_size(8000, 4000, 100.0f, 500.0f,

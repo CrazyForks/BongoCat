@@ -41,6 +41,13 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
         bongo_cat_window_mark_hit_dirty(app);
         bongo_cat_window_sync_click_through(app);
     }
+    if (window->pass_through && window->always_on_top) {
+        bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_SHORTCUT_VISIBILITY);
+        if (bongo_cat_pref_toggle(context, "hide-on-hover", tr(app,
+            "pages.preference.cat.labels.hideOnHover", "Hide on Hover"), "",
+            &window->hide_on_hover))
+            bongo_cat_app_update_hover(app, SDL_GetTicksNS());
+    }
     bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_KEEP_IN_SCREEN);
     if (bongo_cat_pref_toggle(context, "keep-in-screen", tr(app,
         "pages.preference.cat.labels.keepInScreen", "Keep on Screen"), "",

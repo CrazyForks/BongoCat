@@ -35,7 +35,7 @@
           "obsBackground": "La capture de fenêtre est noire ?",
           "obsBackgroundHelp": "OBS : activez cette option, utilisez la méthode compatible Windows 7 et supprimez le fond avec un filtre d'incrustation couleur.",
           "windowSize": "Placez la souris sur le bord de la fenêtre, ou maintenez Maj et faites glisser avec le bouton droit pour redimensionner.",
-          "hideOnHover": "Lorsque cette option est activée, la fenêtre se masque au survol de la souris. Vous pouvez définir un délai ; 0 signifie immédiatement."
+          "hideOnHover": "Lorsque le passage des clics et Toujours au premier plan sont activés, le compagnon se masque immédiatement au survol et réapparaît lorsque le pointeur s’éloigne."
         }
       },
       "general": {

@@ -35,7 +35,7 @@
           "obsBackground": "¿La captura de ventana aparece en negro?",
           "obsBackgroundHelp": "OBS: activa esta opción, usa el método compatible con Windows 7 y elimina el fondo con un filtro de clave de color.",
           "windowSize": "Mueva el ratón al borde de la ventana o mantenga Mayús y arrastre con el botón derecho para cambiar el tamaño.",
-          "hideOnHover": "Al activarlo, la ventana se oculta automáticamente al pasar el ratón. Puede definir un retardo; 0 significa ocultar inmediatamente."
+          "hideOnHover": "Con el paso de clics y Siempre visible activados, la mascota se oculta inmediatamente al pasar el ratón y reaparece al retirarlo."
         }
       },
       "general": {

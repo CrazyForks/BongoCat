@@ -35,7 +35,9 @@ int bongo_cat_window_wait_timeout(const BongoCatApp *app, uint64_t now) {
         wait_ms = 4;
     if (app->wheel_animation_active && wait_ms > 8) wait_ms = 8;
     if (app->session.window.visible && !app->window_minimized &&
-        app->click_through_applied && wait_ms > 16) wait_ms = 16;
+        (app->click_through_applied || (app->settings.window.pass_through &&
+            app->settings.window.always_on_top && app->settings.window.hide_on_hover)) &&
+        wait_ms > 16) wait_ms = 16;
     bool pending_hit = app->session.window.visible && !app->window_minimized &&
         app->pointer_hit_dirty &&
         app->pointer_hit_deadline_ns && !app->settings.window.pass_through &&
@@ -94,6 +96,15 @@ bool bongo_cat_window_wait_timeout_self_test(void) {
     app->click_through_applied = true;
     if (bongo_cat_window_wait_timeout(app, now) != 16) goto done;
     app->click_through_applied = false;
+    app->settings.window.pass_through = true;
+    app->settings.window.always_on_top = true;
+    app->settings.window.hide_on_hover = true;
+    if (bongo_cat_window_wait_timeout(app, now) != 16) goto done;
+    app->settings.window.always_on_top = false;
+    if (bongo_cat_window_wait_timeout(app, now) !=
+        remaining_ms(now + frame_interval_ns(app), now)) goto done;
+    app->settings.window.pass_through = false;
+    app->settings.window.hide_on_hover = false;
 #ifdef BONGO_CAT_HAS_CUBISM
     app->settings.model.max_fps = 60;
 #endif

@@ -35,7 +35,7 @@
           "obsBackground": "Window capture is black?",
           "obsBackgroundHelp": "OBS: enable this option, use the Windows 7 compatibility method, and remove the background with a color key filter.",
           "windowSize": "Move mouse to window edge, or hold Shift and right-drag to resize.",
-          "hideOnHover": "When enabled, the window hides automatically on mouse hover. You can set a delay; 0 means hide immediately."
+          "hideOnHover": "With Pass Through and Always on Top enabled, hide the pet immediately on hover and show it again when the pointer leaves."
         }
       },
       "general": {
