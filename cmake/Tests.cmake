@@ -119,6 +119,14 @@ if(BUILD_TESTING)
       tests/platform/test_windows_input.c
       tests/platform/test_windows_relative.c
       tests/platform/test_windows_raw_receiver.c)
+    if(MSVC)
+      # Visual Studio can evaluate target language options as C++ with Cubism.
+      set_property(SOURCE
+        tests/platform/test_windows_input.c
+        tests/platform/test_windows_relative.c
+        tests/platform/test_windows_raw_receiver.c
+        APPEND PROPERTY COMPILE_OPTIONS "/experimental:c11atomics")
+    endif()
     target_include_directories(bongo_cat_windows_input_tests PRIVATE
       tests/support src/platform/windows src/runtime/input)
     target_link_libraries(bongo_cat_windows_input_tests PRIVATE

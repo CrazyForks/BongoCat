@@ -163,6 +163,13 @@ jobs:
         if: runner.os != 'Windows'
         run: bash .github/scripts/build-unix.sh cmake --build build --parallel 2
 
+      - name: Install software OpenGL for Windows tests
+        if: runner.os == 'Windows'
+        uses: ssciwr/setup-mesa-dist-win@6657792673a5d162d5f244db991ba45b4b68989f # v2
+        with:
+          version: '23.3.3'
+          deployment-choice: '1'
+
       - name: Test Windows release
         if: runner.os == 'Windows'
         shell: pwsh
@@ -310,6 +317,12 @@ jobs:
         run: >-
           & ./.github/scripts/build-windows.ps1
           cmake --build build-store --config Release --parallel 2
+
+      - name: Install software OpenGL for Windows tests
+        uses: ssciwr/setup-mesa-dist-win@6657792673a5d162d5f244db991ba45b4b68989f # v2
+        with:
+          version: '23.3.3'
+          deployment-choice: '1'
 
       - name: Run Store release tests
         shell: pwsh
