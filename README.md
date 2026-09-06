@@ -207,17 +207,26 @@ Platform listeners
   model update -> OpenGL composition -> platform presentation
 ```
 
-The Windows low-level hooks, macOS Quartz event tap, and Linux XInput2 listener
+The Windows Raw Input receiver, macOS Quartz event tap, and Linux XInput2 listener
 run outside the main loop. They publish timestamped key and mouse-button edges
-to the bounded atomic queue and publish pointer coordinates through a separate
-coalescing slot; a successful publish pushes a native SDL wake event. This
-keeps high-frequency motion from displacing ordered key and button edges. On
-Windows, DirectInput is used only through the platform pointer interface when a
-model requests relative movement or a foreground application locks the cursor.
+to the bounded atomic queue and coalesce pointer motion separately, so frequent
+motion cannot displace ordered key and button edges. Native SDL wake events
+notify the main thread. Windows registers a message-only receiver for background
+keyboard and mouse input with `RIDEV_INPUTSINK | RIDEV_DEVNOTIFY`, preserving legacy
+window messages. Device motion drives the model when another application hides
+or locks the cursor; SDL supplies the desktop cursor position. The receiver
+tracks held inputs per device and clears them on device removal or desktop
+switches. It does not install input hooks, use DirectInput, or send input to games.
 SDL3 window, preferences, and gamepad events
 are handled on the main thread, where gamepad events are normalized before they
 reach model parameters or shortcuts. No platform listener calls Live2D,
 overlay, or UI code directly.
+
+Some games still interrupt background input delivery on certain systems.
+Version 1.4.3 improves input handling and diagnostics, but does not resolve
+all reported game compatibility issues. See
+[Windows input and game compatibility](SECURITY.md#windows-input-and-game-compatibility)
+for the implementation boundaries and remaining limitations.
 
 `bongo_cat_app_run` handles update-shutdown and secondary-process arguments,
 enforces single-instance ownership for the primary process, allocates the

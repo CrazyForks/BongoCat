@@ -208,15 +208,15 @@ Listener platform
   update model -> komposisi OpenGL -> presentasi platform
 ```
 
-Low-level hook Windows, event tap Quartz macOS, dan listener XInput2 Linux
-berjalan di luar main loop. Komponen tersebut mempublikasikan edge tombol
-keyboard dan mouse bertimestamp ke antrean atomik berbatas, serta mempublikasikan
-koordinat pointer melalui slot terpisah yang digabungkan; setiap publikasi yang
-berhasil memicu event wake native SDL. Hal ini mencegah gerakan berfrekuensi
-tinggi mendesak keluar edge tombol keyboard dan mouse yang berurutan. Di
-Windows, DirectInput hanya
-digunakan melalui antarmuka pointer platform ketika model meminta gerakan
-relatif. Event jendela SDL3, preferensi, dan gamepad ditangani di thread utama,
+Penerima Raw Input Windows, event tap Quartz macOS, dan listener XInput2 Linux
+berjalan di luar main loop. Perubahan tombol masuk ke antrean atomik berbatas,
+gerakan digabungkan secara terpisah, dan event SDL membangunkan thread utama.
+Windows memakai jendela khusus pesan dengan `RIDEV_INPUTSINK | RIDEV_DEVNOTIFY`
+untuk menerima input latar belakang sambil mempertahankan pesan jendela biasa.
+Model memakai gerakan perangkat ketika aplikasi lain menyembunyikan atau mengunci
+kursor; SDL menyediakan posisi kursor desktop. Status tombol dibersihkan ketika
+perangkat dilepas atau desktop input berganti. Windows tidak lagi memakai hook
+input atau DirectInput. Event jendela SDL3, preferensi, dan gamepad ditangani di thread utama,
 tempat event gamepad dinormalisasi sebelum mencapai parameter model atau
 shortcut. Tidak ada listener platform yang memanggil kode Live2D, overlay, atau
 UI secara langsung.

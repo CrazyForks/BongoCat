@@ -210,15 +210,16 @@ système d'entrée :
   mise à jour du modèle -> composition OpenGL -> présentation plateforme
 ```
 
-Les hooks de bas niveau de Windows, l'event tap Quartz de macOS et l'écouteur
-XInput2 de Linux s'exécutent en dehors de la boucle principale. Ils publient
-les transitions horodatées des touches et des boutons de souris dans une file
-atomique bornée, tandis que les coordonnées du pointeur sont publiées dans un
-emplacement séparé utilisant la coalescence ; lorsqu'une publication réussit,
-un événement SDL natif de réveil est envoyé. Cela empêche les mouvements à
-haute fréquence d'évincer les transitions ordonnées des touches et des boutons.
-Sous Windows, DirectInput est uniquement utilisé via l'interface de pointeur
-propre à la plateforme lorsqu'un modèle demande un déplacement relatif.
+Le récepteur Raw Input de Windows, l'event tap Quartz de macOS et l'écouteur
+XInput2 de Linux s'exécutent en dehors de la boucle principale. Les transitions
+des touches et des boutons utilisent une file atomique bornée ; les mouvements
+sont regroupés séparément et des événements SDL réveillent le thread principal.
+Windows utilise une fenêtre de messages avec `RIDEV_INPUTSINK | RIDEV_DEVNOTIFY`
+pour recevoir les entrées en arrière-plan, en conservant les messages ordinaires.
+Le modèle utilise les mouvements du périphérique lorsqu'une autre application
+masque ou verrouille le curseur ; SDL fournit sa position sur le bureau.
+Les états sont nettoyés au retrait d'un périphérique ou au changement de bureau.
+Windows n'installe plus de hooks d'entrée et n'utilise plus DirectInput.
 
 Les événements SDL3 liés aux fenêtres, aux préférences et aux manettes sont
 traités sur le thread principal, où les événements de manette sont normalisés
