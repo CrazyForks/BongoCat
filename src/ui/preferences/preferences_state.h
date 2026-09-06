@@ -127,6 +127,7 @@ struct BongoCatPreferences {
 int bongo_cat_preferences_resolved_theme(const BongoCatPreferences *value);
 void bongo_cat_preferences_apply_theme(BongoCatPreferences *value);
 bool bongo_cat_preferences_open_window(BongoCatPreferences *value);
+void bongo_cat_preferences_release_idle_window(BongoCatPreferences *value);
 bool bongo_cat_preferences_scale_event(BongoCatPreferences *value,
     const SDL_Event *event);
 bool bongo_cat_preferences_refresh_raster(BongoCatPreferences *value);

@@ -76,6 +76,34 @@ if(BUILD_TESTING)
   endif()
   add_test(NAME model-import-unit COMMAND bongo_cat_mver_import_tests)
 
+  add_executable(bongo_cat_preferences_lifecycle_tests
+    tests/ui/test_preferences_lifecycle.c)
+  target_include_directories(bongo_cat_preferences_lifecycle_tests PRIVATE
+    ${BONGO_CAT_RUNTIME_INTERNAL_INCLUDE_DIRS})
+  target_include_directories(bongo_cat_preferences_lifecycle_tests SYSTEM PRIVATE
+    ${BONGO_CAT_NUKLEAR_INCLUDE_DIR})
+  target_link_libraries(bongo_cat_preferences_lifecycle_tests PRIVATE bongo_cat_runtime)
+  if(WIN32)
+    target_sources(bongo_cat_preferences_lifecycle_tests PRIVATE
+      "${CMAKE_CURRENT_BINARY_DIR}/windows_resources.rc")
+    add_dependencies(bongo_cat_preferences_lifecycle_tests bongo_cat_asset_pack)
+  else()
+    add_custom_command(TARGET bongo_cat_preferences_lifecycle_tests POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/resources/assets"
+        "$<TARGET_FILE_DIR:bongo_cat_preferences_lifecycle_tests>/assets")
+  endif()
+  bongo_cat_stage_cubism_assets(bongo_cat_preferences_lifecycle_tests)
+  if(MSVC)
+    target_compile_options(bongo_cat_preferences_lifecycle_tests PRIVATE
+      /experimental:c11atomics)
+  endif()
+  add_test(NAME preferences-lifecycle COMMAND bongo_cat_preferences_lifecycle_tests
+    --ci-smoke --ci-ignore-global-input
+    "--storage-root=${CMAKE_CURRENT_BINARY_DIR}/preferences-lifecycle-data")
+  set_tests_properties(preferences-lifecycle PROPERTIES
+    ENVIRONMENT "BONGO_CAT_DISABLE_NEARBY_MODEL_SCAN=1" TIMEOUT 60)
+
   if(BONGO_CAT_CUBISM_ENABLED)
     add_executable(bongo_cat_motion_state_tests
       tests/live2d/test_motion_state.cpp)

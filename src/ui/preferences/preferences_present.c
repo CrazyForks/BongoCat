@@ -8,6 +8,7 @@
 #include <SDL3/SDL_opengl.h>
 
 void bongo_cat_preferences_render(BongoCatPreferences *value) {
+    bongo_cat_preferences_release_idle_window(value);
     if (!value || !value->window || !value->visible) return;
     bongo_cat_preferences_drag_tick(value);
     uint64_t now = SDL_GetTicksNS();

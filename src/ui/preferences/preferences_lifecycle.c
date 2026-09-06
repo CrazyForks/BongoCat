@@ -92,28 +92,31 @@ void bongo_cat_preferences_close(BongoCatPreferences *value) {
         bongo_cat_preferences_behavior_dialog_close(value);
     bongo_cat_preferences_model_rename_finish(value, true);
     bongo_cat_preferences_shortcut_cancel(value);
-    if (value->gl_context) SDL_GL_MakeCurrent(value->window, value->gl_context);
-    if (value->ui_initialized && value->input_active)
-        bongo_cat_preferences_input_end(value);
+    value->behavior_dialog = false;
+    value->behavior_dialog_input_armed = false;
+    value->behavior_dialog_opened_ns = 0;
+    value->behavior_dialog_closing_ns = 0;
+    value->import_requested = false;
+    value->import_drop_active = false;
+    if (value->input_active) bongo_cat_preferences_input_end(value);
     if (value->ui_initialized) bongo_cat_ui_input_reset(&value->ui);
     SDL_StopTextInput(value->window);
-    bongo_cat_preferences_remove_dialog_clear(value->app);
-    if (value->ui_initialized) {
-        bongo_cat_pref_controls_reset(&value->ui.context);
-        bongo_cat_ui_animations_reset(&value->ui.context);
-    }
     if (value->chrome_dragging) SDL_CaptureMouse(false);
+    value->chrome_dragging = false;
     value->visible = false;
     SDL_HideWindow(value->window);
-    value->model_load_visual_active = false;
-    value->model_load_visual_completion_ns = 0;
-    value->smoke_behavior_open_pending = false;
-    value->native_drag = false;
-    value->chrome_dragging = false;
-    value->shown_ns = 0;
-    SDL_GL_MakeCurrent(value->app->window, value->app->gl_context);
-    SDL_GL_SetSwapInterval(1);
+    bongo_cat_preferences_release_idle_window(value);
     bongo_cat_config_store_flush(value->app);
+}
+
+void bongo_cat_preferences_release_idle_window(BongoCatPreferences *value) {
+    if (!value || !value->window || value->visible) return;
+    /* A folder dialog still needs its owner; import completion can queue a
+       catalog refresh. Keep the window until both have finished. */
+    if (bongo_cat_preferences_import_is_open(value->import_dialog) ||
+        bongo_cat_app_model_refresh_busy(value->app) || value->model_loading ||
+        value->model_selection_pending) return;
+    release_window(value);
 }
 
 void bongo_cat_preferences_destroy(BongoCatPreferences *value) {
