@@ -1,0 +1,141 @@
+#include "test.h"
+#include "windows_input_internal.h"
+
+static void test_relative_motion(void) {
+    WindowsInputState state = {0};
+    WindowsRawDevice device = {0};
+    BongoCatPlatform platform = {.native = &state};
+    InitializeSRWLock(&state.relative_lock);
+    state.receiving = true;
+    RAWMOUSE mouse = {.lLastX = 17, .lLastY = -9};
+    double x, y;
+    bongo_cat_windows_input_motion(&state, &device, &mouse, NULL);
+    CHECK(!bongo_cat_windows_input_take_relative(&platform, &x, &y, NULL));
+    bongo_cat_windows_input_reset_relative(&platform);
+    bongo_cat_windows_input_motion(&state, &device, &mouse, NULL);
+    mouse.lLastX = -5;
+    bongo_cat_windows_input_motion(&state, &device, &mouse, NULL);
+    unsigned long long samples;
+    CHECK(bongo_cat_windows_input_take_relative(&platform, &x, &y, &samples));
+    CHECK(x == 12.0 && y == -18.0 && samples == 2);
+    CHECK(bongo_cat_windows_input_take_relative(&platform, &x, &y, &samples));
+    CHECK(x == 0.0 && y == 0.0 && samples == 0);
+    bongo_cat_windows_input_motion(&state, &device, &mouse, NULL);
+    bongo_cat_windows_input_reset_relative(&platform);
+    CHECK(bongo_cat_windows_input_take_relative(&platform, &x, &y, NULL));
+    CHECK(x == 0.0 && y == 0.0);
+    bongo_cat_windows_input_release_relative(&platform);
+    bongo_cat_windows_input_motion(&state, &device, &mouse, NULL);
+    CHECK(!bongo_cat_windows_input_take_relative(&platform, &x, &y, NULL));
+    bongo_cat_windows_input_reset_relative(&platform);
+    state.receiving = false;
+    CHECK(!bongo_cat_windows_input_take_relative(&platform, &x, &y, NULL));
+}
+
+static void test_absolute_devices(void) {
+    WindowsInputState state = {0};
+    WindowsRawDevice a = {0}, b = {0};
+    BongoCatPlatform platform = {.native = &state};
+    InitializeSRWLock(&state.relative_lock);
+    state.receiving = true;
+    bongo_cat_windows_input_reset_relative(&platform);
+    RECT bounds = {-1920, -200, 3440, 1440};
+    RAWMOUSE mouse = {.usFlags = MOUSE_MOVE_ABSOLUTE | MOUSE_VIRTUAL_DESKTOP};
+    bongo_cat_windows_input_motion(&state, &a, &mouse, &bounds);
+    CHECK(a.absolute_x == -1920.0 && a.absolute_y == -200.0);
+    mouse.lLastX = mouse.lLastY = 65535;
+    bongo_cat_windows_input_motion(&state, &b, &mouse, &bounds);
+    double x, y;
+    CHECK(bongo_cat_windows_input_take_relative(&platform, &x, &y, NULL));
+    CHECK(x == 0.0 && y == 0.0);
+    bongo_cat_windows_input_motion(&state, &a, &mouse, &bounds);
+    CHECK(bongo_cat_windows_input_take_relative(&platform, &x, &y, NULL));
+    CHECK(x == 5359.0 && y == 1639.0);
+    CHECK(a.absolute_x == 3439.0 && a.absolute_y == 1439.0);
+    bongo_cat_windows_input_reset_relative(&platform);
+    mouse.lLastX = mouse.lLastY = 32768;
+    bongo_cat_windows_input_motion(&state, &a, &mouse, &bounds);
+    CHECK(bongo_cat_windows_input_take_relative(&platform, &x, &y, NULL));
+    CHECK(x == 0.0 && y == 0.0);
+    bounds.right = 2560;
+    mouse.lLastX = 30000;
+    bongo_cat_windows_input_motion(&state, &a, &mouse, &bounds);
+    CHECK(bongo_cat_windows_input_take_relative(&platform, &x, &y, NULL));
+    CHECK(x == 0.0 && y == 0.0);
+    mouse.lLastX = -1;
+    bongo_cat_windows_input_motion(&state, &a, &mouse, &bounds);
+    CHECK(!a.absolute_known && state.counters.invalid == 1);
+}
+
+static void test_motion_units(void) {
+    WindowsInputState state = {0};
+    WindowsRawDevice absolute = {0}, relative = {0};
+    BongoCatPlatform platform = {.native = &state};
+    InitializeSRWLock(&state.relative_lock);
+    state.receiving = true;
+    bongo_cat_windows_input_reset_relative(&platform);
+    RECT bounds = {0, 0, 2560, 1440};
+    RAWMOUSE mouse = {.usFlags = MOUSE_MOVE_ABSOLUTE};
+    bongo_cat_windows_input_motion(&state, &absolute, &mouse, &bounds);
+    mouse.lLastX = 32768;
+    bongo_cat_windows_input_motion(&state, &absolute, &mouse, &bounds);
+    mouse = (RAWMOUSE){.lLastX = 3, .lLastY = -4};
+    bongo_cat_windows_input_motion(&state, &relative, &mouse, NULL);
+    double x, y;
+    CHECK(bongo_cat_windows_input_take_relative(&platform, &x, &y, NULL));
+    CHECK(x == 3.0 && y == -4.0);
+    CHECK(bongo_cat_windows_input_take_relative(&platform, &x, &y, NULL));
+    CHECK(x == 0.0 && y == 0.0);
+}
+
+static void test_delivered_motion_without_ownership(void) {
+    WindowsInputState state = {0};
+    WindowsRawDevice device = {0};
+    BongoCatPlatform platform = {.native = &state};
+    InitializeSRWLock(&state.relative_lock);
+    bongo_cat_windows_input_reset_relative(&platform);
+    RAWMOUSE mouse = {.lLastX = 12, .lLastY = -3};
+    bongo_cat_windows_input_motion(&state, &device, &mouse, NULL);
+    mouse.lLastX = -12;
+    mouse.lLastY = 3;
+    bongo_cat_windows_input_motion(&state, &device, &mouse, NULL);
+    double x, y;
+    unsigned long long samples;
+    CHECK(bongo_cat_windows_input_take_relative(&platform, &x, &y, &samples));
+    CHECK(x == 0.0 && y == 0.0 && samples == 2);
+    CHECK(!bongo_cat_windows_input_take_relative(&platform, &x, &y, NULL));
+    RECT bounds = {0, 0, 1920, 1080};
+    mouse = (RAWMOUSE){.usFlags = MOUSE_MOVE_ABSOLUTE};
+    bongo_cat_windows_input_motion(&state, &device, &mouse, &bounds);
+    CHECK(!bongo_cat_windows_input_take_relative(&platform, &x, &y, NULL));
+    mouse.lLastX = mouse.lLastY = 65535;
+    bongo_cat_windows_input_motion(&state, &device, &mouse, &bounds);
+    CHECK(bongo_cat_windows_input_take_relative(&platform, &x, &y, &samples));
+    CHECK(x == 1919.0 && y == 1079.0 && samples == 1);
+    CHECK(state.relative_reads == 2);
+    CHECK(!bongo_cat_windows_input_take_relative(&platform, &x, &y, NULL));
+}
+
+static void test_relative_modes(void) {
+    RECT point = {1279, 799, 1279, 799}, screen = {0, 0, 2560, 1600};
+    CURSORINFO cursor = {.cbSize = sizeof(cursor), .flags = CURSOR_SHOWING};
+    CHECK(bongo_cat_windows_input_relative_mode(true, &point, &cursor));
+    CHECK(!bongo_cat_windows_input_relative_mode(false, &point, &cursor));
+    CHECK(!bongo_cat_windows_input_relative_mode(true, &screen, &cursor));
+    cursor.flags = 0;
+    CHECK(bongo_cat_windows_input_relative_mode(true, &screen, &cursor));
+    CHECK(bongo_cat_windows_input_relative_mode(true, NULL, &cursor));
+    CHECK(!bongo_cat_windows_input_relative_mode(false, &screen, &cursor));
+    CHECK(!bongo_cat_windows_input_relative_mode(true, &screen, NULL));
+    CHECK(!bongo_cat_windows_input_relative_mode(true, NULL, NULL));
+    cursor.flags = CURSOR_SUPPRESSED;
+    CHECK(!bongo_cat_windows_input_relative_mode(true, &screen, &cursor));
+}
+
+void test_windows_relative_sources(void) {
+    test_relative_motion();
+    test_absolute_devices();
+    test_motion_units();
+    test_delivered_motion_without_ownership();
+    test_relative_modes();
+}

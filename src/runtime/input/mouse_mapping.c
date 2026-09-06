@@ -76,15 +76,17 @@ bool bongo_cat_app_map_pointer(BongoCatApp *app, bool relative_requested,
     BongoCatMverPointerBounds pointer_bounds = {
         bounds.x, bounds.y, bounds.w, bounds.h
     };
+    BongoCatPointerDiagnostics *diagnostics = &app->pointer_diagnostics;
+    diagnostics->bounds = pointer_bounds;
+    diagnostics->bounds_known = true;
     double relative_x = 0.0, relative_y = 0.0;
     bool use_relative = relative_requested &&
         bongo_cat_platform_relative_pointer(&app->platform,
             &relative_x, &relative_y);
     bool initialized = app->mver_pointer.initialized;
     double previous_x = app->mver_pointer.x, previous_y = app->mver_pointer.y;
-    /* A temporary device read failure must not snap a locked game pointer
-       back to the fixed screen coordinate. Keep the virtual position until
-       relative samples resume; the first sample still seeds from reality. */
+    /* Preserve the virtual position while relative samples are unavailable. */
+    if (relative_requested && !use_relative) diagnostics->relative_waits++;
     if (relative_requested && initialized && !use_relative) {
         absolute_x = previous_x;
         absolute_y = previous_y;
@@ -92,6 +94,13 @@ bool bongo_cat_app_map_pointer(BongoCatApp *app, bool relative_requested,
     if (!bongo_cat_mver_pointer_update(&app->mver_pointer,
         absolute_x, absolute_y, relative_x, relative_y, use_relative,
         &pointer_bounds, x, y)) return false;
+    if (use_relative && (relative_x != 0.0 || relative_y != 0.0)) {
+        diagnostics->relative_motion++;
+        double expected_x = (initialized ? previous_x : absolute_x) + relative_x;
+        double expected_y = (initialized ? previous_y : absolute_y) + relative_y;
+        if (expected_x != *x) diagnostics->clamped_x++;
+        if (expected_y != *y) diagnostics->clamped_y++;
+    }
     *changed = !initialized || previous_x != *x || previous_y != *y;
     return true;
 }
@@ -199,9 +208,7 @@ void bongo_cat_app_apply_mouse_coordinates(BongoCatApp *app, double hand_x,
 
 void bongo_cat_app_reset_pointer_tracking(BongoCatApp *app) {
     if (!app) return;
-    if (app->pointer_relative_active)
-        bongo_cat_platform_relative_pointer_reset(&app->platform);
-    else bongo_cat_platform_relative_pointer_release(&app->platform);
+    bongo_cat_platform_relative_pointer_release(&app->platform);
     app->mver_pointer = (BongoCatMverPointerState){0};
     app->model_pointer_anchor_ready = false;
     app->pointer_known = false;

@@ -87,6 +87,17 @@ if(BUILD_TESTING)
   endif()
 
   if(WIN32)
+    add_executable(bongo_cat_windows_input_tests
+      tests/platform/test_windows_input.c
+      tests/platform/test_windows_relative.c
+      tests/platform/test_windows_raw_receiver.c)
+    target_include_directories(bongo_cat_windows_input_tests PRIVATE
+      tests/support src/platform/windows src/runtime/input)
+    target_link_libraries(bongo_cat_windows_input_tests PRIVATE
+      bongo_cat_runtime bongo_cat_warnings user32)
+    add_test(NAME windows-input COMMAND bongo_cat_windows_input_tests)
+    set_tests_properties(windows-input PROPERTIES TIMEOUT 30)
+
     add_executable(bongo_cat_windows_capture_tests
       tests/platform/test_windows_capture.c)
     target_include_directories(bongo_cat_windows_capture_tests PRIVATE

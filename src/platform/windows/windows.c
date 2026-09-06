@@ -1,7 +1,6 @@
 #include "bongo_cat/platform.h"
 #include "windows_borderless.h"
 #include "windows_capture.h"
-#include "windows_direct_input.h"
 #include "windows_input.h"
 #include "windows_layered.h"
 #include "windows_startup.h"
@@ -58,7 +57,7 @@ BongoCatResult bongo_cat_platform_init(BongoCatPlatform *platform, SDL_Window *w
     }
     if (!bongo_cat_windows_input_start(platform)) {
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
-            "Global input hooks are unavailable; the window will continue without global input");
+            "Raw Input is unavailable; the window will continue without global input");
     }
     HWND hwnd = native_window(platform);
     SetWindowTextW(hwnd, bongo_cat_windows_instance_title());
@@ -85,7 +84,6 @@ void bongo_cat_platform_shutdown(BongoCatPlatform *platform) {
     if (!platform) return;
     HWND window = native_window(platform);
     if (window) bongo_cat_windows_borderless_uninstall(window);
-    bongo_cat_windows_direct_input_destroy(platform);
     bongo_cat_windows_input_stop(platform);
     bongo_cat_windows_layered_destroy(platform);
     SDL_SetWindowsMessageHook(NULL, NULL);
@@ -147,34 +145,20 @@ bool bongo_cat_platform_pointer_locked(BongoCatPlatform *platform) {
     if (!foreground || !GetWindowThreadProcessId(foreground, &foreground_pid) ||
         foreground_pid == GetCurrentProcessId()) return false;
     RECT clip = {0};
-    if (!GetClipCursor(&clip)) return false;
-    LONG width = clip.right - clip.left;
-    LONG height = clip.bottom - clip.top;
-    return width >= 0 && width <= 2 && height >= 0 && height <= 2;
+    CURSORINFO cursor = {.cbSize = sizeof(cursor)};
+    bool clip_known = GetClipCursor(&clip) != FALSE;
+    bool cursor_known = GetCursorInfo(&cursor) != FALSE;
+    return bongo_cat_windows_input_relative_mode(true,
+        clip_known ? &clip : NULL, cursor_known ? &cursor : NULL);
 }
 bool bongo_cat_platform_relative_pointer(BongoCatPlatform *platform,
     double *x, double *y) {
-    if (!platform || !x || !y) return false;
-    uint64_t now_ms = GetTickCount64();
-    if (!platform->relative_pointer) {
-        if (platform->relative_pointer_retry_ms > now_ms)
-            return bongo_cat_windows_input_take_relative(platform, x, y);
-        if (!bongo_cat_windows_direct_input_create(platform,
-            native_window(platform))) {
-            platform->relative_pointer_retry_ms = now_ms + 5000;
-            return bongo_cat_windows_input_take_relative(platform, x, y);
-        }
-        platform->relative_pointer_retry_ms = 0;
-    }
-    return bongo_cat_windows_direct_input_read(platform, x, y);
+    return bongo_cat_windows_input_take_relative(platform, x, y, NULL);
 }
 void bongo_cat_platform_relative_pointer_reset(BongoCatPlatform *platform) {
     bongo_cat_windows_input_reset_relative(platform);
-    bongo_cat_windows_direct_input_reset(platform);
 }
 void bongo_cat_platform_relative_pointer_release(BongoCatPlatform *platform) {
-    if (!platform) return;
-    bongo_cat_windows_direct_input_destroy(platform);
-    platform->relative_pointer_retry_ms = 0;
+    bongo_cat_windows_input_release_relative(platform);
 }
 #endif

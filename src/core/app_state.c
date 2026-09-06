@@ -159,8 +159,11 @@ void bongo_cat_app_apply_input(BongoCatApp *app, const BongoCatInputEvent *event
             changed = app->right_mouse_down != down;
             app->right_mouse_down = down;
         } else {
-            changed = app->side_mouse_down != down;
-            app->side_mouse_down = down;
+            if (strcmp(event->name, "Back") == 0) app->back_mouse_down = down;
+            else app->forward_mouse_down = down;
+            bool side_down = app->back_mouse_down || app->forward_mouse_down;
+            changed = app->side_mouse_down != side_down;
+            app->side_mouse_down = side_down;
         }
         if (changed) app->mouse_button_event_pending = true;
         if (!down) app->pointer_hit_dirty = true;

@@ -12,8 +12,13 @@ if(WIN32)
     src/platform/windows/windows_transparency.c
     src/platform/windows/windows_pointer.c
     src/platform/windows/windows_dialog.c
-    src/platform/windows/windows_direct_input.c
     src/platform/windows/windows_input.c
+    src/platform/windows/windows_input_receiver.c
+    src/platform/windows/windows_input_registration.c
+    src/platform/windows/windows_input_devices.c
+    src/platform/windows/windows_input_packets.c
+    src/platform/windows/windows_input_relative.c
+    src/platform/windows/windows_input_diagnostics.c
     src/platform/windows/windows_popup.c
     src/platform/windows/windows_layered.c
     src/platform/windows/windows_layered_state.c
@@ -25,7 +30,7 @@ if(WIN32)
   target_include_directories(bongo_cat_runtime PRIVATE
     src/platform/windows)
   target_link_libraries(bongo_cat_runtime PRIVATE
-    dinput8 dxguid dwmapi ole32 shell32 user32 uuid windowscodecs advapi32
+    dwmapi ole32 shell32 user32 uuid windowscodecs advapi32
     winhttp)
 elseif(APPLE)
   find_package(CURL REQUIRED)

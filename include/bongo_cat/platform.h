@@ -13,8 +13,6 @@ typedef struct BongoCatPlatform {
     BongoCatInputState *input;
     void *native;
     void *presenter;
-    void *relative_pointer;
-    uint64_t relative_pointer_retry_ms;
     uint32_t wake_event_type;
     float window_opacity;
 } BongoCatPlatform;

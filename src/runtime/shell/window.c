@@ -48,6 +48,8 @@ static bool try_window(BongoCatApp *app, bool transparent, int samples,
 BongoCatResult bongo_cat_window_create(BongoCatApp *app, BongoCatError *error) {
     SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1");
 #ifdef _WIN32
+    /* The native input thread owns keyboard Raw Input for this process. */
+    SDL_SetHintWithPriority(SDL_HINT_WINDOWS_RAW_KEYBOARD, "0", SDL_HINT_OVERRIDE);
     /* Transparent OpenGL windows must never receive SDL's default black
        WM_ERASEBKGND fill before the first frame is submitted. */
     SDL_SetHint(SDL_HINT_WINDOWS_ERASE_BACKGROUND_MODE, "0");

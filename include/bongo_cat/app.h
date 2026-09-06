@@ -20,6 +20,14 @@ typedef struct BongoCatUpdateService BongoCatUpdateService;
 
 #define BONGO_CAT_MODEL_COVER_PENDING_CAP 8
 
+typedef struct BongoCatPointerDiagnostics {
+    uint64_t last_log_ns, mode_changes, mapped_updates;
+    uint64_t relative_motion, relative_waits, clamped_x, clamped_y;
+    uint64_t map_failures;
+    BongoCatMverPointerBounds bounds;
+    bool bounds_known;
+} BongoCatPointerDiagnostics;
+
 typedef struct BongoCatApp {
     BongoCatSettings settings;
     BongoCatSessionState session;
@@ -128,16 +136,14 @@ typedef struct BongoCatApp {
     uint64_t pointer_hit_deadline_ns;
     uint64_t display_recovery_due_ns;
     uint64_t mouse_last_ns;
-    uint64_t mouse_diagnostic_due_ns;
-    uint64_t mouse_hook_samples;
-    uint64_t input_diagnostic_due_ns;
+    BongoCatPointerDiagnostics pointer_diagnostics;
+    uint64_t mouse_native_samples;
     uint64_t input_events_consumed;
     uint64_t input_key_down_events, input_key_up_events;
     uint64_t input_mouse_down_events, input_mouse_up_events;
     uint64_t input_key_supported, input_key_unsupported;
     uint64_t input_mouse_applied, input_mouse_updates;
     uint64_t input_shortcuts_triggered;
-    char input_last_name[BONGO_CAT_ID_CAP];
     uint64_t frame_audit_bmp_ns;
     uint64_t random_expression_due_ns;
     float random_expression_interval_seconds;
@@ -158,6 +164,7 @@ typedef struct BongoCatApp {
     bool left_mouse_down;
     bool right_mouse_down;
     bool side_mouse_down;
+    bool back_mouse_down, forward_mouse_down;
     bool mouse_button_event_pending;
     bool model_pointer_anchor_ready;
     float model_pointer_anchor_x, model_pointer_anchor_y;

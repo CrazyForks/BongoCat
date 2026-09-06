@@ -19,7 +19,9 @@ set(FORBIDDEN_APIS
   Process32Next EnumProcesses EnumProcessModules AdjustTokenPrivileges
   LookupPrivilegeValue OpenSCManager CreateService StartService ControlService
   DeviceIoControl NtLoadDriver AttachThreadInput SendInput keybd_event
-  mouse_event RegisterRawInputDevices GetRawInputData
+  mouse_event SetWindowsHookEx SetWindowsHookExA SetWindowsHookExW DirectInput8Create
+  SetCursorPos SetPhysicalCursorPos ClipCursor BlockInput
+  SDL_SetWindowRelativeMouseMode
   CGEventPost CGEventPostToPid CGEventCreateKeyboardEvent
   CGEventCreateMouseEvent CGWarpMouseCursorPosition
   CGAssociateMouseAndMouseCursorPosition IOHIDManagerCreate
@@ -33,7 +35,9 @@ set(FORBIDDEN_TOKENS
   SE_DEBUG_NAME SeDebugPrivilege PROCESS_VM_READ PROCESS_VM_WRITE
   PROCESS_VM_OPERATION PROCESS_ALL_ACCESS THREAD_SET_CONTEXT
   kCGHIDEventTap kCGHeadInsertEventTap IOConnectCall
-  /dev/input /dev/uinput CAP_SYS_PTRACE CAP_SYS_ADMIN)
+  /dev/input /dev/uinput CAP_SYS_PTRACE CAP_SYS_ADMIN
+  WH_KEYBOARD_LL WH_MOUSE_LL RIDEV_NOLEGACY RIDEV_CAPTUREMOUSE
+  RIDEV_NOHOTKEYS RIDEV_APPKEYS RIDEV_EXCLUDE RIDEV_EXINPUTSINK)
 set(FAILURES "")
 
 foreach(FILE IN LISTS PRODUCTION_FILES)
@@ -57,9 +61,11 @@ endforeach()
 
 # Intentional sensitive capabilities remain confined to reviewed modules.
 set(SENSITIVE_RULES
-  "SetWindowsHookEx|src/platform/windows/windows_input.c"
   "GetAsyncKeyState|src/platform/windows/windows_keys.c"
-  "DirectInput8Create|src/platform/windows/windows_direct_input.c"
+  "RegisterRawInputDevices|src/platform/windows/windows_input_registration.c"
+  "GetRegisteredRawInputDevices|src/platform/windows/windows_input_registration.c"
+  "GetRawInputData|src/platform/windows/windows_input_receiver.c"
+  "SDL_HINT_WINDOWS_RAW_KEYBOARD|src/runtime/shell/window.c|src/platform/windows/windows_input.c"
   "OpenProcessToken|src/platform/windows/windows_diagnostics.c"
   "BitBlt|src/platform/windows/windows_capture_probe.c"
   "PrintWindow|src/platform/windows/windows_capture_probe.c"

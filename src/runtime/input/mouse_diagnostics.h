@@ -7,12 +7,8 @@
 
 void bongo_cat_mouse_audit(BongoCatApp *app, double x, double y);
 void bongo_cat_mouse_log_diagnostics(BongoCatApp *app, uint64_t now,
-    bool received, double target_x, double target_y,
-    float global_x, float global_y, SDL_MouseButtonFlags buttons,
-    bool cursor_locked, bool relative_requested);
-void bongo_cat_mouse_log_mode_change(const BongoCatApp *app,
-    bool cursor_locked, bool profile_relative, bool relative_requested,
-    bool map_requested, bool map_ok, double target_x, double target_y,
-    double model_x, double model_y, bool model_moved);
+    double target_x, double target_y,
+    bool cursor_locked, bool relative_requested,
+    double model_x, double model_y, bool model_moved, bool native_selected);
 
 #endif
