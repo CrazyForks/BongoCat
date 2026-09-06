@@ -6,11 +6,17 @@ if(APPLE)
     MACOSX_BUNDLE_INFO_PLIST
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Info.plist.in")
   add_custom_command(TARGET bongo_cat POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory
+    COMMAND ${CMAKE_COMMAND} -E rm -rf
       "$<TARGET_BUNDLE_CONTENT_DIR:bongo_cat>/MacOS/assets"
+      "$<TARGET_BUNDLE_CONTENT_DIR:bongo_cat>/MacOS/FrameworkShaders"
+      "$<TARGET_BUNDLE_CONTENT_DIR:bongo_cat>/Resources/assets"
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+      "$<TARGET_BUNDLE_CONTENT_DIR:bongo_cat>/Resources/assets"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
       "${CMAKE_CURRENT_SOURCE_DIR}/resources/assets"
-      "$<TARGET_BUNDLE_CONTENT_DIR:bongo_cat>/MacOS/assets"
+      "$<TARGET_BUNDLE_CONTENT_DIR:bongo_cat>/Resources/assets"
+    COMMAND ${CMAKE_COMMAND} -E rm -f
+      "$<TARGET_BUNDLE_CONTENT_DIR:bongo_cat>/Resources/assets/models/LICENSE"
     VERBATIM)
 endif()
 

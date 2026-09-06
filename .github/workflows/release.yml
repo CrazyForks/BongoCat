@@ -68,7 +68,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             cmake ninja-build libgl1-mesa-dev libx11-dev libxi-dev \
-            libxfixes-dev libcurl4-openssl-dev
+            libxfixes-dev libcurl4-openssl-dev xvfb xauth libgl1-mesa-dri
 
       - name: Configure Windows release
         if: runner.os == 'Windows'
@@ -108,7 +108,7 @@ jobs:
 
       - name: Test Unix release
         if: runner.os != 'Windows'
-        run: ctest --test-dir build-release --output-on-failure
+        run: bash .github/scripts/test-unix.sh ctest --test-dir build-release --output-on-failure
 
       - name: Install NSIS
         if: runner.os == 'Windows'
@@ -170,6 +170,7 @@ jobs:
 
       - name: Package Unix release
         if: runner.os != 'Windows'
+        timeout-minutes: 5
         shell: pwsh
         run: |
           $name = (Get-Content build-release/bongocat-package-name.txt -Raw).Trim()
@@ -189,6 +190,8 @@ jobs:
             throw "Expected one Unix release archive, found $($archives.Count)"
           }
           $archive = $archives[0]
+          & ./.github/scripts/check-unix-package.ps1 `
+            -Archive $archive.FullName -Platform '${{ matrix.platform }}'
           $checksum = "$($archive.FullName).sha256"
           if (-not (Test-Path -LiteralPath $checksum -PathType Leaf)) {
             throw "Release checksum is missing: $checksum"

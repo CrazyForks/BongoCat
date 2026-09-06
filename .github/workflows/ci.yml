@@ -37,7 +37,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            cmake ninja-build cppcheck \
+            cmake ninja-build cppcheck xvfb xauth libgl1-mesa-dri \
             libgl1-mesa-dev libx11-dev libxi-dev libxfixes-dev \
             libcurl4-openssl-dev
 
@@ -88,7 +88,7 @@ jobs:
         run: bash .github/scripts/build-unix.sh cmake --build build-quality --parallel 2
 
       - name: Run native tests
-        run: ctest --test-dir build-quality --output-on-failure
+        run: bash .github/scripts/test-unix.sh ctest --test-dir build-quality --output-on-failure
 
   build:
     name: build / ${{ matrix.platform }}
@@ -123,7 +123,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             cmake ninja-build libgl1-mesa-dev libx11-dev libxi-dev \
-            libxfixes-dev libcurl4-openssl-dev
+            libxfixes-dev libcurl4-openssl-dev xvfb xauth libgl1-mesa-dri
 
       - name: Configure Windows release
         if: runner.os == 'Windows'
@@ -172,7 +172,7 @@ jobs:
 
       - name: Test Unix release
         if: runner.os != 'Windows'
-        run: ctest --test-dir build --output-on-failure
+        run: bash .github/scripts/test-unix.sh ctest --test-dir build --output-on-failure
 
   desktop-package:
     name: package / ${{ matrix.platform }}
@@ -214,7 +214,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             cmake ninja-build libgl1-mesa-dev libx11-dev libxi-dev \
-            libxfixes-dev libcurl4-openssl-dev
+            libxfixes-dev libcurl4-openssl-dev xvfb xauth libgl1-mesa-dri
 
       - name: Configure release
         run: |
@@ -228,10 +228,11 @@ jobs:
         run: bash .github/scripts/build-unix.sh cmake --build build-package --parallel 2
 
       - name: Test release
-        run: ctest --test-dir build-package --output-on-failure
+        run: bash .github/scripts/test-unix.sh ctest --test-dir build-package --output-on-failure
 
       - name: Package desktop release
         id: package
+        timeout-minutes: 5
         shell: pwsh
         run: |
           $projectVersion = & ./packaging/get-project-version.ps1
@@ -243,12 +244,15 @@ jobs:
           }
 
           cmake --build build-package --target package
+          if ($LASTEXITCODE -ne 0) { throw 'Unix archive packaging failed' }
           $archives = @(Get-ChildItem build-package/dist -File | Where-Object {
             $_.Name -match '\.(zip|tar\.gz)$'
           })
           if ($archives.Count -ne 1) {
             throw "Expected one desktop archive, found $($archives.Count)"
           }
+          & ./.github/scripts/check-unix-package.ps1 `
+            -Archive $archives[0].FullName -Platform $platform
           "name=$name" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           "file=$($archives[0].FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 

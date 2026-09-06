@@ -1,8 +1,10 @@
 install(TARGETS bongo_cat
   RUNTIME DESTINATION . COMPONENT Runtime
   BUNDLE DESTINATION . COMPONENT Runtime)
-install(FILES LICENSE DESTINATION . COMPONENT Runtime)
-install(FILES resources/assets/models/LICENSE DESTINATION assets/models COMPONENT Runtime)
+if(WIN32)
+  install(FILES LICENSE DESTINATION . COMPONENT Runtime)
+  install(FILES resources/assets/models/LICENSE DESTINATION assets/models COMPONENT Runtime)
+endif()
 set(BONGO_CAT_PACKAGE_PRODUCT "BongoCat")
 if(NOT BONGO_CAT_CUBISM_ENABLED)
   set(BONGO_CAT_PACKAGE_PRODUCT "BongoCat-Diagnostic")
@@ -10,7 +12,8 @@ if(NOT BONGO_CAT_CUBISM_ENABLED)
     COMPONENT Runtime)
 endif()
 if(UNIX AND NOT APPLE)
-  install(DIRECTORY resources/assets DESTINATION . COMPONENT Runtime)
+  install(DIRECTORY resources/assets DESTINATION . COMPONENT Runtime
+    PATTERN "LICENSE" EXCLUDE)
 endif()
 
 include(cmake/PackagingPlatform.cmake)
