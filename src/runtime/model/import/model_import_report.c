@@ -1,4 +1,5 @@
 #include "model_import.h"
+#include "mver/model_import_mver_manifest.h"
 #include "bongo_cat/file.h"
 #include "bongo_cat/json.h"
 #include "bongo_cat/path.h"
@@ -85,7 +86,9 @@ static size_t missing_motion_sounds(const BongoCatImportCandidate *candidate) {
     char manifest_path[BONGO_CAT_PATH_CAP];
     if (!bongo_cat_path_join(manifest_path, sizeof(manifest_path),
         candidate->directory, candidate->setting)) return 0;
-    yyjson_doc *document = bongo_cat_json_read_file(manifest_path, 0, NULL);
+    yyjson_doc *document = candidate->format == BONGO_CAT_IMPORT_TAURI
+        ? bongo_cat_json_read_file(manifest_path, 0, NULL)
+        : bongo_cat_import_mver_manifest_read(manifest_path, NULL);
     yyjson_val *refs = document ? yyjson_obj_get(yyjson_doc_get_root(document),
         "FileReferences") : NULL;
     yyjson_val *motions = yyjson_obj_get(refs, "Motions");

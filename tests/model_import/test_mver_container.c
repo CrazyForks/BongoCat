@@ -175,6 +175,15 @@ void test_mver_container_discovery(void) {
     CHECK(progressive.callbacks == 2 && progressive.resolved == 2 &&
         progressive.installed == 2);
     CHECK(stats.succeeded_count == 2 && stats.failed_count == 0);
+    CHECK(child(mode, sizeof(mode), package,
+        "img/standard/cat_model/cat.moc3", false));
+    progressive = (ProgressiveImportLog){0};
+    CHECK(session && bongo_cat_import_session_install_progressive(session,
+        mode, progressive_receipt, &progressive, &stats, &error) ==
+        BONGO_CAT_OK);
+    CHECK(progressive.callbacks == 1 && progressive.resolved == 1 &&
+        progressive.installed == 0);
+    CHECK(stats.succeeded_count == 1 && stats.failed_count == 0);
     char missing_source[BONGO_CAT_PATH_CAP];
     CHECK(child(missing_source, sizeof(missing_source), progressive_root,
         "missing", false));
@@ -202,6 +211,14 @@ void test_mver_container_discovery(void) {
         &error) == BONGO_CAT_OK);
     CHECK(subset_receipt.count == 1 && subset_receipt.installed_count == 0 &&
         strcmp(subset_receipt.ids[0], receipt.ids[0]) == 0);
+    CHECK(child(mode, sizeof(mode), package,
+        "img/standard/cat_model/cat.moc3", false));
+    BongoCatImportReceipt moc_receipt = {0};
+    CHECK(bongo_cat_import_install(mode, models_root, &moc_receipt,
+        &error) == BONGO_CAT_OK);
+    CHECK(moc_receipt.count == subset_receipt.count &&
+        moc_receipt.installed_count == 0 &&
+        strcmp(moc_receipt.ids[0], subset_receipt.ids[0]) == 0);
     char stored[BONGO_CAT_PATH_CAP], duplicate_directory[BONGO_CAT_PATH_CAP];
     CHECK(child(stored, sizeof(stored), models_root, receipt.ids[0], false) &&
         bongo_cat_path_is_dir(stored));

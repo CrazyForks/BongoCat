@@ -1,4 +1,5 @@
 #include "model_import_mver_internal.h"
+#include "model_import_mver_manifest.h"
 #include "bongo_cat/file.h"
 #include "bongo_cat/path.h"
 
@@ -43,9 +44,7 @@ static yyjson_doc *manifest(const BongoCatImportCandidate *candidate,
     char path[BONGO_CAT_PATH_CAP];
     if (!bongo_cat_path_join(path, sizeof(path), candidate->directory,
         candidate->setting)) return NULL;
-    FILE *file = bongo_cat_file_open(path, "rb");
-    yyjson_doc *document = file ? yyjson_read_fp(file, 0, NULL, NULL) : NULL;
-    if (file) fclose(file);
+    yyjson_doc *document = bongo_cat_import_mver_manifest_read(path, NULL);
     *references = document ? yyjson_obj_get(yyjson_doc_get_root(document),
         "FileReferences") : NULL;
     return document;

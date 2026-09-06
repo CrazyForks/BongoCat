@@ -119,6 +119,7 @@ set(BONGO_CAT_RUNTIME_IMPORT_SOURCES
   src/runtime/model/import/mver/model_import_mver_assets.c
   src/runtime/model/import/mver/model_import_mver_copy.c
   src/runtime/model/import/mver/model_import_mver_discovery.c
+  src/runtime/model/import/mver/model_import_mver_manifest.c
   src/runtime/model/import/mver/model_import_mver_effect.c
   src/runtime/model/import/mver/model_import_mver_image.c
   src/runtime/model/import/mver/model_import_mver_labels.c

@@ -65,13 +65,8 @@ static bool behavior_references(const char *root, yyjson_val *refs) {
     return true;
 }
 
-bool bongo_cat_import_manifest_valid(const char *root, const char *setting,
-    BongoCatError *error) {
-    char path[BONGO_CAT_PATH_CAP];
-    if (!bongo_cat_path_join(path, sizeof(path), root, setting)) return false;
-    FILE *file = bongo_cat_file_open(path, "rb");
-    yyjson_doc *document = file ? yyjson_read_fp(file, 0, NULL, NULL) : NULL;
-    if (file) fclose(file);
+bool bongo_cat_import_manifest_document_valid(const char *root,
+    yyjson_doc *document) {
     yyjson_val *manifest = document ? yyjson_doc_get_root(document) : NULL;
     yyjson_val *refs = yyjson_is_obj(manifest)
         ? yyjson_obj_get(manifest, "FileReferences") : NULL;
@@ -86,6 +81,17 @@ bool bongo_cat_import_manifest_valid(const char *root, const char *setting,
     valid = valid && optional_reference(root, refs, "Physics") &&
         optional_reference(root, refs, "Pose") &&
         optional_reference(root, refs, "DisplayInfo") && behavior_references(root, refs);
+    return valid;
+}
+
+bool bongo_cat_import_manifest_valid(const char *root, const char *setting,
+    BongoCatError *error) {
+    char path[BONGO_CAT_PATH_CAP];
+    if (!bongo_cat_path_join(path, sizeof(path), root, setting)) return false;
+    FILE *file = bongo_cat_file_open(path, "rb");
+    yyjson_doc *document = file ? yyjson_read_fp(file, 0, NULL, NULL) : NULL;
+    if (file) fclose(file);
+    bool valid = bongo_cat_import_manifest_document_valid(root, document);
     yyjson_doc_free(document);
     if (!valid && error) bongo_cat_error_set(error, BONGO_CAT_ERROR_FORMAT,
         "Model manifest or referenced assets are invalid: %s", path);

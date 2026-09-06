@@ -1,5 +1,5 @@
 #include "model_import.h"
-#include "../model_import_manifest.h"
+#include "model_import_mver_manifest.h"
 #include "model_import_mver.h"
 #include "model_import_path.h"
 #include "runtime.h"
@@ -82,7 +82,7 @@ static bool mode_uses_live2d(yyjson_val *mode) {
 static bool model_at(const char *directory, char *setting, size_t capacity) {
     return bongo_cat_path_find_unique_suffix(directory, ".model3.json",
         setting, capacity) == 1 &&
-        bongo_cat_import_manifest_valid(directory, setting, NULL);
+        bongo_cat_import_mver_manifest_valid(directory, setting);
 }
 
 static bool find_mode_model(const char *mode_root, char *directory,

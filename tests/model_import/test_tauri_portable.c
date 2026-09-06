@@ -69,6 +69,13 @@ void test_tauri_portable(void) {
     CHECK(write_text(path, "keep"));
     BongoCatImportDiscovery discovery = {0};
     BongoCatError error = {0};
+    /* A referenced Moc may live below the manifest directory. */
+    CHECK(child(path, sizeof(path), model, "cat.model3.json", false));
+    CHECK(write_text(path, "{\"Version\":3,\"FileReferences\":{"
+        "\"Moc\":\"nested/CAT.MOC3\",\"Textures\":["
+        "\"resources/model-texture.png\"]}}"));
+    CHECK(child(path, sizeof(path), nested, "CAT.MOC3", false));
+    CHECK(write_text(path, "MOC3"));
     CHECK(bongo_cat_import_tauri_discover_exact(model, &discovery, &error) == 1);
     CHECK(discovery.count == 1 &&
         discovery.candidates[0].format == BONGO_CAT_IMPORT_TAURI &&
@@ -85,10 +92,25 @@ void test_tauri_portable(void) {
     char models_root[BONGO_CAT_PATH_CAP];
     CHECK(child(models_root, sizeof(models_root), root, "models", true));
     BongoCatImportReceipt receipt = {0};
-    CHECK(bongo_cat_import_install(model, models_root, &receipt, &error) ==
+    CHECK(child(path, sizeof(path), nested, "CAT.MOC3", false));
+    CHECK(bongo_cat_import_install(path, models_root, &receipt, &error) ==
         BONGO_CAT_OK);
     CHECK(receipt.count == 1 && receipt.installed_count == 1 &&
         strcmp(receipt.ids[0], "keyboard") == 0);
+    BongoCatImportReceipt folder_receipt = {0};
+    CHECK(bongo_cat_import_install(model, models_root, &folder_receipt,
+        &error) == BONGO_CAT_OK);
+    CHECK(folder_receipt.count == receipt.count &&
+        folder_receipt.installed_count == 0 &&
+        strcmp(folder_receipt.ids[0], receipt.ids[0]) == 0);
+    BongoCatImportSession *session = bongo_cat_import_session_create(
+        models_root, &error);
+    BongoCatImportBatchStats stats = {0};
+    CHECK(session != NULL);
+    CHECK(session && bongo_cat_import_session_install_progressive(session,
+        path, NULL, NULL, &stats, &error) == BONGO_CAT_OK);
+    CHECK(stats.succeeded_count == 1 && stats.failed_count == 0);
+    bongo_cat_import_session_destroy(session);
     char package[BONGO_CAT_PATH_CAP];
     CHECK(child(package, sizeof(package), models_root, receipt.ids[0], false));
     CHECK(child(path, sizeof(path), package, "config.json", false) &&

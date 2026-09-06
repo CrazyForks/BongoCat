@@ -229,6 +229,8 @@ int main(void) {
     failures += test_mver_policy();
     failures += test_model_import_identity();
     test_mver_container_discovery();
+    test_model_import_source();
+    test_mver_manifest();
     test_tauri_portable();
     failures += test_slim_package();
     return failures ? 1 : 0;

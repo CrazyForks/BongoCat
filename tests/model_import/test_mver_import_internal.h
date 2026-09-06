@@ -12,6 +12,8 @@ extern int failures;
 } } while (0)
 
 void test_mver_container_discovery(void);
+void test_model_import_source(void);
+void test_mver_manifest(void);
 void test_tauri_portable(void);
 
 #endif
