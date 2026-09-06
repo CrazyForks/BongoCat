@@ -59,7 +59,9 @@ static bool prepare_corner_mask(void) {
 }
 
 void bongo_cat_window_mask_corners(BongoCatApp *app, int width, int height) {
-    if (!app->settings.window.rounded_corners || width <= 0 || height <= 0 ||
+    if (!app->settings.window.rounded_corners ||
+        app->settings.window.corner_radius_percent <= 0.0f ||
+        width <= 0 || height <= 0 ||
         !prepare_corner_mask()) return;
     GLint program, vao, equation_rgb, equation_alpha, src_rgb, dst_rgb,
         src_alpha, dst_alpha;
@@ -90,7 +92,7 @@ void bongo_cat_window_mask_corners(BongoCatApp *app, int width, int height) {
     corner_gl.bind_vertex_array(corner_vao);
     corner_gl.uniform_1i(corner_width, width);
     corner_gl.uniform_1i(corner_height, height);
-    float percent = SDL_clamp(app->settings.window.corner_radius_percent, 1.0f, 50.0f);
+    float percent = SDL_clamp(app->settings.window.corner_radius_percent, 0.0f, 50.0f);
     corner_gl.uniform_1i(corner_radius,
         (GLint)(SDL_min(width, height) * percent * 10.0f + 0.5f));
     glDrawArrays(GL_TRIANGLES, 0, 3);

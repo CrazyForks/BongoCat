@@ -76,10 +76,14 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
         bongo_cat_window_set_scale(app, requested_scale);
     }
     bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_WINDOW_CORNERS);
+    /* Display the fraction of maximum rounding; keep saved radii in their
+       original units (percent of the short edge) for existing settings. */
+    float corner_roundness = window->corner_radius_percent * 2.0f;
     if (bongo_cat_pref_toggle_float(context, "window-corners", tr(app,
         "pages.preference.cat.labels.windowCorners", "Window Corners (%)"),
-        &window->rounded_corners, 1.0f, &window->corner_radius_percent,
-        50.0f, 1.0f, BONGO_CAT_DEFAULT_WINDOW_CORNER_PERCENT)) {
+        &window->rounded_corners, 0.0f, &corner_roundness,
+        100.0f, 1.0f, BONGO_CAT_DEFAULT_WINDOW_CORNER_PERCENT * 2.0f)) {
+        window->corner_radius_percent = corner_roundness * 0.5f;
         app->dirty = true;
         bongo_cat_window_mark_hit_dirty(app);
     }

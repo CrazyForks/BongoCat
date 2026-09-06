@@ -210,7 +210,7 @@ void bongo_cat_settings_validate(BongoCatSettings *config) {
     config->window.hide_delay_seconds = clampf_or(
         config->window.hide_delay_seconds, 0.0f, 60.0f, 0.0f);
     config->window.corner_radius_percent = clampf_or(
-        config->window.corner_radius_percent, 1.0f, 50.0f,
+        config->window.corner_radius_percent, 0.0f, 50.0f,
         BONGO_CAT_DEFAULT_WINDOW_CORNER_PERCENT);
     config->window.random_expression_interval_seconds = clampf_or(
         config->window.random_expression_interval_seconds, 1.0f, 3600.0f,

@@ -165,7 +165,7 @@ void bongo_cat_ui_paint_sidebar_glow(struct nk_context *context,
     int width, height; float sx, sy; BongoCatUIBackend *backend;
     if (!texture_dimensions(context, surface, &width, &height, &sx, &sy,
         &backend)) return;
-    float scale = (sx + sy) * .5f;
+    float scale = NK_MIN(sx, sy);
     BongoCatUIPaintKey key = {BONGO_CAT_UI_PAINT_SIDEBAR_GLOW,
         width, height, (int)lroundf(rounding * scale),
         (int)lroundf(sidebar * sx), 0, pack(color), 0};

@@ -10,7 +10,7 @@ bool bongo_cat_window_visible_at_pointer(BongoCatApp *app, float x, float y) {
         width <= 0 || height <= 0 || pixel_width <= 0 || pixel_height <= 0) return false;
     if (app->settings.window.rounded_corners) {
         float radius = SDL_min(pixel_width, pixel_height) *
-            SDL_clamp(app->settings.window.corner_radius_percent, 1.0f, 50.0f) / 100.0f;
+            SDL_clamp(app->settings.window.corner_radius_percent, 0.0f, 50.0f) / 100.0f;
         float px = x * pixel_width / width;
         float py = y * pixel_height / height;
         float dx = SDL_max(SDL_fabsf(px - pixel_width * 0.5f) -
