@@ -21,6 +21,7 @@
           "alwaysOnTop": "Toujours au premier plan",
           "keepInScreen": "Maintenir à l'écran",
           "windowSize": "Taille de la fenêtre",
+          "windowCorners": "Coins arrondis (%)",
           "opacity": "Opacité",
           "randomExpression": "Expressions aléatoires",
           "obsBackground": "Arrière-plan uni",

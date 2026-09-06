@@ -69,6 +69,9 @@ static bool read_window(yyjson_val *object, BongoCatWindowPreferences *value,
             error) ||
         !read_bool(object, "randomExpression", &value->random_expression,
             error) ||
+        !read_bool(object, "roundedCorners", &value->rounded_corners, error) ||
+        !read_float(object, "cornerRadiusPercent", &value->corner_radius_percent,
+            error) ||
         !read_float(object, "hideDelaySeconds", &value->hide_delay_seconds,
             error) ||
         !read_float(object, "randomExpressionIntervalSeconds",

@@ -21,6 +21,7 @@
           "alwaysOnTop": "Sempre no Topo",
           "keepInScreen": "Manter na Tela",
           "windowSize": "Tamanho da Janela",
+          "windowCorners": "Cantos arredondados (%)",
           "opacity": "Opacidade",
           "randomExpression": "Expressões Aleatórias",
           "obsBackground": "Fundo sólido",

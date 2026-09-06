@@ -21,6 +21,7 @@
           "alwaysOnTop": "Siempre visible",
           "keepInScreen": "Mantener en pantalla",
           "windowSize": "Tamaño de la ventana",
+          "windowCorners": "Esquinas redondeadas (%)",
           "opacity": "Opacidad",
           "randomExpression": "Expresiones aleatorias",
           "obsBackground": "Fondo sólido",

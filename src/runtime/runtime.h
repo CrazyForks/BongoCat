@@ -110,6 +110,8 @@ void bongo_cat_frame_presentation_prepare(BongoCatApp *app,
     const unsigned char *pixels, int width, int height, bool visible);
 void bongo_cat_frame_presented_audit(BongoCatApp *app);
 void bongo_cat_window_clear_background(BongoCatApp *app);
+void bongo_cat_window_mask_corners(BongoCatApp *app, int width, int height);
+void bongo_cat_window_destroy_corner_mask(void);
 void bongo_cat_app_render_now(BongoCatApp *app);
 bool bongo_cat_app_capture_pending_model_cover(BongoCatApp *app);
 void bongo_cat_runtime_flow_update(BongoCatApp *app, uint64_t now);

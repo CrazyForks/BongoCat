@@ -58,6 +58,11 @@ static void window_size(struct nk_command_buffer *c, struct nk_rect b,
     line(c, b, 10, 3, 15, 3, color); line(c, b, 15, 3, 15, 8, color);
 }
 
+static void window_corners(struct nk_command_buffer *c, struct nk_rect b,
+    struct nk_color color) {
+    nk_stroke_rect(c, nk_rect(b.x + 1, b.y + 1, 16, 16), 5, 1.5f, color);
+}
+
 static void opacity(struct nk_command_buffer *c, struct nk_rect b,
     struct nk_color color) {
     line(c, b, 9, 1, 4, 9, color); line(c, b, 9, 1, 14, 9, color);
@@ -159,7 +164,7 @@ bool bongo_cat_pref_row_icon_draw(struct nk_command_buffer *canvas,
     typedef void (*Draw)(struct nk_command_buffer *, struct nk_rect,
         struct nk_color);
     static const Draw draws[] = {multiple_models, pass_through, always_on_top,
-        keep_in_screen, solid_background, window_size, opacity,
+        keep_in_screen, solid_background, window_size, window_corners, opacity,
         random_expression, mirror, mouse_mirror, mouse_centered, ignore_mouse,
         max_fps, autostart, language, theme, shortcut_visibility,
         shortcut_preferences};

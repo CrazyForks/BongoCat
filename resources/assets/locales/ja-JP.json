@@ -21,6 +21,7 @@
           "alwaysOnTop": "常に手前に表示",
           "keepInScreen": "画面内に保持",
           "windowSize": "ウィンドウサイズ",
+          "windowCorners": "ウィンドウの角丸 (%)",
           "opacity": "不透明度",
           "randomExpression": "ランダム表情",
           "obsBackground": "単色背景",

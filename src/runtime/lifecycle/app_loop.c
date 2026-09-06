@@ -84,6 +84,7 @@ static bool render(BongoCatApp *app, bool present) {
     }
     bool reveal_startup = app->startup_visibility_pending &&
         app->session.window.visible;
+    bongo_cat_window_mask_corners(app, width, height);
     bongo_cat_frame_audit(app, width, height);
     bongo_cat_window_capture_pointer_hit(app);
     /* Keep the native window hidden while diagnostics/readback finish. The

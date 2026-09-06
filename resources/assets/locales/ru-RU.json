@@ -21,6 +21,7 @@
           "alwaysOnTop": "Поверх всех окон",
           "keepInScreen": "Удерживать на экране",
           "windowSize": "Размер окна",
+          "windowCorners": "Скругление углов (%)",
           "opacity": "Непрозрачность",
           "randomExpression": "Случайные выражения",
           "obsBackground": "Однотонный фон",

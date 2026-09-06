@@ -21,6 +21,7 @@
           "alwaysOnTop": "Always on Top",
           "keepInScreen": "Keep on Screen",
           "windowSize": "Window Size",
+          "windowCorners": "Window Corners (%)",
           "opacity": "Opacity",
           "randomExpression": "Random Expressions",
           "obsBackground": "Solid Background",

@@ -21,6 +21,7 @@
           "alwaysOnTop": "視窗置頂",
           "keepInScreen": "保持在螢幕內",
           "windowSize": "視窗尺寸",
+          "windowCorners": "視窗圓角 (%)",
           "opacity": "不透明度",
           "randomExpression": "隨機表情",
           "obsBackground": "純色背景",

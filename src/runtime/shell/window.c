@@ -213,6 +213,8 @@ bool bongo_cat_window_event(BongoCatApp *app, const SDL_Event *event) {
 
 void bongo_cat_window_destroy(BongoCatApp *app) {
     bongo_cat_window_drag_end(app);
+    if (app->gl_context && SDL_GL_MakeCurrent(app->window, app->gl_context))
+        bongo_cat_window_destroy_corner_mask();
     if (app->gl_context) SDL_GL_DestroyContext(app->gl_context);
     if (app->window) SDL_DestroyWindow(app->window);
     app->gl_context = NULL;

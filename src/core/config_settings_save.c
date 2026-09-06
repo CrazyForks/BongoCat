@@ -34,6 +34,10 @@ static bool write_window(yyjson_mut_doc *doc, yyjson_mut_val *object,
             value->obs_background) &&
         yyjson_mut_obj_add_bool(doc, object, "randomExpression",
             value->random_expression) &&
+        yyjson_mut_obj_add_bool(doc, object, "roundedCorners",
+            value->rounded_corners) &&
+        yyjson_mut_obj_add_real(doc, object, "cornerRadiusPercent",
+            value->corner_radius_percent) &&
         yyjson_mut_obj_add_strcpy(doc, object, "captureBackgroundColor",
             bongo_cat_obs_background_color_name(
                 value->obs_background_color)) &&

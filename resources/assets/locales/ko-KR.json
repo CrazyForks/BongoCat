@@ -21,6 +21,7 @@
           "alwaysOnTop": "항상 위",
           "keepInScreen": "화면 안에 유지",
           "windowSize": "창 크기",
+          "windowCorners": "창 모서리 둥글기 (%)",
           "opacity": "불투명도",
           "randomExpression": "무작위 표정",
           "obsBackground": "단색 배경",

@@ -21,6 +21,7 @@
           "alwaysOnTop": "Immer im Vordergrund",
           "keepInScreen": "Auf dem Bildschirm halten",
           "windowSize": "Fenstergröße",
+          "windowCorners": "Fensterrundung (%)",
           "opacity": "Deckkraft",
           "randomExpression": "Zufällige Ausdrücke",
           "obsBackground": "Einfarbiger Hintergrund",
