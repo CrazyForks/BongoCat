@@ -15,11 +15,8 @@ timing, and window/cursor metadata, rather than typed text. Development tools
 that simulate input are separate `EXCLUDE_FROM_ALL` targets and are not part
 of the application target or its installation rules.
 
-Some game and system combinations still stop delivering background input
-while the game has focus. This remains an unresolved compatibility issue;
-version 1.6.0 does not claim to fix it for every game. Registration success
-alone does not establish that input messages are arriving. BongoCat does
-not attempt to bypass a game's input restrictions.
+Registration success alone does not establish that input messages are
+arriving. BongoCat does not attempt to bypass a game's input restrictions.
 
 Using documented Windows APIs does not guarantee acceptance by every
 anti-cheat product. The source checks in
