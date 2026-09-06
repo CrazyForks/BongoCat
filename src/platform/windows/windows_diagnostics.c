@@ -139,7 +139,8 @@ static void log_device_context(HWND window) {
     HDC current_dc = wglGetCurrentDC();
     HGLRC current_context = wglGetCurrentContext();
     HWND current_window = current_dc ? WindowFromDC(current_dc) : NULL;
-    SDL_Log("Window device context: pixel_format=%d described=%d "
+    SDL_LogDebug(SDL_LOG_CATEGORY_VIDEO,
+        "Window device context: pixel_format=%d described=%d "
         "pfd_flags=0x%lx color_bits=%u alpha_bits=%u depth_bits=%u "
         "stencil_bits=%u layer_type=%u technology=%d bits_pixel=%d "
         "planes=%d raster_caps=0x%x current_gl_context=%p current_dc=%p "
@@ -183,7 +184,8 @@ static void log_window(HWND window) {
     RECT client = {0}; POINT client_origin = {0};
     bool client_known = GetClientRect(window, &client) != FALSE &&
         ClientToScreen(window, &client_origin) != FALSE;
-    SDL_Log("Capture window details: class=%s title=%s pid=%lu thread=%lu "
+    SDL_LogDebug(SDL_LOG_CATEGORY_VIDEO,
+        "Capture window details: class=%s title=%s pid=%lu thread=%lu "
         "dpi=%u frame_known=%d frame=%ld,%ld %ldx%ld "
         "client_known=%d client=%ld,%ld %ldx%ld "
         "layered_known=%d alpha=%u layered_flags=0x%lx", class_name, title,

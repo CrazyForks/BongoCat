@@ -64,27 +64,13 @@ static HRESULT remove_taskbar_tab(HWND window) {
 static void log_environment(HWND window) {
     if (environment_logged) return;
     environment_logged = true;
-    OSVERSIONINFOW version = {.dwOSVersionInfoSize = sizeof(version)};
-    typedef LONG (WINAPI *RtlGetVersionFn)(OSVERSIONINFOW *);
-    HMODULE module = GetModuleHandleW(L"ntdll.dll");
-    RtlGetVersionFn get_version = module ?
-        (RtlGetVersionFn)(void *)GetProcAddress(module, "RtlGetVersion") : NULL;
-    bool version_known = get_version && get_version(&version) == 0;
-    BOOL composition = FALSE;
-    HRESULT composition_result = DwmIsCompositionEnabled(&composition);
-    SDL_Log("Windows capture environment: version=%lu.%lu.%lu known=%d "
-        "composition=%d composition_result=0x%08lx remote_session=%d",
-        (unsigned long)version.dwMajorVersion,
-        (unsigned long)version.dwMinorVersion,
-        (unsigned long)version.dwBuildNumber, version_known,
-        SUCCEEDED(composition_result) && composition,
-        (unsigned long)composition_result, GetSystemMetrics(SM_REMOTESESSION) != 0);
     bongo_cat_windows_diagnostics_log(window);
 }
 
 void bongo_cat_windows_capture_log(HWND window, const char *stage) {
     log_environment(window);
     if (!window || !IsWindow(window)) return;
+    if (SDL_GetLogPriority(SDL_LOG_CATEGORY_VIDEO) > SDL_LOG_PRIORITY_DEBUG) return;
     RECT bounds = {0};
     DWORD cloaked = 0, affinity = 0;
     HRESULT cloak_result = DwmGetWindowAttribute(window, DWMWA_CLOAKED,
@@ -93,7 +79,8 @@ void bongo_cat_windows_capture_log(HWND window, const char *stage) {
     LONG_PTR style = GetWindowLongPtrW(window, GWL_STYLE);
     LONG_PTR extended = GetWindowLongPtrW(window, GWL_EXSTYLE);
     GetWindowRect(window, &bounds);
-    SDL_Log("Windows capture state (%s): hwnd=%p visible=%d iconic=%d "
+    SDL_LogDebug(SDL_LOG_CATEGORY_VIDEO,
+        "Windows capture state (%s): hwnd=%p visible=%d iconic=%d "
         "cloaked=%lu cloak_known=%d rect=%ld,%ld %ldx%ld style=0x%llx "
         "exstyle=0x%llx owner=%p affinity=0x%lx affinity_known=%d",
         stage ? stage : "unknown", (void *)window,
