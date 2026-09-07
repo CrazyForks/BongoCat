@@ -104,10 +104,6 @@ if(BUILD_TESTING)
   set_tests_properties(preferences-lifecycle PROPERTIES
     ENVIRONMENT "BONGO_CAT_DISABLE_NEARBY_MODEL_SCAN=1" TIMEOUT 60)
   if(APPLE)
-    # macOS hosted runners can abort inside SDL's Cocoa shared-context path
-    # after the context is created, before the lifecycle assertions execute.
-    # Keep the lifecycle test active on Linux and Windows where this path is
-    # supported by the CI display stack.
     set_tests_properties(preferences-lifecycle PROPERTIES DISABLED TRUE)
   endif()
 
