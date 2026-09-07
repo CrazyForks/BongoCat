@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+env:
+  BONGO_CAT_NSIS_PACKAGE_VERSION: '3.12.0'
+  BONGO_CAT_NSIS_COMPILER_VERSION: 'v3.12'
+
 concurrency:
   group: bongocat-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -125,13 +129,6 @@ jobs:
             cmake ninja-build libgl1-mesa-dev libx11-dev libxi-dev \
             libxfixes-dev libcurl4-openssl-dev xvfb xauth libgl1-mesa-dri
 
-      - name: Configure Windows release
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          cmake -S . -B build -A ${{ matrix.cmake_arch }} `
-            -DBONGO_CAT_WARNINGS_AS_ERRORS=ON
-
       - name: Configure Unix release
         if: runner.os != 'Windows'
         run: |
@@ -147,17 +144,24 @@ jobs:
       - name: Build Windows release
         if: runner.os == 'Windows'
         shell: pwsh
-        run: >-
-          & ./.github/scripts/build-windows.ps1
-          cmake --build build --config Release --parallel 2
+        run: |
+          & ./scripts/build-windows.ps1 `
+            -BuildDir build `
+            -Configuration Release `
+            -Architecture '${{ matrix.cmake_arch }}' `
+            -Jobs 2
 
       - name: Build Windows validation tools
         if: runner.os == 'Windows'
         shell: pwsh
-        run: >-
-          & ./.github/scripts/build-windows.ps1
-          cmake --build build --config Release
-          --target bongo_cat_validation_tools --parallel 2
+        run: |
+          & ./scripts/build-windows.ps1 `
+            -BuildDir build `
+            -Configuration Release `
+            -Architecture '${{ matrix.cmake_arch }}' `
+            -Jobs 2 `
+            -SkipConfigure `
+            -Target bongo_cat_validation_tools
 
       - name: Build Unix release
         if: runner.os != 'Windows'
@@ -308,19 +312,15 @@ jobs:
         shell: pwsh
         run: ./.github/scripts/restore-cubism-sdk.ps1
 
-      - name: Configure Store release
-        shell: pwsh
-        run: |
-          cmake -S . -B build-store -G "Visual Studio 17 2022" `
-            -A ${{ matrix.cmake_arch }} -T v143 `
-            -DBONGO_CAT_REQUIRE_CUBISM=ON `
-            -DBONGO_CAT_WARNINGS_AS_ERRORS=ON
-
       - name: Build Store release
         shell: pwsh
-        run: >-
-          & ./.github/scripts/build-windows.ps1
-          cmake --build build-store --config Release --parallel 2
+        run: |
+          & ./scripts/build-windows.ps1 `
+            -BuildDir build-store `
+            -Configuration Release `
+            -Architecture '${{ matrix.cmake_arch }}' `
+            -Jobs 2 `
+            -RequireCubism
 
       - name: Install software OpenGL for Windows tests
         uses: ssciwr/setup-mesa-dist-win@6657792673a5d162d5f244db991ba45b4b68989f # v2
@@ -345,8 +345,10 @@ jobs:
       - name: Install NSIS
         shell: pwsh
         run: |
-          if (-not (Get-Command makensis.exe -ErrorAction SilentlyContinue)) {
-            choco install nsis --no-progress --yes
+          choco upgrade nsis --version $env:BONGO_CAT_NSIS_PACKAGE_VERSION `
+            --allow-downgrade --no-progress --yes
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Pinned NSIS installation failed'
           }
           $nsisCommand = Get-Command makensis.exe -ErrorAction SilentlyContinue
           $nsisRoots = @(
@@ -360,6 +362,12 @@ jobs:
           if (-not $nsisRoot) {
             throw 'NSIS was not installed (makensis.exe was not found)'
           }
+          $makensis = Join-Path $nsisRoot 'makensis.exe'
+          $nsisVersion = (& $makensis /VERSION).Trim()
+          if ($nsisVersion -ne $env:BONGO_CAT_NSIS_COMPILER_VERSION) {
+            throw "Unexpected NSIS compiler version: $nsisVersion"
+          }
+          Write-Host "NSIS compiler: $makensis ($nsisVersion)"
           $nsisRoot | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
 
       - name: Package Windows desktop release
@@ -388,6 +396,31 @@ jobs:
           if (-not (Test-Path -LiteralPath $setup)) {
             throw "Production desktop installer is missing: $setup"
           }
+          $portableHash = (Get-FileHash -LiteralPath $portable -Algorithm SHA256).Hash.ToLowerInvariant()
+          $setupHash = (Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()
+          $app = "build-store/Release/BongoCat.exe"
+          $appHash = (Get-FileHash -LiteralPath $app -Algorithm SHA256).Hash.ToLowerInvariant()
+          $cubismArch = if ('${{ matrix.cmake_arch }}' -eq 'Win32') { 'x86' } else { 'x86_64' }
+          $cubismCore = "vendor/CubismSdkForNative/Core/lib/windows/$cubismArch/143/Live2DCubismCore_MT.lib"
+          $cubismHash = (Get-FileHash -LiteralPath $cubismCore -Algorithm SHA256).Hash.ToLowerInvariant()
+          $cmakeVersion = (& cmake --version | Select-Object -First 1).Trim()
+          $nsisCommand = Get-Command makensis.exe -ErrorAction Stop
+          $nsisVersion = (& $nsisCommand.Source /VERSION).Trim()
+          @"
+          ## Windows build provenance (${{ matrix.platform }})
+
+          | Input or artifact | Value |
+          | --- | --- |
+          | Commit | ``${{ github.sha }}`` |
+          | Runner image | ``$env:ImageOS $env:ImageVersion`` |
+          | CMake | ``$cmakeVersion`` |
+          | NSIS | ``$nsisVersion`` at ``$($nsisCommand.Source)`` |
+          | Cubism Core SHA-256 | ``$cubismHash`` |
+          | BongoCat.exe SHA-256 | ``$appHash`` |
+          | Portable SHA-256 | ``$portableHash`` |
+          | Installer SHA-256 | ``$setupHash`` |
+
+          "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
           "portable=$portable" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           "file=$setup" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
