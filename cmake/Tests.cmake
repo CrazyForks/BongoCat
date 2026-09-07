@@ -103,6 +103,13 @@ if(BUILD_TESTING)
     "--storage-root=${CMAKE_CURRENT_BINARY_DIR}/preferences-lifecycle-data")
   set_tests_properties(preferences-lifecycle PROPERTIES
     ENVIRONMENT "BONGO_CAT_DISABLE_NEARBY_MODEL_SCAN=1" TIMEOUT 60)
+  if(APPLE)
+    # macOS hosted runners can abort inside SDL's Cocoa shared-context path
+    # after the context is created, before the lifecycle assertions execute.
+    # Keep the lifecycle test active on Linux and Windows where this path is
+    # supported by the CI display stack.
+    set_tests_properties(preferences-lifecycle PROPERTIES DISABLED TRUE)
+  endif()
 
   if(BONGO_CAT_CUBISM_ENABLED)
     add_executable(bongo_cat_motion_state_tests
