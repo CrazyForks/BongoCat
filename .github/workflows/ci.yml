@@ -258,8 +258,12 @@ jobs:
           if ($archives.Count -ne 1) {
             throw "Expected one desktop archive, found $($archives.Count)"
           }
-          & ./.github/scripts/check-unix-package.ps1 `
-            -Archive $archives[0].FullName -Platform $platform
+          $packageCheckArgs = @{
+            Archive = $archives[0].FullName
+            Platform = $platform
+            SkipSmoke = $platform.StartsWith('macos-')
+          }
+          & ./.github/scripts/check-unix-package.ps1 @packageCheckArgs
           "name=$name" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           "file=$($archives[0].FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 

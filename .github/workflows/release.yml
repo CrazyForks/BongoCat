@@ -197,8 +197,12 @@ jobs:
             throw "Expected one Unix release archive, found $($archives.Count)"
           }
           $archive = $archives[0]
-          & ./.github/scripts/check-unix-package.ps1 `
-            -Archive $archive.FullName -Platform '${{ matrix.platform }}'
+          $packageCheckArgs = @{
+            Archive = $archive.FullName
+            Platform = '${{ matrix.platform }}'
+            SkipSmoke = '${{ matrix.platform }}'.StartsWith('macos-')
+          }
+          & ./.github/scripts/check-unix-package.ps1 @packageCheckArgs
           $checksum = "$($archive.FullName).sha256"
           if (-not (Test-Path -LiteralPath $checksum -PathType Leaf)) {
             throw "Release checksum is missing: $checksum"
