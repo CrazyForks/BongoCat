@@ -139,17 +139,7 @@ void bongo_cat_platform_begin_drag(BongoCatPlatform *platform,
 }
 bool bongo_cat_platform_dynamic_hit_supported(void) { return true; }
 bool bongo_cat_platform_pointer_locked(BongoCatPlatform *platform) {
-    if (!platform) return false;
-    HWND foreground = GetForegroundWindow();
-    DWORD foreground_pid = 0;
-    if (!foreground || !GetWindowThreadProcessId(foreground, &foreground_pid) ||
-        foreground_pid == GetCurrentProcessId()) return false;
-    RECT clip = {0};
-    CURSORINFO cursor = {.cbSize = sizeof(cursor)};
-    bool clip_known = GetClipCursor(&clip) != FALSE;
-    bool cursor_known = GetCursorInfo(&cursor) != FALSE;
-    return bongo_cat_windows_input_relative_mode(true,
-        clip_known ? &clip : NULL, cursor_known ? &cursor : NULL);
+    return bongo_cat_windows_input_pointer_locked(platform);
 }
 bool bongo_cat_platform_relative_pointer(BongoCatPlatform *platform,
     double *x, double *y) {

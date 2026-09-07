@@ -223,9 +223,6 @@ bool bongo_cat_preferences_event(BongoCatPreferences *value, const SDL_Event *ev
         value->import_drop_active = false;
         bongo_cat_pref_controls_reset(&value->ui.context);
     }
-    if (value->app->smoke_input_audit && (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
-        event->type == SDL_EVENT_MOUSE_BUTTON_UP)) SDL_Log("Preferences mouse %s at %.1f,%.1f",
-            event->button.down ? "down" : "up", event->button.x, event->button.y);
     if (bongo_cat_preferences_model_rename_event(value, event)) return true;
     if (bongo_cat_preferences_behavior_rename_event(value, event)) return true;
     if (bongo_cat_preferences_shortcut_event(value, event)) return true;

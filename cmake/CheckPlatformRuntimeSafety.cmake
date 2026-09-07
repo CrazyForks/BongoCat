@@ -66,7 +66,6 @@ set(SENSITIVE_RULES
   "GetRegisteredRawInputDevices|src/platform/windows/windows_input_registration.c"
   "GetRawInputData|src/platform/windows/windows_input_receiver.c"
   "SDL_HINT_WINDOWS_RAW_KEYBOARD|src/runtime/shell/window.c|src/platform/windows/windows_input.c"
-  "OpenProcessToken|src/platform/windows/windows_diagnostics.c"
   "BitBlt|src/platform/windows/windows_capture_probe.c"
   "PrintWindow|src/platform/windows/windows_capture_probe.c"
   "UpdateLayeredWindow|src/platform/windows/windows_layered.c"

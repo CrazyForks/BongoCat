@@ -1,5 +1,4 @@
 #include "runtime.h"
-#include "mouse_diagnostics.h"
 
 #include <SDL3/SDL.h>
 
@@ -24,7 +23,6 @@ void bongo_cat_app_apply_mouse(BongoCatApp *app) {
     uint64_t now = SDL_GetTicksNS();
     if (received) {
         app->mouse_last_ns = now ? now : 1;
-        app->mouse_native_samples++;
     }
     float global_x = 0.0f, global_y = 0.0f;
     SDL_MouseButtonFlags buttons = SDL_GetGlobalMouseState(&global_x, &global_y);
@@ -71,7 +69,6 @@ void bongo_cat_app_apply_mouse(BongoCatApp *app) {
     bool moved = !app->pointer_known || app->pointer_x != target_x ||
         app->pointer_y != target_y;
     if (moved) {
-        bongo_cat_mouse_audit(app, target_x, target_y);
         bongo_cat_app_track_hover(app, target_x, target_y);
         /* Refresh the hit pixel before the next button press. Waiting for the
            scheduled frame can leave a stale transparent state for fast clicks. */
@@ -103,25 +100,17 @@ void bongo_cat_app_apply_mouse(BongoCatApp *app) {
         (app->model_render_options.mver_projection &&
             (!app->settings.model.mouse_centered || profile_relative)));
     bool map_ok = !map_pointer;
-    app->pointer_diagnostics.bounds_known = false;
-    app->pointer_diagnostics.bounds = (BongoCatMverPointerBounds){0};
     if (map_pointer) {
         map_ok = bongo_cat_app_map_pointer(app, relative_requested, target_x,
             target_y, &model_x, &model_y, &model_moved);
         if (!map_ok) {
-            app->pointer_diagnostics.map_failures++;
             model_x = target_x; model_y = target_y; model_moved = moved;
         }
     }
-    if (pointer_mode_changed) app->pointer_diagnostics.mode_changes++;
     if (!app->settings.model.ignore_mouse &&
         (model_moved || button_changed || pointer_mode_changed || button_event_pending)) {
-        app->input_mouse_updates++;
         bongo_cat_app_apply_mouse_coordinates(app, model_x, model_y,
             cursor_locked ? model_x : target_x, cursor_locked ? model_y : target_y);
     }
     app->mouse_button_event_pending = false;
-    bongo_cat_mouse_log_diagnostics(app, now, target_x, target_y,
-        cursor_locked, relative_requested,
-        model_x, model_y, model_moved, native_selected);
 }

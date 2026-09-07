@@ -1,4 +1,5 @@
 #include "runtime.h"
+#include "bongo_cat/log.h"
 #include "model_cover.h"
 #include "bongo_cat/overlay.h"
 #include "bongo_cat/preferences.h"
@@ -163,21 +164,18 @@ static bool take_update_shutdown(BongoCatApp *app) {
     if (!bongo_cat_platform_single_instance_take_update_shutdown())
         return false;
     app->running = false;
-    SDL_Log("Installed update requested application shutdown");
+    SDL_LogInfo(BONGO_CAT_LOG_UPDATE,
+        "Installed update requested application shutdown");
     return true;
 }
 
 void bongo_cat_app_loop(BongoCatApp *app) {
-    uint64_t iterations = 0, wakes = 0, zero_waits = 0;
     while (app->running) {
-        iterations++;
         int wait_ms = bongo_cat_window_wait_timeout(app, SDL_GetTicksNS());
         if (app->secondary_pet && wait_ms > 100) wait_ms = 100;
-        if (!wait_ms) zero_waits++;
         bongo_cat_preferences_input_begin(app->preferences);
         SDL_Event event;
         if (bongo_cat_wait_event(&event, wait_ms)) {
-            wakes++;
             handle_event(app, &event);
             unsigned queued = 0;
             while (queued++ < 256 && SDL_PollEvent(&event))
@@ -216,8 +214,4 @@ void bongo_cat_app_loop(BongoCatApp *app) {
         if (app->smoke_deadline_ns && now >= app->smoke_deadline_ns)
             app->running = false;
     }
-    if (app->smoke)
-        SDL_Log("Smoke loop: iterations=%llu wakes=%llu zero_waits=%llu",
-            (unsigned long long)iterations, (unsigned long long)wakes,
-            (unsigned long long)zero_waits);
 }

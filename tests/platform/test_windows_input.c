@@ -8,6 +8,7 @@
 int bongo_cat_test_failures;
 void test_windows_relative_sources(void);
 void test_windows_raw_receiver(void);
+void test_windows_pointer_detection(void);
 
 typedef struct RawFixture {
     WindowsInputState state;
@@ -69,7 +70,7 @@ static void test_key_devices(void) {
     bongo_cat_windows_input_clear_devices(&test.state);
     expect(&test, BONGO_CAT_INPUT_KEY_UP, "ControlRight");
     CHECK(!bongo_cat_input_control_down(&test.input));
-    CHECK(test.state.device_count == 0 && test.state.counters.background == 7);
+    CHECK(test.state.device_count == 0);
 }
 
 static void test_key_sequences(void) {
@@ -144,13 +145,13 @@ static void test_backpressure(void) {
     initialize(&test);
     fill_queue(&test, false);
     key_packet(&test, 1, 'A', 0x1e, 0);
-    CHECK(test.state.counters.queue_failures == 1);
+    CHECK(test.state.retry_events);
     drain(&test);
     bongo_cat_windows_input_flush(&test.state);
     expect(&test, BONGO_CAT_INPUT_KEY_DOWN, "KeyA");
     fill_queue(&test, true);
     bongo_cat_windows_input_clear_devices(&test.state);
-    CHECK(test.state.counters.queue_failures == 2);
+    CHECK(test.state.retry_events);
     drain(&test);
     bongo_cat_windows_input_flush(&test.state);
     expect(&test, BONGO_CAT_INPUT_KEY_UP, "KeyA");
@@ -170,16 +171,15 @@ static void test_packets(void) {
     bongo_cat_windows_input_packet(&test.state, &packet, sizeof(packet));
     double x, y;
     CHECK(bongo_cat_windows_input_take_relative(&test.platform, &x, &y, NULL));
-    CHECK(x == 8.0 && y == 0.0 && test.state.counters.mouse == 1);
-    CHECK(test.state.relative_reads == 1);
+    CHECK(x == 8.0 && y == 0.0);
     CHECK(!bongo_cat_windows_input_take_relative(&test.platform, &x, &y, NULL));
     bongo_cat_windows_input_packet(&test.state, &packet, 1);
     packet.header.dwSize = sizeof(RAWINPUTHEADER);
     bongo_cat_windows_input_packet(&test.state, &packet, packet.header.dwSize);
-    CHECK(test.state.counters.invalid == 2 && test.state.counters.mouse == 1);
+    CHECK(!bongo_cat_windows_input_take_relative(&test.platform, &x, &y, NULL));
     packet.header.dwType = RIM_TYPEHID;
     bongo_cat_windows_input_packet(&test.state, &packet, packet.header.dwSize);
-    CHECK(test.state.counters.ignored == 1);
+    expect_empty(&test);
     bongo_cat_windows_input_clear_devices(&test.state);
     test.state.desktop_unavailable = true;
     key_packet(&test, 1, 'A', 0x1e, 0);
@@ -189,6 +189,32 @@ static void test_packets(void) {
     expect(&test, BONGO_CAT_INPUT_KEY_UP, "KeyA");
 }
 
+static void test_motion_keeps_key_and_button_edges(void) {
+    RawFixture test = {0};
+    initialize(&test);
+    RAWINPUT packet = {0};
+    packet.header.dwSize = sizeof(packet);
+    packet.header.dwType = RIM_TYPEMOUSE;
+    packet.header.wParam = RIM_INPUTSINK;
+    packet.data.mouse.lLastX = 1;
+    for (unsigned i = 0; i < 8000; ++i) {
+        packet.data.mouse.usButtonFlags = i == 100 ? RI_MOUSE_LEFT_BUTTON_DOWN :
+            i == 101 ? RI_MOUSE_LEFT_BUTTON_UP : 0;
+        bongo_cat_windows_input_packet(&test.state, &packet, sizeof(packet));
+        if (i == 100) key_packet(&test, 1, 'A', 0x1e, 0);
+        if (i == 101) key_packet(&test, 1, 'A', 0x1e, RI_KEY_BREAK);
+        bongo_cat_windows_input_flush(&test.state);
+    }
+    expect(&test, BONGO_CAT_INPUT_MOUSE_DOWN, "Left");
+    expect(&test, BONGO_CAT_INPUT_KEY_DOWN, "KeyA");
+    expect(&test, BONGO_CAT_INPUT_MOUSE_UP, "Left");
+    expect(&test, BONGO_CAT_INPUT_KEY_UP, "KeyA");
+    expect_empty(&test);
+    CHECK(test.state.observed_x == 8000);
+    CHECK(!test.state.retry_events);
+    bongo_cat_windows_input_clear_devices(&test.state);
+}
+
 int main(void) {
     CHECK(SDL_Init(SDL_INIT_EVENTS));
     test_key_devices();
@@ -196,7 +222,9 @@ int main(void) {
     test_buttons();
     test_backpressure();
     test_packets();
+    test_motion_keeps_key_and_button_edges();
     test_windows_relative_sources();
+    test_windows_pointer_detection();
     test_windows_raw_receiver();
     SDL_Quit();
     return bongo_cat_test_failures ? 1 : 0;

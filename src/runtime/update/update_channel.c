@@ -126,7 +126,5 @@ void bongo_cat_update_show_completion(BongoCatUpdateService *service) {
             snapshot.error : tr(service, "native.support.updateFailed",
                 "Unable to check for updates"));
         bongo_cat_preferences_notice_show(service->app, detail, true);
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
-            "Update check failed: %s", snapshot.error);
     }
 }

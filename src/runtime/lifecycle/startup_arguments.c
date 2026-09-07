@@ -60,7 +60,6 @@ bool bongo_cat_startup_arguments(BongoCatApp *app, int argc, char **argv,
         else if (strcmp(arg, "--ci-remove-imported") == 0) app->smoke_remove_imported = true;
         else if (strcmp(arg, "--ci-shortcuts") == 0) app->smoke_shortcuts = true;
         else if (strcmp(arg, "--ci-menu") == 0) app->smoke_menu = true;
-        else if (strcmp(arg, "--ci-input-audit") == 0) app->smoke_input_audit = true;
         else if (strcmp(arg, "--ci-ignore-global-input") == 0) app->smoke_ignore_global_input = true;
         else if (strcmp(arg, "--ci-pass-through") == 0) app->smoke_pass_through = true;
         else if (strcmp(arg, "--ci-context-menu") == 0) app->smoke_context_menu = true;

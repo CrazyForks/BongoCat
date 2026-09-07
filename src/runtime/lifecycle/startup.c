@@ -2,6 +2,7 @@
 #include "runtime_state.h"
 #include "bongo_cat/file.h"
 #include "bongo_cat/i18n.h"
+#include "bongo_cat/log.h"
 #include "bongo_cat/path.h"
 #include "storage_paths.h"
 
@@ -18,7 +19,6 @@
 static char runtime_log_path[BONGO_CAT_PATH_CAP];
 static char log_source[BONGO_CAT_ID_CAP + 8] = "unknown";
 static bool startup_is_ready;
-static bool verbose_logging;
 static SDL_Mutex *log_mutex;
 
 static const char *priority_name(SDL_LogPriority priority) {
@@ -60,7 +60,7 @@ static void append_log(const char *path, const char *timestamp,
 static void SDLCALL log_output(void *userdata, int category,
     SDL_LogPriority priority, const char *message) {
     (void)userdata;
-    if (!verbose_logging && priority < SDL_LOG_PRIORITY_INFO) return;
+    if (!bongo_cat_log_enabled(category, priority)) return;
     if (log_mutex) SDL_LockMutex(log_mutex);
     char timestamp[64];
     bongo_cat_runtime_timestamp(timestamp, sizeof(timestamp));
@@ -75,11 +75,11 @@ void bongo_cat_runtime_clean_shutdown(BongoCatApp *app, int exit_code) {
     bongo_cat_runtime_timestamp(timestamp, sizeof(timestamp));
     snprintf(message, sizeof(message),
         "[runtime] Shutdown complete: exit_code=%d", exit_code);
-    append_log(runtime_log_path, timestamp, SDL_LOG_CATEGORY_APPLICATION,
+    append_log(runtime_log_path, timestamp, BONGO_CAT_LOG_LIFECYCLE,
         SDL_LOG_PRIORITY_INFO, message);
     fprintf(stderr, "%s [%s] [%s:%d] %s\n", timestamp, log_source,
         priority_name(SDL_LOG_PRIORITY_INFO),
-        SDL_LOG_CATEGORY_APPLICATION, message);
+        BONGO_CAT_LOG_LIFECYCLE, message);
 
     bongo_cat_runtime_state_clean(app, timestamp);
 }
@@ -132,14 +132,16 @@ static void begin_log(BongoCatApp *app) {
         interrupted[ferror(stage) ? 0 : length] = '\0';
         fclose(stage);
     }
-    verbose_logging = app->smoke;
     if (!log_mutex) log_mutex = SDL_CreateMutex();
     SDL_SetLogOutputFunction(log_output, NULL);
-    SDL_Log("[runtime] Process started: version=%s platform=%s storage=%s",
-        BONGO_CAT_VERSION, SDL_GetPlatform(), app->storage_root[0]
-            ? app->storage_root : app->config_root);
+    SDL_SetLogPriorities(SDL_LOG_PRIORITY_WARN);
+    SDL_SetLogPriority(BONGO_CAT_LOG_LIFECYCLE, SDL_LOG_PRIORITY_INFO);
+    SDL_SetLogPriority(BONGO_CAT_LOG_UPDATE, SDL_LOG_PRIORITY_INFO);
+    SDL_LogInfo(BONGO_CAT_LOG_LIFECYCLE,
+        "[runtime] Process started: version=%s platform=%s",
+        BONGO_CAT_VERSION, SDL_GetPlatform());
 #ifdef _WIN32
-    SDL_Log("[runtime] Package identity: %s",
+    SDL_LogInfo(BONGO_CAT_LOG_LIFECYCLE, "[runtime] Package identity: %s",
         bongo_cat_windows_is_packaged() ? "MSIX" : "unpackaged Win32");
 #endif
     if (interrupted[0]) SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
@@ -172,7 +174,7 @@ void bongo_cat_startup_stage(BongoCatApp *app, const char *stage) {
     char runtime_stage[160];
     snprintf(runtime_stage, sizeof(runtime_stage), "startup:%s", stage);
     bongo_cat_runtime_stage(app, runtime_stage);
-    SDL_Log("[runtime] Startup stage: %s", stage);
+    SDL_LogInfo(BONGO_CAT_LOG_LIFECYCLE, "[runtime] Startup stage: %s", stage);
 }
 
 void bongo_cat_startup_ready(BongoCatApp *app) {
@@ -184,7 +186,7 @@ void bongo_cat_startup_ready(BongoCatApp *app) {
     if (bongo_cat_path_join(path, sizeof(path), app->state_root,
         "startup-stage.tmp")) bongo_cat_file_remove(path);
     bongo_cat_runtime_stage(app, "running");
-    SDL_Log("[runtime] Startup ready");
+    SDL_LogInfo(BONGO_CAT_LOG_LIFECYCLE, "[runtime] Startup ready");
 }
 
 #ifdef _WIN32

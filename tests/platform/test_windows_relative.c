@@ -64,7 +64,7 @@ static void test_absolute_devices(void) {
     CHECK(x == 0.0 && y == 0.0);
     mouse.lLastX = -1;
     bongo_cat_windows_input_motion(&state, &a, &mouse, &bounds);
-    CHECK(!a.absolute_known && state.counters.invalid == 1);
+    CHECK(!a.absolute_known);
 }
 
 static void test_motion_units(void) {
@@ -112,7 +112,6 @@ static void test_delivered_motion_without_ownership(void) {
     bongo_cat_windows_input_motion(&state, &device, &mouse, &bounds);
     CHECK(bongo_cat_windows_input_take_relative(&platform, &x, &y, &samples));
     CHECK(x == 1919.0 && y == 1079.0 && samples == 1);
-    CHECK(state.relative_reads == 2);
     CHECK(!bongo_cat_windows_input_take_relative(&platform, &x, &y, NULL));
 }
 
@@ -132,10 +131,37 @@ static void test_relative_modes(void) {
     CHECK(!bongo_cat_windows_input_relative_mode(true, &screen, &cursor));
 }
 
+static void test_high_rate_observation(void) {
+    WindowsInputState state = {0};
+    WindowsRawDevice device = {0};
+    BongoCatPlatform platform = {.native = &state};
+    InitializeSRWLock(&state.relative_lock);
+    RAWMOUSE mouse = {.lLastX = 3, .lLastY = -2};
+    for (unsigned i = 0; i < 8000; ++i)
+        bongo_cat_windows_input_motion(&state, &device, &mouse, NULL);
+    CHECK(state.observed_x == 24000 && state.observed_y == -16000);
+    CHECK(state.observed_motion == 8000 && state.relative_samples == 0);
+    bongo_cat_windows_input_reset_relative(&platform);
+    CHECK(state.observed_motion == 8000);
+    CHECK(state.observed_generation == 0);
+    for (unsigned i = 0; i < 8000; ++i)
+        bongo_cat_windows_input_motion(&state, &device, &mouse, NULL);
+    double x, y;
+    unsigned long long samples;
+    CHECK(bongo_cat_windows_input_take_relative(&platform, &x, &y, &samples));
+    CHECK(x == 24000 && y == -16000 && samples == 8000);
+    CHECK(state.observed_motion == 16000);
+    CHECK(!bongo_cat_windows_input_take_relative(&platform, &x, &y, &samples));
+    bongo_cat_windows_input_clear_motion(&state);
+    CHECK(state.observed_x == 0 && state.observed_y == 0);
+    CHECK(state.observed_motion == 0 && state.observed_generation == 1);
+}
+
 void test_windows_relative_sources(void) {
     test_relative_motion();
     test_absolute_devices();
     test_motion_units();
     test_delivered_motion_without_ownership();
     test_relative_modes();
+    test_high_rate_observation();
 }

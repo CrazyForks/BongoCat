@@ -18,14 +18,14 @@ if(WIN32)
     src/platform/windows/windows_input_devices.c
     src/platform/windows/windows_input_packets.c
     src/platform/windows/windows_input_relative.c
-    src/platform/windows/windows_input_diagnostics.c
+    src/platform/windows/windows_input_detection.c
+    src/platform/windows/windows_input_probe.c
     src/platform/windows/windows_popup.c
     src/platform/windows/windows_layered.c
     src/platform/windows/windows_layered_state.c
     src/platform/windows/windows_opacity.c
     src/platform/windows/windows_tray.c
     src/platform/windows/windows_assets.c
-    src/platform/windows/windows_diagnostics.c
     src/platform/windows/windows_capture_probe.c)
   target_include_directories(bongo_cat_runtime PRIVATE
     src/platform/windows)

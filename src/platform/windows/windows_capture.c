@@ -1,5 +1,4 @@
 #include "windows_capture.h"
-#include "windows_diagnostics.h"
 
 #ifdef _WIN32
 #include <SDL3/SDL.h>
@@ -12,7 +11,6 @@ static UINT capture_refresh_message;
 static const wchar_t capture_property[] = L"BongoCat.CaptureWindow";
 static bool removal_warning_emitted;
 static bool style_warning_emitted;
-static bool environment_logged;
 #define BONGO_CAT_CAPTURE_REFRESH_TIMER ((UINT_PTR)0xBC51)
 
 static bool has_property(HWND window, const wchar_t *name) {
@@ -61,14 +59,7 @@ static HRESULT remove_taskbar_tab(HWND window) {
     return result;
 }
 
-static void log_environment(HWND window) {
-    if (environment_logged) return;
-    environment_logged = true;
-    bongo_cat_windows_diagnostics_log(window);
-}
-
 void bongo_cat_windows_capture_log(HWND window, const char *stage) {
-    log_environment(window);
     if (!window || !IsWindow(window)) return;
     if (SDL_GetLogPriority(SDL_LOG_CATEGORY_VIDEO) > SDL_LOG_PRIORITY_DEBUG) return;
     RECT bounds = {0};

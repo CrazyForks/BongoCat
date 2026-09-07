@@ -40,7 +40,6 @@ bool bongo_cat_windows_input_push_event(WindowsInputState *state,
         event.value = value;
         snprintf(event.name, sizeof(event.name), "%s", name);
         pushed = bongo_cat_input_push(platform->input, &event);
-        if (!pushed) state->counters.queue_failures++;
     }
     ReleaseSRWLockShared(&state->platform_lock);
     if (pushed) state->wake_pending = true;
@@ -69,10 +68,6 @@ static void check_receiver(WindowsInputState *state) {
         if (ownership != state->ownership || unavailable)
             bongo_cat_windows_input_clear_devices(state);
         else bongo_cat_windows_input_clear_motion(state);
-        if (unavailable != state->desktop_unavailable)
-            state->counters.desktop_resets++;
-        SDL_Log("[input] Raw Input receiver: ownership=%u error=%lu desktop_available=%d",
-            ownership, (unsigned long)state->registration_error, !unavailable);
         state->ownership = ownership;
         state->desktop_unavailable = unavailable;
     }
@@ -90,9 +85,8 @@ static DWORD WINAPI input_thread(void *context) {
         return 0;
     }
     state->registered = bongo_cat_windows_input_receiver_create(state);
-    SDL_Log("[input] Windows input: diagnostics=raw-input-v3 backend=raw-input "
-        "registered=%d error=%lu background=INPUTSINK device_notify=1 legacy=enabled",
-        state->registered, (unsigned long)state->startup_error);
+    if (!state->registered) SDL_LogError(SDL_LOG_CATEGORY_INPUT,
+        "Raw Input initialization failed: error=%lu", (unsigned long)state->startup_error);
     if (state->registered) {
         state->ownership = 3;
         check_receiver(state);
@@ -100,7 +94,8 @@ static DWORD WINAPI input_thread(void *context) {
     SetEvent(state->ready);
     ULONGLONG last_check = GetTickCount64(), last_wake = 0;
     while (state->registered) {
-        DWORD wait = MsgWaitForMultipleObjectsEx(1, &state->stop, 16,
+        DWORD timeout = state->wake_pending || state->retry_events ? 8 : 1000;
+        DWORD wait = MsgWaitForMultipleObjectsEx(1, &state->stop, timeout,
             QS_ALLINPUT, MWMO_INPUTAVAILABLE);
         if (wait == WAIT_OBJECT_0) break;
         if (wait == WAIT_FAILED) {
@@ -119,15 +114,12 @@ static DWORD WINAPI input_thread(void *context) {
             bongo_cat_windows_input_wake(state);
             last_wake = now;
         }
-        bongo_cat_windows_input_log(state, now);
     }
     AcquireSRWLockExclusive(&state->relative_lock);
     state->receiving = false;
     ReleaseSRWLockExclusive(&state->relative_lock);
     bongo_cat_windows_input_clear_devices(state);
     bongo_cat_windows_input_wake(state);
-    state->diagnostic_ready = false;
-    bongo_cat_windows_input_log(state, GetTickCount64());
     bongo_cat_windows_input_receiver_destroy(state);
     release_state(state);
     return 0;

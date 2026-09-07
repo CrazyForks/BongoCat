@@ -2,6 +2,7 @@
 #define BONGO_CAT_WINDOWS_INPUT_INTERNAL_H
 
 #include "windows_input.h"
+#include "windows_input_detection.h"
 #include "windows_keys.h"
 
 #ifdef _WIN32
@@ -26,16 +27,6 @@ typedef struct WindowsRawDevice {
     unsigned long long generation;
 } WindowsRawDevice;
 
-typedef struct WindowsRawCounters {
-    unsigned long long keyboard, mouse, foreground, background;
-    unsigned long long keyboard_foreground, keyboard_background;
-    unsigned long long session_input_changes;
-    unsigned long long relative, absolute, motion, button_edges;
-    unsigned long long key_sent, button_sent, ignored, invalid;
-    unsigned long long read_errors, queue_failures, capacity_failures;
-    unsigned long long removals, desktop_resets;
-} WindowsRawCounters;
-
 typedef struct WindowsInputState {
     BongoCatPlatform *platform;
     SRWLOCK platform_lock;
@@ -53,19 +44,17 @@ typedef struct WindowsInputState {
     unsigned device_count;
     WindowsRawHeld keys[BONGO_CAT_WINDOWS_RAW_HELD_LIMIT];
     WindowsRawHeld buttons[BONGO_CAT_WINDOWS_MOUSE_BUTTON_COUNT];
-    WindowsRawCounters counters, reported;
-    ULONGLONG last_keyboard_ms, last_mouse_ms, last_motion_ms;
-    ULONGLONG last_diagnostic_ms, last_diagnostic_probe_ms;
-    DWORD last_session_input_tick;
-    bool session_input_known;
-    HWND reported_foreground;
-    DWORD reported_foreground_pid;
-    bool diagnostic_ready, desktop_unavailable, wake_pending;
+    bool desktop_unavailable, wake_pending, retry_events;
     bool relative_active, receiving;
     long long relative_x, relative_y;
     double absolute_x, absolute_y;
     unsigned long long relative_samples, absolute_samples, generation;
-    unsigned long long relative_reads, relative_sample_reads, relative_resets;
+    long long observed_x, observed_y;
+    unsigned long long observed_motion, observed_generation;
+    WindowsPointerDetection pointer_detection;
+    ULONGLONG pointer_probe_ms;
+    unsigned long long pointer_generation;
+    bool pointer_probe_ready;
 } WindowsInputState;
 
 bool bongo_cat_windows_input_push_event(WindowsInputState *state,
@@ -91,6 +80,5 @@ unsigned bongo_cat_windows_input_ownership(WindowsInputState *state);
 bool bongo_cat_windows_input_receiver_create(WindowsInputState *state);
 void bongo_cat_windows_input_receiver_destroy(WindowsInputState *state);
 bool bongo_cat_windows_input_dispatch(WindowsInputState *state);
-void bongo_cat_windows_input_log(WindowsInputState *state, ULONGLONG now_ms);
 #endif
 #endif

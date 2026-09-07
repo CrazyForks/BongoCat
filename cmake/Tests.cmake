@@ -1,4 +1,9 @@
 if(BUILD_TESTING)
+  add_executable(bongo_cat_log_policy_tests tests/core/test_log_policy.c)
+  target_link_libraries(bongo_cat_log_policy_tests PRIVATE
+    bongo_cat_runtime bongo_cat_warnings)
+  add_test(NAME log-policy COMMAND bongo_cat_log_policy_tests)
+
   add_executable(bongo_cat_core_tests
     tests/core/test_main.c
     tests/core/test_config.c
@@ -121,12 +126,14 @@ if(BUILD_TESTING)
     add_executable(bongo_cat_windows_input_tests
       tests/platform/test_windows_input.c
       tests/platform/test_windows_relative.c
+      tests/platform/test_windows_pointer_detection.c
       tests/platform/test_windows_raw_receiver.c)
     if(MSVC)
       # Visual Studio can evaluate target language options as C++ with Cubism.
       set_property(SOURCE
         tests/platform/test_windows_input.c
         tests/platform/test_windows_relative.c
+        tests/platform/test_windows_pointer_detection.c
         tests/platform/test_windows_raw_receiver.c
         APPEND PROPERTY COMPILE_OPTIONS "/experimental:c11atomics")
     endif()

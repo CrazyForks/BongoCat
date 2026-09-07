@@ -67,11 +67,7 @@ static void update_hands(BongoCatApp *app) {
 
 static void apply_key(BongoCatApp *app, const char *name, bool pressed) {
     int hand = bongo_cat_overlay_key(app->overlay, name, pressed);
-    if (hand < 0) {
-        app->input_key_unsupported++;
-        return;
-    }
-    app->input_key_supported++;
+    if (hand < 0) return;
     update_hands(app);
     app->dirty = true;
 }
@@ -168,14 +164,12 @@ void bongo_cat_app_apply_input(BongoCatApp *app, const BongoCatInputEvent *event
         if (changed) app->mouse_button_event_pending = true;
         if (!down) app->pointer_hit_dirty = true;
         if (side) {
-            app->input_mouse_applied++;
             app->dirty = true;
             break;
         }
         const char *id = left
             ? "ParamMouseLeftDown" : "ParamMouseRightDown";
         bongo_cat_live2d_set_parameter(app->live2d, id, down ? 1.0f : 0.0f);
-        app->input_mouse_applied++;
         app->dirty = true;
         break;
     }

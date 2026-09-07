@@ -20,10 +20,10 @@ void bongo_cat_windows_input_motion(WindowsInputState *state,
     AcquireSRWLockExclusive(&state->relative_lock);
     if (!(mouse->usFlags & MOUSE_MOVE_ABSOLUTE)) {
         device->absolute_known = false;
-        state->counters.relative++;
         if (mouse->lLastX || mouse->lLastY) {
-            state->counters.motion++;
-            state->last_motion_ms = GetTickCount64();
+            state->observed_x += mouse->lLastX;
+            state->observed_y += mouse->lLastY;
+            state->observed_motion++;
             if (state->relative_active) {
                 state->relative_x += mouse->lLastX;
                 state->relative_y += mouse->lLastY;
@@ -31,12 +31,10 @@ void bongo_cat_windows_input_motion(WindowsInputState *state,
             }
         }
     } else {
-        state->counters.absolute++;
         if (!bounds || bounds->right <= bounds->left ||
             bounds->bottom <= bounds->top || mouse->lLastX < 0 ||
             mouse->lLastX > 65535 || mouse->lLastY < 0 || mouse->lLastY > 65535) {
             device->absolute_known = false;
-            state->counters.invalid++;
             ReleaseSRWLockExclusive(&state->relative_lock);
             return;
         }
@@ -49,8 +47,7 @@ void bongo_cat_windows_input_motion(WindowsInputState *state,
             device->generation == state->generation &&
             memcmp(bounds, &device->absolute_bounds, sizeof(*bounds)) == 0;
         if (baseline && (x != device->absolute_x || y != device->absolute_y)) {
-            state->counters.motion++;
-            state->last_motion_ms = GetTickCount64();
+            state->observed_motion++;
             if (state->relative_active) {
                 state->absolute_x += x - device->absolute_x;
                 state->absolute_y += y - device->absolute_y;
@@ -71,12 +68,14 @@ static void clear_motion(WindowsInputState *state) {
     state->absolute_x = state->absolute_y = 0.0;
     state->relative_samples = state->absolute_samples = 0;
     state->generation++;
-    state->relative_resets++;
 }
 
 void bongo_cat_windows_input_clear_motion(WindowsInputState *state) {
     AcquireSRWLockExclusive(&state->relative_lock);
     clear_motion(state);
+    state->observed_x = state->observed_y = 0;
+    state->observed_motion = 0;
+    state->observed_generation++;
     ReleaseSRWLockExclusive(&state->relative_lock);
 }
 
@@ -98,8 +97,6 @@ bool bongo_cat_windows_input_take_relative(BongoCatPlatform *platform,
         *y = relative ? (double)state->relative_y : state->absolute_y;
         if (sample_count) *sample_count = relative ? state->relative_samples :
             state->absolute_samples;
-        state->relative_reads++;
-        if (delivered) state->relative_sample_reads++;
     }
     state->relative_x = state->relative_y = 0;
     state->absolute_x = state->absolute_y = 0.0;

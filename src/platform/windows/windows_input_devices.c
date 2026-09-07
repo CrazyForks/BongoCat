@@ -12,13 +12,16 @@ static void publish(WindowsInputState *state, WindowsRawHeld *held, bool mouse) 
         BONGO_CAT_INPUT_MOUSE_UP) : (down ? BONGO_CAT_INPUT_KEY_DOWN :
         BONGO_CAT_INPUT_KEY_UP);
     if (!bongo_cat_windows_input_push_event(state, kind, held->name,
-        down ? 1.0f : 0.0f)) return;
+        down ? 1.0f : 0.0f)) {
+        state->retry_events = true;
+        return;
+    }
     held->emitted = down;
-    if (mouse) state->counters.button_sent++;
-    else state->counters.key_sent++;
 }
 
 void bongo_cat_windows_input_flush(WindowsInputState *state) {
+    if (!state->retry_events) return;
+    state->retry_events = false;
     for (unsigned i = 0; i < BONGO_CAT_WINDOWS_RAW_HELD_LIMIT; ++i)
         publish(state, &state->keys[i], false);
     for (unsigned i = 0; i < BONGO_CAT_WINDOWS_MOUSE_BUTTON_COUNT; ++i)
@@ -29,15 +32,9 @@ WindowsRawDevice *bongo_cat_windows_input_device(WindowsInputState *state,
     HANDLE handle) {
     for (WindowsRawDevice *device = state->devices; device; device = device->next)
         if (device->handle == handle) return device;
-    if (state->device_count >= BONGO_CAT_WINDOWS_RAW_DEVICE_LIMIT) {
-        state->counters.capacity_failures++;
-        return NULL;
-    }
+    if (state->device_count >= BONGO_CAT_WINDOWS_RAW_DEVICE_LIMIT) return NULL;
     WindowsRawDevice *device = calloc(1, sizeof(*device));
-    if (!device) {
-        state->counters.capacity_failures++;
-        return NULL;
-    }
+    if (!device) return NULL;
     device->handle = handle;
     device->next = state->devices;
     state->devices = device;
@@ -55,7 +52,6 @@ static int held_slot(WindowsInputState *state, const char *name) {
     }
     if (available >= 0) snprintf(state->keys[available].name,
         sizeof(state->keys[available].name), "%s", name);
-    else state->counters.capacity_failures++;
     return available;
 }
 
@@ -63,12 +59,10 @@ void bongo_cat_windows_input_key(WindowsInputState *state,
     WindowsRawDevice *device, const RAWKEYBOARD *key) {
     if ((key->Flags & RI_KEY_E0) &&
         (key->MakeCode == 0x2a || key->MakeCode == 0x36)) {
-        state->counters.ignored++;
         return;
     }
     if ((key->Flags & RI_KEY_E1) && key->MakeCode == 0x1d) {
         device->pending_e1 = true;
-        state->counters.ignored++;
         return;
     }
     RAWKEYBOARD normalized = *key;
@@ -79,15 +73,12 @@ void bongo_cat_windows_input_key(WindowsInputState *state,
     key = &normalized;
     char buffer[16];
     const char *name = bongo_cat_windows_key_name(key, buffer);
-    if (!name) { state->counters.ignored++; return; }
+    if (!name) return;
     unsigned index = bongo_cat_windows_key_index(key);
-    if (index >= BONGO_CAT_WINDOWS_RAW_KEY_COUNT) {
-        state->counters.invalid++;
-        return;
-    }
+    if (index >= BONGO_CAT_WINDOWS_RAW_KEY_COUNT) return;
     unsigned slot = device->keys[index];
     bool down = !(key->Flags & RI_KEY_BREAK);
-    if (down == (slot != 0)) { state->counters.ignored++; return; }
+    if (down == (slot != 0)) return;
     if (down) {
         int found = held_slot(state, name);
         if (found < 0) return;
@@ -109,6 +100,7 @@ void bongo_cat_windows_input_key(WindowsInputState *state,
 
 void bongo_cat_windows_input_buttons(WindowsInputState *state,
     WindowsRawDevice *device, USHORT flags) {
+    if (!flags) return;
     static const USHORT presses[] = {RI_MOUSE_LEFT_BUTTON_DOWN,
         RI_MOUSE_RIGHT_BUTTON_DOWN, RI_MOUSE_MIDDLE_BUTTON_DOWN,
         RI_MOUSE_BUTTON_4_DOWN, RI_MOUSE_BUTTON_5_DOWN};
@@ -122,13 +114,11 @@ void bongo_cat_windows_input_buttons(WindowsInputState *state,
         if ((flags & presses[i]) && !device->buttons[i]) {
             device->buttons[i] = true;
             held->references++;
-            state->counters.button_edges++;
             publish(state, held, true);
         }
         if ((flags & releases[i]) && device->buttons[i]) {
             device->buttons[i] = false;
             held->references--;
-            state->counters.button_edges++;
             publish(state, held, true);
         }
     }
@@ -146,7 +136,7 @@ void bongo_cat_windows_input_remove_device(WindowsInputState *state, HANDLE hand
     *link = device->next;
     free(device);
     state->device_count--;
-    state->counters.removals++;
+    state->retry_events = true;
     bongo_cat_windows_input_flush(state);
 }
 

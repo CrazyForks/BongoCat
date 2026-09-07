@@ -20,14 +20,6 @@ typedef struct BongoCatUpdateService BongoCatUpdateService;
 
 #define BONGO_CAT_MODEL_COVER_PENDING_CAP 8
 
-typedef struct BongoCatPointerDiagnostics {
-    uint64_t last_log_ns, mode_changes, mapped_updates;
-    uint64_t relative_motion, relative_waits, clamped_x, clamped_y;
-    uint64_t map_failures;
-    BongoCatMverPointerBounds bounds;
-    bool bounds_known;
-} BongoCatPointerDiagnostics;
-
 typedef struct BongoCatApp {
     BongoCatSettings settings;
     BongoCatSessionState session;
@@ -112,7 +104,6 @@ typedef struct BongoCatApp {
     bool smoke_remove_imported;
     bool smoke_shortcuts;
     bool smoke_menu;
-    bool smoke_input_audit;
     bool smoke_ignore_global_input;
     bool smoke_pass_through;
     bool smoke_context_menu;
@@ -136,14 +127,6 @@ typedef struct BongoCatApp {
     uint64_t pointer_hit_deadline_ns;
     uint64_t display_recovery_due_ns;
     uint64_t mouse_last_ns;
-    BongoCatPointerDiagnostics pointer_diagnostics;
-    uint64_t mouse_native_samples;
-    uint64_t input_events_consumed;
-    uint64_t input_key_down_events, input_key_up_events;
-    uint64_t input_mouse_down_events, input_mouse_up_events;
-    uint64_t input_key_supported, input_key_unsupported;
-    uint64_t input_mouse_applied, input_mouse_updates;
-    uint64_t input_shortcuts_triggered;
     uint64_t frame_audit_bmp_ns;
     uint64_t random_expression_due_ns;
     float random_expression_interval_seconds;

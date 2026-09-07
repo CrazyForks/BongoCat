@@ -1,6 +1,7 @@
 #include "update_internal.h"
 #include "preferences_notice.h"
 #include "bongo_cat/i18n.h"
+#include "bongo_cat/log.h"
 #include "bongo_cat/preferences.h"
 
 #include <stdio.h>
@@ -44,6 +45,12 @@ static void complete(BongoCatUpdateService *service,
     }
     SDL_UnlockMutex(service->mutex);
     if (!notify) return;
+    if (status == BONGO_CAT_UPDATE_ERROR)
+        SDL_LogError(BONGO_CAT_LOG_UPDATE, "Update check failed: %s",
+            error && error[0] ? error : "unknown error");
+    else SDL_LogInfo(BONGO_CAT_LOG_UPDATE, "Update check: %s version=%s",
+        status == BONGO_CAT_UPDATE_AVAILABLE ? "available" : "current",
+        release ? release->version : BONGO_CAT_VERSION);
     SDL_Event event = {0};
     event.type = service->event_type;
     event.user.data1 = service;
@@ -130,11 +137,13 @@ bool bongo_cat_update_check(BongoCatUpdateService *service, bool manual) {
     SDL_LockMutex(service->http_mutex);
     service->http_cancelled = false;
     SDL_UnlockMutex(service->http_mutex);
+    SDL_LogInfo(BONGO_CAT_LOG_UPDATE, "Update check started");
     service->worker = SDL_CreateThread(update_worker,
         BONGO_CAT_SLUG "-update-check", service);
     bool started = service->worker != NULL;
     if (!started) {
         service->status = BONGO_CAT_UPDATE_ERROR;
+        SDL_LogError(BONGO_CAT_LOG_UPDATE, "Cannot start the update checker");
         snprintf(service->error, sizeof(service->error),
             "Cannot start the update checker");
     }
