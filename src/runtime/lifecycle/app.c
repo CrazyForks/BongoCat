@@ -28,6 +28,16 @@ static bool load_selected_model(BongoCatApp *app, BongoCatError *error) {
     }
     for (size_t i = 0; i < app->models.count; ++i)
         if (bongo_cat_app_select_model(app, app->models.entries[i].id)) return true;
+    /* Stored built-ins may themselves be damaged. Retry the packaged assets
+       before treating a model failure as a startup failure. */
+    if (bongo_cat_model_catalog_add_bundled(app, true)) {
+        for (size_t i = 1; i < 4; ++i)
+            if (bongo_cat_app_select_model(app, candidates[i])) {
+                SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
+                    "Recovered startup using bundled model %s", candidates[i]);
+                return true;
+            }
+    }
     bongo_cat_error_set(error, BONGO_CAT_ERROR_CUBISM,
         "No usable Live2D model could be loaded");
     return false;

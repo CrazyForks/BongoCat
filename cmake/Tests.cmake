@@ -113,6 +113,15 @@ if(BUILD_TESTING)
   endif()
 
   if(BONGO_CAT_CUBISM_ENABLED)
+    add_test(NAME model-startup-recovery COMMAND ${CMAKE_COMMAND}
+      "-DEXECUTABLE=$<TARGET_FILE:bongo_cat_preferences_lifecycle_tests>"
+      "-DASSET_ROOT=${CMAKE_CURRENT_SOURCE_DIR}/resources/assets"
+      "-DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/model-startup-recovery"
+      -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CheckModelStartupRecovery.cmake")
+    set_tests_properties(model-startup-recovery PROPERTIES TIMEOUT 60)
+    if(APPLE)
+      set_tests_properties(model-startup-recovery PROPERTIES DISABLED TRUE)
+    endif()
     add_executable(bongo_cat_motion_state_tests
       tests/live2d/test_motion_state.cpp)
     target_include_directories(bongo_cat_motion_state_tests PRIVATE
