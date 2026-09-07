@@ -41,6 +41,7 @@ typedef struct WindowsInputState {
     SRWLOCK platform_lock;
     SRWLOCK relative_lock;
     HANDLE thread, stop, ready;
+    volatile LONG references;
     HWND window;
     ATOM window_class;
     bool registered;

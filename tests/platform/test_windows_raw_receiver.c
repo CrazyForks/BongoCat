@@ -8,6 +8,62 @@ static unsigned registered_to(HWND window) {
     return bongo_cat_windows_input_ownership(&state);
 }
 
+static HANDLE blocked_receiver_entered, blocked_receiver_release;
+static WNDPROC original_receiver_proc;
+#define TEST_BLOCK_RECEIVER (WM_APP + 271)
+
+static LRESULT CALLBACK blocked_receiver_proc(HWND window, UINT message,
+    WPARAM wparam, LPARAM lparam) {
+    if (message == TEST_BLOCK_RECEIVER) {
+        SetEvent(blocked_receiver_entered);
+        WaitForSingleObject(blocked_receiver_release, INFINITE);
+        return 0;
+    }
+    return CallWindowProcW(original_receiver_proc, window, message, wparam, lparam);
+}
+
+static void test_deferred_cleanup(BongoCatPlatform *platform) {
+    DWORD before = 0, after = 0;
+    CHECK(GetProcessHandleCount(GetCurrentProcess(), &before));
+    CHECK(bongo_cat_windows_input_start(platform));
+    WindowsInputState *state = platform->native;
+    if (!state) return;
+    HANDLE worker = NULL;
+    blocked_receiver_entered = CreateEventW(NULL, TRUE, FALSE, NULL);
+    blocked_receiver_release = CreateEventW(NULL, TRUE, FALSE, NULL);
+    CHECK(DuplicateHandle(GetCurrentProcess(), state->thread, GetCurrentProcess(),
+        &worker, SYNCHRONIZE, FALSE, 0));
+    CHECK(blocked_receiver_entered && blocked_receiver_release);
+    if (worker && blocked_receiver_entered && blocked_receiver_release) {
+        original_receiver_proc = (WNDPROC)GetWindowLongPtrW(state->window, GWLP_WNDPROC);
+        CHECK(SetWindowLongPtrW(state->window, GWLP_WNDPROC,
+            (LONG_PTR)blocked_receiver_proc) != 0);
+        CHECK(PostMessageW(state->window, TEST_BLOCK_RECEIVER, 0, 0));
+        DWORD entered = WaitForSingleObject(blocked_receiver_entered, 3000);
+        CHECK(entered == WAIT_OBJECT_0);
+        if (entered == WAIT_OBJECT_0) {
+            bongo_cat_windows_input_stop(platform);
+            CHECK(platform->native == NULL);
+            CHECK(WaitForSingleObject(worker, 0) == WAIT_TIMEOUT);
+            BongoCatPlatform duplicate = {.input = platform->input};
+            CHECK(!bongo_cat_windows_input_start(&duplicate));
+            bongo_cat_windows_input_stop(&duplicate);
+        }
+    }
+    if (blocked_receiver_release) SetEvent(blocked_receiver_release);
+    bongo_cat_windows_input_stop(platform);
+    if (worker) {
+        CHECK(WaitForSingleObject(worker, INFINITE) == WAIT_OBJECT_0);
+        CloseHandle(worker);
+    }
+    if (blocked_receiver_entered) CloseHandle(blocked_receiver_entered);
+    if (blocked_receiver_release) CloseHandle(blocked_receiver_release);
+    CHECK(GetProcessHandleCount(GetCurrentProcess(), &after));
+    CHECK(after == before);
+    CHECK(bongo_cat_windows_input_start(platform));
+    bongo_cat_windows_input_stop(platform);
+}
+
 static void test_registration_flags(void) {
     HWND receiver = CreateWindowExW(0, L"STATIC", L"", 0,
         0, 0, 0, 0, HWND_MESSAGE, NULL, GetModuleHandleW(NULL), NULL);
@@ -73,6 +129,7 @@ void test_windows_raw_receiver(void) {
         CHECK(!IsWindow(receiver));
         bongo_cat_windows_input_stop(&platform);
     }
+    test_deferred_cleanup(&platform);
     SDL_DestroyWindow(window);
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 

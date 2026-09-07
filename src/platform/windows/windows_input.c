@@ -8,6 +8,12 @@
 
 static volatile LONG receiver_claimed;
 
+static void free_state(WindowsInputState *state);
+
+static void release_state(WindowsInputState *state) {
+    if (InterlockedDecrement(&state->references) == 0) free_state(state);
+}
+
 void bongo_cat_windows_input_wake(WindowsInputState *state) {
     if (!state->wake_pending) return;
     AcquireSRWLockShared(&state->platform_lock);
@@ -80,6 +86,7 @@ static DWORD WINAPI input_thread(void *context) {
     WindowsInputState *state = context;
     if (WaitForSingleObject(state->stop, state->test_start_delay_ms) == WAIT_OBJECT_0) {
         SetEvent(state->ready);
+        release_state(state);
         return 0;
     }
     state->registered = bongo_cat_windows_input_receiver_create(state);
@@ -122,6 +129,7 @@ static DWORD WINAPI input_thread(void *context) {
     state->diagnostic_ready = false;
     bongo_cat_windows_input_log(state, GetTickCount64());
     bongo_cat_windows_input_receiver_destroy(state);
+    release_state(state);
     return 0;
 }
 
@@ -150,6 +158,9 @@ bool bongo_cat_windows_input_start(BongoCatPlatform *platform) {
     }
     state->stop = CreateEventW(NULL, TRUE, FALSE, NULL);
     state->ready = CreateEventW(NULL, TRUE, FALSE, NULL);
+    /* The caller retains ownership until the thread handle is published and
+       stop finishes waiting; the worker retains ownership until cleanup. */
+    state->references = 2;
     state->thread = state->stop && state->ready ?
         CreateThread(NULL, 0, input_thread, state, 0, NULL) : NULL;
     if (!state->thread) { free_state(state); return false; }
@@ -172,9 +183,8 @@ void bongo_cat_windows_input_stop(BongoCatPlatform *platform) {
     platform->native = NULL;
     if (WaitForSingleObject(state->thread, 3000) != WAIT_OBJECT_0) {
         SDL_LogError(SDL_LOG_CATEGORY_INPUT,
-            "[input] Raw Input thread did not stop; its state remains isolated until exit");
-        return;
+            "[input] Raw Input thread did not stop; cleanup is deferred until thread exit");
     }
-    free_state(state);
+    release_state(state);
 }
 #endif
