@@ -92,7 +92,8 @@ jobs:
             -Configuration Release `
             -Architecture '${{ matrix.cmake_arch }}' `
             -Jobs 2 `
-            -RequireCubism
+            -RequireCubism `
+            -Target ALL_BUILD
 
       - name: Build Unix release
         if: runner.os != 'Windows'

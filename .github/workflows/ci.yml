@@ -149,7 +149,8 @@ jobs:
             -BuildDir build `
             -Configuration Release `
             -Architecture '${{ matrix.cmake_arch }}' `
-            -Jobs 2
+            -Jobs 2 `
+            -Target ALL_BUILD
 
       - name: Build Windows validation tools
         if: runner.os == 'Windows'
@@ -320,7 +321,8 @@ jobs:
             -Configuration Release `
             -Architecture '${{ matrix.cmake_arch }}' `
             -Jobs 2 `
-            -RequireCubism
+            -RequireCubism `
+            -Target ALL_BUILD
 
       - name: Install software OpenGL for Windows tests
         uses: ssciwr/setup-mesa-dist-win@6657792673a5d162d5f244db991ba45b4b68989f # v2
