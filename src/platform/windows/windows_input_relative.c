@@ -6,11 +6,7 @@
 bool bongo_cat_windows_input_relative_mode(bool foreign_foreground,
     const RECT *clip, const CURSORINFO *cursor) {
     if (!foreign_foreground) return false;
-    if (clip) {
-        long long width = (long long)clip->right - clip->left;
-        long long height = (long long)clip->bottom - clip->top;
-        if (width >= 0 && width <= 2 && height >= 0 && height <= 2) return true;
-    }
+    if (bongo_cat_windows_pointer_clip_locked(clip)) return true;
     /* Hidden cursors also cover games that recenter within a larger clip. */
     return cursor && cursor->flags == 0;
 }

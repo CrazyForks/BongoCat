@@ -12,13 +12,19 @@ static bool interior(POINT point, const RECT *bounds) {
         (long long)point.y < (long long)bounds->bottom - 1 - margin;
 }
 
+bool bongo_cat_windows_pointer_clip_locked(const RECT *clip) {
+    if (!clip || clip->right < clip->left || clip->bottom < clip->top)
+        return false;
+    /* Ordered LONG endpoints have an exact DWORD distance, even across zero.
+       Keep the subtraction unsigned instead of widening signed coordinates. */
+    DWORD width = (DWORD)clip->right - (DWORD)clip->left;
+    DWORD height = (DWORD)clip->bottom - (DWORD)clip->top;
+    return width <= 2 && height <= 2;
+}
+
 static WindowsPointerReason lock_hint(const WindowsPointerObservation *sample) {
-    if (sample->clip_known) {
-        long long width = (long long)sample->clip.right - sample->clip.left;
-        long long height = (long long)sample->clip.bottom - sample->clip.top;
-        if (width >= 0 && width <= 2 && height >= 0 && height <= 2)
-            return WINDOWS_POINTER_CLIPPED;
-    }
+    if (sample->clip_known && bongo_cat_windows_pointer_clip_locked(&sample->clip))
+        return WINDOWS_POINTER_CLIPPED;
     if (sample->cursor_known && sample->cursor_flags == 0)
         return WINDOWS_POINTER_HIDDEN;
     return WINDOWS_POINTER_DESKTOP;

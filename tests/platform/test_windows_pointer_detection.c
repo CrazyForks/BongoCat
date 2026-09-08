@@ -1,5 +1,36 @@
 #include "test.h"
 #include "windows_input_detection.h"
+#include <limits.h>
+
+static void test_clip_bounds(void) {
+    static const struct {
+        RECT clip;
+        bool locked;
+    } cases[] = {
+        {{-1920, -1080, 0, 0}, false},
+        {{-1920, -1080, -1, -1}, false},
+        {{-1920, -1080, 1920, 1080}, false},
+        {{0, 0, 1920, 1080}, false},
+        {{-2, -2, 0, 0}, true},
+        {{-1, -1, 1, 1}, true},
+        {{960, 540, 961, 541}, true},
+        {{0, 0, 0, 0}, true},
+        {{-3, -2, 0, 0}, false},
+        {{-2, -3, 0, 0}, false},
+        {{1, 0, 0, 1}, false},
+        {{0, 1, 1, 0}, false},
+        {{LONG_MIN, LONG_MIN, LONG_MAX, LONG_MAX}, false},
+        {{LONG_MIN, LONG_MIN, LONG_MIN + 2, LONG_MIN + 2}, true},
+        {{LONG_MAX - 2, LONG_MAX - 2, LONG_MAX, LONG_MAX}, true}
+    };
+    CHECK(!bongo_cat_windows_pointer_clip_locked(NULL));
+    for (unsigned i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+        bool locked = bongo_cat_windows_pointer_clip_locked(&cases[i].clip);
+        if (locked != cases[i].locked)
+            fprintf(stderr, "clip bounds case=%u locked=%d\n", i, (int)locked);
+        CHECK(locked == cases[i].locked);
+    }
+}
 
 static WindowsPointerObservation observation(void) {
     return (WindowsPointerObservation){.foreground = (HWND)(uintptr_t)1,
@@ -80,9 +111,12 @@ static void test_desktop_edges_and_slow_motion(void) {
             if (scenario == 5) sample.raw_x = 1;
             if (scenario == 6) sample.raw_x = i % 2 ? 4.0 : -4.0;
             bool relative = bongo_cat_windows_pointer_detect(&state, &sample, i * 16);
-            if (relative)
+            if (relative) {
                 fprintf(stderr, "desktop scenario=%s sample=%u reason=%d raw_x=%.1f\n",
                     scenarios[scenario], i, (int)state.reason, sample.raw_x);
+                fprintf(stderr, "clip=(%ld,%ld,%ld,%ld)\n", sample.clip.left,
+                    sample.clip.top, sample.clip.right, sample.clip.bottom);
+            }
             CHECK(!relative);
         }
     }
@@ -190,6 +224,7 @@ static void test_slow_sampling_and_edge_returns(void) {
 }
 
 void test_windows_pointer_detection(void) {
+    test_clip_bounds();
     test_stalled_and_resume();
     test_recenter_and_real_travel();
     test_desktop_edges_and_slow_motion();

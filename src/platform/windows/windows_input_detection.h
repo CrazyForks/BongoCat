@@ -37,6 +37,7 @@ typedef struct WindowsPointerDetection {
     WindowsPointerReason reason;
 } WindowsPointerDetection;
 
+bool bongo_cat_windows_pointer_clip_locked(const RECT *clip);
 bool bongo_cat_windows_pointer_detect(WindowsPointerDetection *state,
     const WindowsPointerObservation *sample, ULONGLONG now_ms);
 #endif
