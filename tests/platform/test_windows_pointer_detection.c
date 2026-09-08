@@ -47,7 +47,7 @@ static void test_recenter_and_real_travel(void) {
     sample = observation();
     CHECK(!bongo_cat_windows_pointer_detect(&state, &sample, 0));
     for (unsigned i = 1; i <= 64; ++i) {
-        sample.raw_x = i % 2 ? 14 : -14;
+        sample.raw_x = i % 2 ? 14.0 : -14.0;
         sample.motion_packets = 1;
         sample.position.x = i % 2 ? 974 : 960;
         CHECK(!bongo_cat_windows_pointer_detect(&state, &sample, i * 16));
@@ -55,7 +55,13 @@ static void test_recenter_and_real_travel(void) {
 }
 
 static void test_desktop_edges_and_slow_motion(void) {
-    for (unsigned scenario = 0; scenario < 7; ++scenario) {
+    static const char *const scenarios[] = {
+        "monitor edge", "negative monitor edge", "clip edge",
+        "unknown monitor", "slow cursor travel", "small raw movement",
+        "alternating raw movement"
+    };
+    for (unsigned scenario = 0;
+        scenario < sizeof(scenarios) / sizeof(scenarios[0]); ++scenario) {
         WindowsPointerDetection state = {0};
         WindowsPointerObservation sample = observation();
         if (scenario == 0) sample.position.x = 1919;
@@ -72,8 +78,12 @@ static void test_desktop_edges_and_slow_motion(void) {
             sample.raw_x = 32;
             if (scenario == 4) sample.position.x += 1;
             if (scenario == 5) sample.raw_x = 1;
-            if (scenario == 6) sample.raw_x = i % 2 ? 4 : -4;
-            CHECK(!bongo_cat_windows_pointer_detect(&state, &sample, i * 16));
+            if (scenario == 6) sample.raw_x = i % 2 ? 4.0 : -4.0;
+            bool relative = bongo_cat_windows_pointer_detect(&state, &sample, i * 16);
+            if (relative)
+                fprintf(stderr, "desktop scenario=%s sample=%u reason=%d raw_x=%.1f\n",
+                    scenarios[scenario], i, (int)state.reason, sample.raw_x);
+            CHECK(!relative);
         }
     }
 }
