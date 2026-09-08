@@ -1,4 +1,5 @@
 #include "runtime.h"
+#include "mouse_internal.h"
 
 #include <SDL3/SDL.h>
 
@@ -15,6 +16,21 @@ static bool reconcile_button(BongoCatApp *app, bool *current, bool pressed,
     return true;
 }
 #endif
+
+static bool update_pointer_mode(BongoCatApp *app, bool cursor_locked) {
+    bool relative = !app->settings.model.ignore_mouse && cursor_locked;
+    bool changed = relative != app->pointer_relative_active ||
+        (relative && cursor_locked != app->pointer_cursor_locked);
+    if (changed) {
+        if (relative != app->pointer_relative_active)
+            app->mver_pointer = (BongoCatMverPointerState){0};
+        if (relative) bongo_cat_platform_relative_pointer_reset(&app->platform);
+        else bongo_cat_platform_relative_pointer_release(&app->platform);
+        app->pointer_relative_active = relative;
+    }
+    app->pointer_cursor_locked = cursor_locked;
+    return changed;
+}
 
 void bongo_cat_app_apply_mouse(BongoCatApp *app) {
     if (!app) return;
@@ -64,7 +80,6 @@ void bongo_cat_app_apply_mouse(BongoCatApp *app) {
     if (cursor_locked && cursor_lock_changed) {
         target_x = global_x;
         target_y = global_y;
-        native_selected = false;
     }
     bool moved = !app->pointer_known || app->pointer_x != target_x ||
         app->pointer_y != target_y;
@@ -77,40 +92,30 @@ void bongo_cat_app_apply_mouse(BongoCatApp *app) {
             bongo_cat_window_capture_pointer_hit(app);
     }
     bongo_cat_window_sync_click_through(app);
+    bool pointer_mode_changed = update_pointer_mode(app, cursor_locked);
+    app->mouse_button_event_pending = false;
+    if (app->settings.model.ignore_mouse) return;
+    bool relative_requested = app->pointer_relative_active;
+    if (!relative_requested && !moved && !button_changed &&
+        !pointer_mode_changed && !button_event_pending) return;
+
+    /* Resolve once: tracking limits and model output share the same display,
+       custom workarea and centered anchor for this update. */
+    BongoCatMouseProjection projection;
+    if (!bongo_cat_app_mouse_projection(app, target_x, target_y, &projection))
+        return;
     double model_x = target_x, model_y = target_y;
     bool model_moved = moved;
     bool profile_relative = app->model_render_options.mver_projection &&
         app->model_render_options.mouse_force_move;
-    /* Model metadata alone does not imply that a game locked the cursor. */
-    bool relative_requested = !app->settings.model.ignore_mouse &&
-        cursor_locked;
-    bool pointer_mode_changed = false;
-    if (relative_requested != app->pointer_relative_active ||
-        (relative_requested && cursor_lock_changed)) {
-        pointer_mode_changed = true;
-        if (relative_requested != app->pointer_relative_active)
-            app->mver_pointer = (BongoCatMverPointerState){0};
-        if (relative_requested)
-            bongo_cat_platform_relative_pointer_reset(&app->platform);
-        else bongo_cat_platform_relative_pointer_release(&app->platform);
-        app->pointer_relative_active = relative_requested;
+    bool map_pointer = cursor_locked || (app->model_render_options.mver_projection &&
+        (!app->settings.model.mouse_centered || profile_relative));
+    if (map_pointer && !bongo_cat_app_map_pointer(app, &projection,
+            relative_requested, target_x, target_y, &model_x, &model_y,
+            &model_moved)) {
+        model_x = target_x; model_y = target_y; model_moved = moved;
     }
-    app->pointer_cursor_locked = cursor_locked;
-    bool map_pointer = !app->settings.model.ignore_mouse && (cursor_locked ||
-        (app->model_render_options.mver_projection &&
-            (!app->settings.model.mouse_centered || profile_relative)));
-    bool map_ok = !map_pointer;
-    if (map_pointer) {
-        map_ok = bongo_cat_app_map_pointer(app, relative_requested, target_x,
-            target_y, &model_x, &model_y, &model_moved);
-        if (!map_ok) {
-            model_x = target_x; model_y = target_y; model_moved = moved;
-        }
-    }
-    if (!app->settings.model.ignore_mouse &&
-        (model_moved || button_changed || pointer_mode_changed || button_event_pending)) {
-        bongo_cat_app_apply_mouse_coordinates(app, model_x, model_y,
+    if (model_moved || button_changed || pointer_mode_changed || button_event_pending)
+        bongo_cat_app_apply_mouse_coordinates(app, &projection, model_x, model_y,
             cursor_locked ? model_x : target_x, cursor_locked ? model_y : target_y);
-    }
-    app->mouse_button_event_pending = false;
 }

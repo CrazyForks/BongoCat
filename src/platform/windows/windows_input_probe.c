@@ -1,6 +1,23 @@
 #include "windows_input_internal.h"
 
 #ifdef _WIN32
+static void observe_cursor(WindowsPointerObservation *sample) {
+    CURSORINFO cursor = {.cbSize = sizeof(cursor)};
+    sample->cursor_known = GetCursorInfo(&cursor) != FALSE;
+    sample->cursor_flags = cursor.flags;
+    if (sample->cursor_known) {
+        sample->position = cursor.ptScreenPos;
+        sample->position_known = true;
+    } else sample->position_known = GetCursorPos(&sample->position) != FALSE;
+    sample->clip_known = GetClipCursor(&sample->clip) != FALSE;
+    if (sample->position_known) {
+        MONITORINFO monitor = {.cbSize = sizeof(monitor)};
+        sample->monitor_known = GetMonitorInfoW(MonitorFromPoint(sample->position,
+            MONITOR_DEFAULTTONULL), &monitor) != FALSE;
+        sample->monitor = monitor.rcMonitor;
+    }
+}
+
 bool bongo_cat_windows_input_pointer_locked(BongoCatPlatform *platform) {
     WindowsInputState *state = platform ? platform->native : NULL;
     if (!state) return false;
@@ -13,34 +30,15 @@ bool bongo_cat_windows_input_pointer_locked(BongoCatPlatform *platform) {
     sample.foreground = GetForegroundWindow();
     if (sample.foreground) GetWindowThreadProcessId(sample.foreground, &sample.pid);
     sample.foreign = sample.pid && sample.pid != GetCurrentProcessId();
-    CURSORINFO cursor = {.cbSize = sizeof(cursor)};
-    sample.cursor_known = GetCursorInfo(&cursor) != FALSE;
-    sample.cursor_flags = cursor.flags;
-    if (sample.cursor_known) {
-        sample.position = cursor.ptScreenPos;
-        sample.position_known = true;
-    } else sample.position_known = GetCursorPos(&sample.position) != FALSE;
-    sample.clip_known = GetClipCursor(&sample.clip) != FALSE;
-    if (sample.position_known) {
-        MONITORINFO monitor = {.cbSize = sizeof(monitor)};
-        sample.monitor_known = GetMonitorInfoW(MonitorFromPoint(sample.position,
-            MONITOR_DEFAULTTONULL), &monitor) != FALSE;
-        sample.monitor = monitor.rcMonitor;
-    }
-    AcquireSRWLockExclusive(&state->relative_lock);
-    sample.raw_x = (double)state->observed_x;
-    sample.raw_y = (double)state->observed_y;
-    sample.absolute_x = state->observed_absolute_x;
-    sample.absolute_y = state->observed_absolute_y;
-    sample.motion_packets = state->observed_motion;
-    state->observed_x = state->observed_y = 0;
-    state->observed_absolute_x = state->observed_absolute_y = 0;
-    state->observed_motion = 0;
-    if (state->pointer_generation != state->observed_generation) {
+    /* Our own windows cannot trigger game mode. Still consume observations so
+       old desktop movement cannot leak into the next foreground application. */
+    if (sample.foreign) observe_cursor(&sample);
+    unsigned long long generation =
+        bongo_cat_windows_input_take_observation(state, &sample);
+    if (state->pointer_generation != generation) {
         state->pointer_detection = (WindowsPointerDetection){0};
-        state->pointer_generation = state->observed_generation;
+        state->pointer_generation = generation;
     }
-    ReleaseSRWLockExclusive(&state->relative_lock);
     return bongo_cat_windows_pointer_detect(&state->pointer_detection,
         &sample, now_ms);
 }

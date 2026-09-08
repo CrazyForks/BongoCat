@@ -3,14 +3,6 @@
 #ifdef _WIN32
 #include <string.h>
 
-bool bongo_cat_windows_input_relative_mode(bool foreign_foreground,
-    const RECT *clip, const CURSORINFO *cursor) {
-    if (!foreign_foreground) return false;
-    if (bongo_cat_windows_pointer_clip_locked(clip)) return true;
-    /* Hidden cursors also cover games that recenter within a larger clip. */
-    return cursor && cursor->flags == 0;
-}
-
 void bongo_cat_windows_input_motion(WindowsInputState *state,
     WindowsRawDevice *device, const RAWMOUSE *mouse, const RECT *bounds) {
     AcquireSRWLockExclusive(&state->relative_lock);
@@ -76,6 +68,23 @@ void bongo_cat_windows_input_clear_motion(WindowsInputState *state) {
     state->observed_motion = 0;
     state->observed_generation++;
     ReleaseSRWLockExclusive(&state->relative_lock);
+}
+
+unsigned long long bongo_cat_windows_input_take_observation(
+    WindowsInputState *state, WindowsPointerObservation *sample) {
+    if (!state || !sample) return 0;
+    AcquireSRWLockExclusive(&state->relative_lock);
+    sample->raw_x = (double)state->observed_x;
+    sample->raw_y = (double)state->observed_y;
+    sample->absolute_x = state->observed_absolute_x;
+    sample->absolute_y = state->observed_absolute_y;
+    sample->motion_packets = state->observed_motion;
+    unsigned long long generation = state->observed_generation;
+    state->observed_x = state->observed_y = 0;
+    state->observed_absolute_x = state->observed_absolute_y = 0;
+    state->observed_motion = 0;
+    ReleaseSRWLockExclusive(&state->relative_lock);
+    return generation;
 }
 
 bool bongo_cat_windows_input_take_relative(BongoCatPlatform *platform,

@@ -121,20 +121,34 @@ static void test_delivered_motion_without_ownership(void) {
     CHECK(!bongo_cat_windows_input_take_relative(&platform, &x, &y, NULL));
 }
 
-static void test_relative_modes(void) {
-    RECT point = {1279, 799, 1279, 799}, screen = {0, 0, 2560, 1600};
-    CURSORINFO cursor = {.cbSize = sizeof(cursor), .flags = CURSOR_SHOWING};
-    CHECK(bongo_cat_windows_input_relative_mode(true, &point, &cursor));
-    CHECK(!bongo_cat_windows_input_relative_mode(false, &point, &cursor));
-    CHECK(!bongo_cat_windows_input_relative_mode(true, &screen, &cursor));
-    cursor.flags = 0;
-    CHECK(bongo_cat_windows_input_relative_mode(true, &screen, &cursor));
-    CHECK(bongo_cat_windows_input_relative_mode(true, NULL, &cursor));
-    CHECK(!bongo_cat_windows_input_relative_mode(false, &screen, &cursor));
-    CHECK(!bongo_cat_windows_input_relative_mode(true, &screen, NULL));
-    CHECK(!bongo_cat_windows_input_relative_mode(true, NULL, NULL));
-    cursor.flags = CURSOR_SUPPRESSED;
-    CHECK(!bongo_cat_windows_input_relative_mode(true, &screen, &cursor));
+static void test_observation_does_not_consume_motion(void) {
+    WindowsInputState state = {0};
+    WindowsRawDevice relative = {0}, absolute = {0};
+    BongoCatPlatform platform = {.native = &state};
+    InitializeSRWLock(&state.relative_lock);
+    bongo_cat_windows_input_reset_relative(&platform);
+    RAWMOUSE mouse = {.lLastX = 12, .lLastY = -3};
+    bongo_cat_windows_input_motion(&state, &relative, &mouse, NULL);
+    RECT bounds = {0, 0, 1920, 1080};
+    mouse = (RAWMOUSE){.usFlags = MOUSE_MOVE_ABSOLUTE};
+    bongo_cat_windows_input_motion(&state, &absolute, &mouse, &bounds);
+    mouse.lLastX = mouse.lLastY = 65535;
+    bongo_cat_windows_input_motion(&state, &absolute, &mouse, &bounds);
+    WindowsPointerObservation sample = {.position_known = true, .position = {42, 24}};
+    CHECK(bongo_cat_windows_input_take_observation(&state, &sample) == 0);
+    CHECK(sample.raw_x == 12 && sample.raw_y == -3);
+    CHECK(sample.absolute_x == 1919 && sample.absolute_y == 1079);
+    CHECK(sample.motion_packets == 2);
+    CHECK(sample.position_known && sample.position.x == 42 && sample.position.y == 24);
+    double x, y;
+    unsigned long long count;
+    CHECK(bongo_cat_windows_input_take_relative(&platform, &x, &y, &count));
+    CHECK(x == 12 && y == -3 && count == 1);
+    CHECK(bongo_cat_windows_input_take_observation(&state, &sample) == 0);
+    CHECK(sample.raw_x == 0 && sample.absolute_x == 0 && sample.motion_packets == 0);
+    bongo_cat_windows_input_clear_motion(&state);
+    CHECK(bongo_cat_windows_input_take_observation(&state, &sample) == 1);
+    CHECK(sample.raw_y == 0 && sample.absolute_y == 0 && sample.motion_packets == 0);
 }
 
 static void test_high_rate_observation(void) {
@@ -168,6 +182,6 @@ void test_windows_relative_sources(void) {
     test_absolute_devices();
     test_motion_units();
     test_delivered_motion_without_ownership();
-    test_relative_modes();
+    test_observation_does_not_consume_motion();
     test_high_rate_observation();
 }

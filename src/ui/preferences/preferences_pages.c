@@ -24,7 +24,8 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
     BongoCatWindowPreferences *window = &app->settings.window;
     BongoCatWindowState *window_state = &app->session.window;
     bongo_cat_pref_section_icon(context, tr(app,
-        "pages.preference.cat.labels.windowSettings", "Window"),
+        "pages.preference.cat.labels.windowSettings",
+        "Window - Pet not responding in games? Try admin mode or set the game to windowed mode"),
         BONGO_CAT_PREF_ICON_SECTION_WINDOW);
     bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_PASS_THROUGH);
     if (bongo_cat_pref_toggle(context, "pass-through", tr(app,

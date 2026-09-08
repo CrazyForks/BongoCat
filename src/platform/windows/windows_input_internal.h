@@ -45,6 +45,8 @@ typedef struct WindowsInputState {
     WindowsRawHeld keys[BONGO_CAT_WINDOWS_RAW_HELD_LIMIT];
     WindowsRawHeld buttons[BONGO_CAT_WINDOWS_MOUSE_BUTTON_COUNT];
     bool desktop_unavailable, wake_pending, retry_events;
+    /* Shared motion buffers are protected by relative_lock. Detection and
+       model consumption have separate totals; neither drains the other's data. */
     bool relative_active, receiving;
     long long relative_x, relative_y;
     double absolute_x, absolute_y;
@@ -52,6 +54,7 @@ typedef struct WindowsInputState {
     long long observed_x, observed_y;
     double observed_absolute_x, observed_absolute_y;
     unsigned long long observed_motion, observed_generation;
+    /* Model-thread-only state. The receiver publishes resets through generation. */
     WindowsPointerDetection pointer_detection;
     ULONGLONG pointer_probe_ms;
     unsigned long long pointer_generation;
@@ -75,6 +78,8 @@ void bongo_cat_windows_input_buttons(WindowsInputState *state,
 void bongo_cat_windows_input_motion(WindowsInputState *state,
     WindowsRawDevice *device, const RAWMOUSE *mouse, const RECT *bounds);
 void bongo_cat_windows_input_clear_motion(WindowsInputState *state);
+unsigned long long bongo_cat_windows_input_take_observation(
+    WindowsInputState *state, WindowsPointerObservation *sample);
 bool bongo_cat_windows_input_register(WindowsInputState *state);
 void bongo_cat_windows_input_unregister(WindowsInputState *state);
 unsigned bongo_cat_windows_input_ownership(WindowsInputState *state);

@@ -16,7 +16,7 @@
           "mouseMirror": "Mouse Mirror",
           "mouseCentered": "Mouse Centered on Desktop Pet",
           "ignoreMouse": "Ignore Mouse Events",
-          "windowSettings": "Window",
+          "windowSettings": "Window - Pet not responding in games? Try admin mode or set the game to windowed mode",
           "passThrough": "Pass Through",
           "alwaysOnTop": "Always on Top",
           "keepInScreen": "Keep on Screen",

@@ -16,7 +16,7 @@
           "mouseMirror": "マウスを反転",
           "mouseCentered": "マウスをデスクトップペット中心にする",
           "ignoreMouse": "マウスイベントを無視",
-          "windowSettings": "ウィンドウ",
+          "windowSettings": "ウィンドウ - ゲーム中にデスクトップペットが反応しない？管理者モードかゲームのウィンドウモードをお試しください",
           "passThrough": "クリックを透過",
           "alwaysOnTop": "常に手前に表示",
           "keepInScreen": "画面内に保持",

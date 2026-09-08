@@ -3,7 +3,7 @@
 #include <SDL3/SDL.h>
 
 /* Window-facing pointer state: hover hiding and hit-test scheduling. The
-   sampling/mapping pipeline lives in mouse_pipeline.c and mouse_mapping.c. */
+   sampling pipeline, display bounds and model output have their own modules. */
 void bongo_cat_app_track_hover(BongoCatApp *app, double x, double y) {
     app->pointer_known = true;
     app->pointer_x = x;

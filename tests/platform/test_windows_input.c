@@ -9,6 +9,7 @@ int bongo_cat_test_failures;
 void test_windows_relative_sources(void);
 void test_windows_raw_receiver(void);
 void test_windows_pointer_detection(void);
+void test_windows_mouse_mapping(void);
 
 typedef struct RawFixture {
     WindowsInputState state;
@@ -225,6 +226,7 @@ int main(void) {
     test_motion_keeps_key_and_button_edges();
     test_windows_relative_sources();
     test_windows_pointer_detection();
+    test_windows_mouse_mapping();
     test_windows_raw_receiver();
     SDL_Quit();
     return bongo_cat_test_failures ? 1 : 0;

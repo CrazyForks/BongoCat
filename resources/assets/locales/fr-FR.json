@@ -16,7 +16,7 @@
           "mouseMirror": "Miroir de la souris",
           "mouseCentered": "Souris centrée sur le compagnon",
           "ignoreMouse": "Ignorer les événements de souris",
-          "windowSettings": "Fenêtre",
+          "windowSettings": "Fenêtre - La mascotte ne réagit pas en jeu ? Essayez le mode administrateur ou passez le jeu en mode fenêtré",
           "passThrough": "Clics traversants",
           "alwaysOnTop": "Toujours au premier plan",
           "keepInScreen": "Maintenir à l'écran",

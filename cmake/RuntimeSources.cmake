@@ -1,5 +1,6 @@
 set(BONGO_CAT_RUNTIME_INTERNAL_INCLUDE_DIRS
   "${CMAKE_CURRENT_SOURCE_DIR}/src/runtime"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/runtime/input"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/runtime/lifecycle"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/runtime/model"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/runtime/model/import"
@@ -56,6 +57,7 @@ set(BONGO_CAT_RUNTIME_DIAGNOSTIC_SOURCES
   src/runtime/diagnostics/frame_audit.c
   src/runtime/diagnostics/frame_presentation_audit.c
   src/runtime/diagnostics/live2d_audit.c
+  src/runtime/diagnostics/live2d_mouse_mapping_audit.c
   src/runtime/diagnostics/live2d_pointer_audit.c
   src/runtime/diagnostics/live2d_audit_scenario.c
   src/runtime/diagnostics/live2d_viewer_audit.c
@@ -65,6 +67,7 @@ set(BONGO_CAT_RUNTIME_DIAGNOSTIC_SOURCES
 set(BONGO_CAT_RUNTIME_INPUT_SOURCES
   src/runtime/input/gamepad.c
   src/runtime/input/mouse.c
+  src/runtime/input/mouse_bounds.c
   src/runtime/input/mouse_mapping.c
   src/runtime/input/mouse_pipeline.c
   src/runtime/input/shortcuts.c)

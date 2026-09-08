@@ -16,7 +16,7 @@
           "mouseMirror": "滑鼠游標鏡像",
           "mouseCentered": "滑鼠以桌寵為中心",
           "ignoreMouse": "忽略滑鼠事件",
-          "windowSettings": "視窗",
+          "windowSettings": "視窗 - 遊戲中桌寵沒反應？試試管理員模式或將遊戲設為視窗模式",
           "passThrough": "視窗穿透",
           "alwaysOnTop": "視窗置頂",
           "keepInScreen": "保持在螢幕內",

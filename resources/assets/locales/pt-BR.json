@@ -16,7 +16,7 @@
           "mouseMirror": "Espelho do Mouse",
           "mouseCentered": "Mouse centrado no mascote de mesa",
           "ignoreMouse": "Ignorar Eventos do Mouse",
-          "windowSettings": "Janela",
+          "windowSettings": "Janela - O mascote não responde ao jogar? Tente o modo administrador ou coloque o jogo em modo janela",
           "passThrough": "Janela Transparente",
           "alwaysOnTop": "Sempre no Topo",
           "keepInScreen": "Manter na Tela",
