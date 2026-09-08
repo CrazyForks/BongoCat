@@ -21,6 +21,7 @@ typedef struct WindowsPointerObservation {
     RECT monitor, clip;
     DWORD cursor_flags;
     double raw_x, raw_y;
+    double absolute_x, absolute_y;
     unsigned long long motion_packets;
 } WindowsPointerObservation;
 
@@ -32,6 +33,7 @@ typedef struct WindowsPointerDetection {
     ULONGLONG last_ms, window_ms, hint_ms, evidence_ms;
     POINT anchor;
     double raw_x, raw_y;
+    double absolute_x, absolute_y;
     unsigned moving_samples, returns;
     long long excursion;
     WindowsPointerReason reason;

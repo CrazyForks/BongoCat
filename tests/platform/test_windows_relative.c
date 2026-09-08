@@ -49,6 +49,8 @@ static void test_absolute_devices(void) {
     CHECK(bongo_cat_windows_input_take_relative(&platform, &x, &y, NULL));
     CHECK(x == 0.0 && y == 0.0);
     bongo_cat_windows_input_motion(&state, &a, &mouse, &bounds);
+    CHECK(state.observed_absolute_x == 5359.0);
+    CHECK(state.observed_absolute_y == 1639.0);
     CHECK(bongo_cat_windows_input_take_relative(&platform, &x, &y, NULL));
     CHECK(x == 5359.0 && y == 1639.0);
     CHECK(a.absolute_x == 3439.0 && a.absolute_y == 1439.0);
@@ -65,6 +67,10 @@ static void test_absolute_devices(void) {
     mouse.lLastX = -1;
     bongo_cat_windows_input_motion(&state, &a, &mouse, &bounds);
     CHECK(!a.absolute_known);
+    CHECK(state.observed_absolute_x == 5359.0);
+    CHECK(state.observed_absolute_y == 1639.0);
+    bongo_cat_windows_input_clear_motion(&state);
+    CHECK(state.observed_absolute_x == 0.0 && state.observed_absolute_y == 0.0);
 }
 
 static void test_motion_units(void) {

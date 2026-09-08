@@ -43,6 +43,8 @@ void bongo_cat_windows_input_motion(WindowsInputState *state,
             device->generation == state->generation &&
             memcmp(bounds, &device->absolute_bounds, sizeof(*bounds)) == 0;
         if (baseline && (x != device->absolute_x || y != device->absolute_y)) {
+            state->observed_absolute_x += x - device->absolute_x;
+            state->observed_absolute_y += y - device->absolute_y;
             state->observed_motion++;
             if (state->relative_active) {
                 state->absolute_x += x - device->absolute_x;
@@ -70,6 +72,7 @@ void bongo_cat_windows_input_clear_motion(WindowsInputState *state) {
     AcquireSRWLockExclusive(&state->relative_lock);
     clear_motion(state);
     state->observed_x = state->observed_y = 0;
+    state->observed_absolute_x = state->observed_absolute_y = 0;
     state->observed_motion = 0;
     state->observed_generation++;
     ReleaseSRWLockExclusive(&state->relative_lock);

@@ -50,6 +50,7 @@ typedef struct WindowsInputState {
     double absolute_x, absolute_y;
     unsigned long long relative_samples, absolute_samples, generation;
     long long observed_x, observed_y;
+    double observed_absolute_x, observed_absolute_y;
     unsigned long long observed_motion, observed_generation;
     WindowsPointerDetection pointer_detection;
     ULONGLONG pointer_probe_ms;

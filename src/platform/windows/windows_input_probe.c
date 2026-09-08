@@ -30,8 +30,11 @@ bool bongo_cat_windows_input_pointer_locked(BongoCatPlatform *platform) {
     AcquireSRWLockExclusive(&state->relative_lock);
     sample.raw_x = (double)state->observed_x;
     sample.raw_y = (double)state->observed_y;
+    sample.absolute_x = state->observed_absolute_x;
+    sample.absolute_y = state->observed_absolute_y;
     sample.motion_packets = state->observed_motion;
     state->observed_x = state->observed_y = 0;
+    state->observed_absolute_x = state->observed_absolute_y = 0;
     state->observed_motion = 0;
     if (state->pointer_generation != state->observed_generation) {
         state->pointer_detection = (WindowsPointerDetection){0};
