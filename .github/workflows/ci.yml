@@ -83,6 +83,8 @@ jobs:
         run: |
           cmake -S . -B build-quality -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
+            -DBONGO_CAT_OPTIMIZE_RELEASE_SIZE=ON \
+            -DBONGO_CAT_OPTIMIZE_RELEASE_IPO=ON \
             -DBONGO_CAT_WARNINGS_AS_ERRORS=ON
 
       - name: Register GCC diagnostics
@@ -134,6 +136,8 @@ jobs:
         run: |
           cmake -S . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
+            -DBONGO_CAT_OPTIMIZE_RELEASE_SIZE=ON \
+            -DBONGO_CAT_OPTIMIZE_RELEASE_IPO=ON \
             -DCMAKE_OSX_ARCHITECTURES=${{ matrix.cmake_arch }} \
             -DBONGO_CAT_WARNINGS_AS_ERRORS=ON
 
@@ -232,6 +236,8 @@ jobs:
         run: |
           cmake -S . -B build-package -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
+            -DBONGO_CAT_OPTIMIZE_RELEASE_SIZE=ON \
+            -DBONGO_CAT_OPTIMIZE_RELEASE_IPO=ON \
             -DCMAKE_OSX_ARCHITECTURES=${{ matrix.cmake_arch }} \
             -DBONGO_CAT_REQUIRE_CUBISM=ON \
             -DBONGO_CAT_WARNINGS_AS_ERRORS=ON

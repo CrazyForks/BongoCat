@@ -10,7 +10,10 @@ param(
     [string[]]$Target = @('bongo_cat'),
     [switch]$RequireCubism,
     [switch]$Package,
-    [switch]$Clean
+    [switch]$Clean,
+    # Reapply defaults to existing caches; -SkipConfigure reuses cached values.
+    [bool]$OptimizeReleaseSize = $true,
+    [bool]$OptimizeReleaseIpo = $true
 )
 
 $ErrorActionPreference = 'Continue'
@@ -205,7 +208,9 @@ if ($SkipConfigure) {
     $configureArgs = @(
         '-S', $root, '-B', $BuildDir,
         '-G', 'Visual Studio 17 2022', '-A', $Architecture,
-        '-DBONGO_CAT_WARNINGS_AS_ERRORS=ON'
+        '-DBONGO_CAT_WARNINGS_AS_ERRORS=ON',
+        "-DBONGO_CAT_OPTIMIZE_RELEASE_SIZE=$($OptimizeReleaseSize.ToString().ToUpperInvariant())",
+        "-DBONGO_CAT_OPTIMIZE_RELEASE_IPO=$($OptimizeReleaseIpo.ToString().ToUpperInvariant())"
     )
     if ($RequireCubism) { $configureArgs += '-DBONGO_CAT_REQUIRE_CUBISM=ON' }
     $configureWriter = New-Object IO.StreamWriter(
