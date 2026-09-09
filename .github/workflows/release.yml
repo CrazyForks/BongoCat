@@ -71,7 +71,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            cmake ninja-build libgl1-mesa-dev libx11-dev libxi-dev \
+            cmake ninja-build libgl1-mesa-dev libegl1-mesa-dev libx11-dev libxi-dev \
             libxfixes-dev libcurl4-openssl-dev xvfb xauth libgl1-mesa-dri \
             curl file desktop-file-utils
 
