@@ -16,7 +16,7 @@
           "mouseMirror": "마우스 반전",
           "mouseCentered": "마우스를 데스크톱 펫 중심으로",
           "ignoreMouse": "마우스 이벤트 무시",
-          "windowSettings": "창 - 게임 중 데스크톱 펫이 반응하지 않나요? 관리자 모드를 시도하거나 게임을 창 모드로 바꿔 보세요",
+          "windowSettings": "창",
           "passThrough": "클릭 통과",
           "alwaysOnTop": "항상 위",
           "keepInScreen": "화면 안에 유지",
@@ -29,6 +29,8 @@
           "maxFPS": "최대 프레임 속도"
         },
         "hints": {
+          "gameInput": "게임 중 데스크톱 펫이 반응하지 않나요?",
+          "gameInputHelp": "BongoCat을 관리자 권한으로 실행하고 게임을 창 모드로 설정해 보세요.",
           "passThrough": "활성화하면 클릭이 창에 영향을 주지 않고 뒤로 통과합니다.",
           "alwaysOnTop": "활성화하면 창이 다른 모든 창 위에 유지됩니다.",
           "keepInScreen": "활성화하면 창이 자동으로 화면 경계 안에 유지됩니다.",

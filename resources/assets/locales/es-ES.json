@@ -16,7 +16,7 @@
           "mouseMirror": "Invertir ratón",
           "mouseCentered": "Ratón centrado en la mascota",
           "ignoreMouse": "Ignorar eventos del ratón",
-          "windowSettings": "Ventana - ¿La mascota no responde al jugar? Prueba el modo administrador o pon el juego en modo ventana",
+          "windowSettings": "Ventana",
           "passThrough": "Dejar pasar clics",
           "alwaysOnTop": "Siempre visible",
           "keepInScreen": "Mantener en pantalla",
@@ -29,6 +29,8 @@
           "maxFPS": "Frecuencia máxima de fotogramas"
         },
         "hints": {
+          "gameInput": "¿La mascota no responde al jugar?",
+          "gameInputHelp": "Prueba a ejecutar BongoCat como administrador y a poner el juego en modo ventana.",
           "passThrough": "Al activarlo, los clics atraviesan la ventana sin afectarla.",
           "alwaysOnTop": "Al activarlo, la ventana permanece por encima de las demás.",
           "keepInScreen": "Al activarlo, la ventana se mantiene automáticamente dentro de los límites de la pantalla.",

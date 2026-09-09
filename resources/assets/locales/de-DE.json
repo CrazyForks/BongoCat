@@ -16,7 +16,7 @@
           "mouseMirror": "Maus spiegeln",
           "mouseCentered": "Maus auf Desktop-Begleiter zentriert",
           "ignoreMouse": "Mausereignisse ignorieren",
-          "windowSettings": "Fenster - Desktop-Tier reagiert im Spiel nicht? Admin-Modus versuchen oder das Spiel im Fenstermodus starten",
+          "windowSettings": "Fenster",
           "passThrough": "Klicks durchlassen",
           "alwaysOnTop": "Immer im Vordergrund",
           "keepInScreen": "Auf dem Bildschirm halten",
@@ -29,6 +29,8 @@
           "maxFPS": "Maximale Bildrate"
         },
         "hints": {
+          "gameInput": "Desktop-Tier reagiert im Spiel nicht?",
+          "gameInputHelp": "Versuche, BongoCat als Administrator auszuführen und das Spiel in den Fenstermodus zu versetzen.",
           "passThrough": "Wenn aktiviert, gehen Klicks durch das Fenster hindurch, ohne es zu beeinflussen.",
           "alwaysOnTop": "Wenn aktiviert, bleibt das Fenster über allen anderen Fenstern.",
           "keepInScreen": "Wenn aktiviert, bleibt das Fenster automatisch innerhalb der Bildschirmgrenzen.",

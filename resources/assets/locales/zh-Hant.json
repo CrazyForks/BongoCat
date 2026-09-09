@@ -16,7 +16,7 @@
           "mouseMirror": "滑鼠游標鏡像",
           "mouseCentered": "滑鼠以桌寵為中心",
           "ignoreMouse": "忽略滑鼠事件",
-          "windowSettings": "視窗 - 遊戲中桌寵沒反應？試試管理員模式或將遊戲設為視窗模式",
+          "windowSettings": "視窗",
           "passThrough": "視窗穿透",
           "alwaysOnTop": "視窗置頂",
           "keepInScreen": "保持在螢幕內",
@@ -29,6 +29,8 @@
           "maxFPS": "最大幀率"
         },
         "hints": {
+          "gameInput": "遊戲中桌寵沒反應？",
+          "gameInputHelp": "試試以系統管理員身分啟動 BongoCat，並將遊戲設為視窗模式。",
           "passThrough": "啟用後，視窗不影響對其他應用程式的操作。",
           "alwaysOnTop": "啟用後，視窗始終顯示在其他應用程式上方。",
           "keepInScreen": "啟用後，視窗會自動調整位置，防止超出螢幕邊界。",

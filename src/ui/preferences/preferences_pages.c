@@ -2,6 +2,7 @@
 #include "preferences_theme.h"
 #include "preferences_widgets.h"
 #include "preferences_notice.h"
+#include "ui_tooltip.h"
 #include "bongo_cat/audio.h"
 #include "bongo_cat/i18n.h"
 #include "bongo_cat/preferences.h"
@@ -25,8 +26,12 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
     BongoCatWindowState *window_state = &app->session.window;
     bongo_cat_pref_section_icon(context, tr(app,
         "pages.preference.cat.labels.windowSettings",
-        "Window - Pet not responding in games? Try admin mode or set the game to windowed mode"),
+        "Window"),
         BONGO_CAT_PREF_ICON_SECTION_WINDOW);
+    bongo_cat_ui_question_tooltip(context, tr(app,
+        "pages.preference.cat.hints.gameInput", "Pet not responding in games?"),
+        tr(app, "pages.preference.cat.hints.gameInputHelp",
+            "Try running BongoCat as administrator and setting the game to windowed mode."));
     bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_PASS_THROUGH);
     if (bongo_cat_pref_toggle(context, "pass-through", tr(app,
         "composables.useAppMenu.labels.passThrough", "Pass Through"), "",
