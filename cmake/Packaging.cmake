@@ -227,6 +227,7 @@ bongo_cat_upgrade_ready:
 endif()
 
 include(CPack)
+include(cmake/PackagingAppImage.cmake)
 
 if(WIN32)
   add_custom_target(package-installer
