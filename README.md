@@ -348,6 +348,24 @@ we need.
 ## Project Status
 ![Alt](https://repobeats.axiom.co/api/embed/74334755a589dea40c5d31f8d2bcdc6c2bd39d87.svg "Repobeats analytics image")
 
+## Sponsors
+
+<div align="center">
+  <table align="center">
+    <tr>
+      <td style="vertical-align: middle; padding-right: 10px;">
+        <img alt="SignPath" src="https://signpath.org/assets/favicon-50x50.png" />
+      </td>
+      <td style="vertical-align: middle;">
+        Free code signing on Windows provided by
+        <a href="https://signpath.io">SignPath.io</a>, certificate by
+        <a href="https://signpath.org/">SignPath Foundation</a>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
 
 ## 🙏 Special Thanks
 > [!TIP]
