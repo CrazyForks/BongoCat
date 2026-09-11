@@ -36,6 +36,7 @@ static bool render(BongoCatApp *app, bool present) {
         return false;
     }
     app->render_retry_ns = 0;
+    bongo_cat_window_apply_pending_resize(app);
     int width, height;
     SDL_GetWindowSizeInPixels(app->window, &width, &height);
     glViewport(0, 0, width, height);
