@@ -161,13 +161,18 @@ static void font_reload_defers_during_frame(void) {
 }
 
 static void model_change_reloads_glyphs_before_drawing(void) {
-    BongoCatPreferences value = {0};
-    value.page = 1;
-    value.ui_initialized = true;
-    value.font_reload_defer_once = true;
-    bongo_cat_preferences_models_changed(&value);
-    CHECK(value.render_dirty && value.model_glyphs_loaded);
-    CHECK(value.font_reload_pending && !value.font_reload_defer_once);
+    for (int page = 0; page < 4; ++page) {
+        BongoCatPreferences value = {0};
+        value.page = page;
+        value.ui_initialized = true;
+        value.font_reload_defer_once = true;
+        bongo_cat_preferences_models_changed(&value);
+        CHECK(value.render_dirty);
+        CHECK(value.font_reload_pending && !value.font_reload_defer_once);
+    }
+    BongoCatPreferences unopened = {0};
+    bongo_cat_preferences_models_changed(&unopened);
+    CHECK(unopened.render_dirty && !unopened.font_reload_pending);
 }
 
 static void model_visual_expires_without_window(void) {

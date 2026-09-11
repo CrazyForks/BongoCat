@@ -46,7 +46,6 @@ BongoCatPreferences *bongo_cat_preferences_create(BongoCatApp *app) {
         if (!value->import_dialog) { free(value); return NULL; } }
     if (value && app->smoke_preference_page >= 0)
         value->page = app->smoke_preference_page;
-    if (value) value->model_glyphs_loaded = value->page == 1;
     return value;
 }
 
@@ -262,11 +261,6 @@ void bongo_cat_preferences_models_changed(BongoCatPreferences *value) {
     if (!value) return;
     value->render_dirty = true;
     value->model_directory_watch_known = false;
-    if (value->page != 1) {
-        value->model_glyphs_loaded = false;
-        return;
-    }
-    value->model_glyphs_loaded = true;
     value->font_reload_pending = value->ui_initialized;
     /* Catalog refreshes finish between UI frames. Rebuild before drawing the
        new cards so names never appear with missing-glyph placeholders. */

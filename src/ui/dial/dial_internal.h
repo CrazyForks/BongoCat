@@ -8,6 +8,8 @@
 #define DIAL_PI 3.14159265358979323846f
 #define DIAL_PAGE 16
 #define DIAL_ROOTS 12
+#define DIAL_REVEAL_DELAY_MS 22
+#define DIAL_REVEAL_DURATION_MS 360
 #define DIAL_PATH_POINTS 160
 typedef struct DialPoint { float x, y; } DialPoint;
 typedef struct DialPath {

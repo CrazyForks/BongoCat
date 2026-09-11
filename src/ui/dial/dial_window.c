@@ -47,8 +47,11 @@ static void animate(Dial *d, uint64_t now) {
         if (next != d->lift[i]) { d->lift[i] = next; d->dirty = true; }
     }
     if (dial_child_count(d) && now-d->changed_at <=
-        (uint64_t)(360+(dial_child_count(d)-1)*22+16)) d->dirty = true;
-    if (now-d->opened_at <= 196) d->dirty = true;
+        (uint64_t)(DIAL_REVEAL_DURATION_MS +
+            (dial_child_count(d)-1)*DIAL_REVEAL_DELAY_MS + 16))
+        d->dirty = true;
+    if (now-d->opened_at <= (uint64_t)(DIAL_REVEAL_DURATION_MS +
+        (d->count-1)*DIAL_REVEAL_DELAY_MS + 16)) d->dirty = true;
 }
 
 static bool create(Dial *d) {

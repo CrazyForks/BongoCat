@@ -95,15 +95,10 @@ static bool draw_shell(BongoCatPreferences *value, struct nk_context *context,
     if (!value->page_seen) {
         value->page_seen = true; value->last_page = value->page;
     } else if (value->last_page != value->page) {
-        bool load_model_glyphs = value->page == 1 && !value->model_glyphs_loaded;
         bongo_cat_preferences_page_cache_clear(value,
             value->last_page, value->page);
         value->last_page = value->page;
         value->page_transition_ns = SDL_GetTicksNS();
-        if (load_model_glyphs) {
-            value->model_glyphs_loaded = true; value->font_reload_pending = true;
-            value->font_reload_defer_once = true;
-        }
         value->render_dirty = true;
     }
     nk_group_end(context);
@@ -114,6 +109,12 @@ static bool draw_shell(BongoCatPreferences *value, struct nk_context *context,
     close_requested = bongo_cat_ui_content_header(context,
         menus[value->page], menu_icons[value->page], !modal, dark,
         native_chrome);
+    if (close_requested) {
+        /* Scrolled cards can overlap the header's hit area despite clipping. */
+        nk_group_end(context);
+        nk_layout_row_end(context);
+        return true;
+    }
     float body_height = interior_height - BONGO_CAT_UI_HEADER_HEIGHT;
     nk_layout_row_dynamic(context, NK_MAX(120.0f, body_height), 1);
     struct nk_rect body_bounds = nk_widget_bounds(context);

@@ -31,8 +31,6 @@ static bool normalize_text(char *text, size_t capacity) {
     return true;
 }
 
-static bool audio_binding(const BongoCatBehaviorShortcut *binding);
-
 bool bongo_cat_settings_shortcut_conflicts(const BongoCatSettings *config,
     const char *shortcut, const char *exclude) {
     if (!config || !shortcut || !shortcut[0]) return false;
@@ -45,25 +43,14 @@ bool bongo_cat_settings_shortcut_conflicts(const BongoCatSettings *config,
     size_t behavior_count = config->behavior_shortcut_count;
     if (behavior_count > BONGO_CAT_BEHAVIOR_BINDING_CAP)
         behavior_count = BONGO_CAT_BEHAVIOR_BINDING_CAP;
-    bool editing_audio = false, editing_behavior = false;
+    /* Model behaviors may share a key; global commands remain exclusive. */
     for (size_t i = 0; i < behavior_count; ++i)
-        if (config->behavior_shortcuts[i].shortcut == exclude) {
-            editing_behavior = true;
-            editing_audio = audio_binding(&config->behavior_shortcuts[i]);
-        }
+        if (config->behavior_shortcuts[i].shortcut == exclude) return false;
     for (size_t i = 0; i < behavior_count; ++i) {
         const char *bound = config->behavior_shortcuts[i].shortcut;
-        if (bound != exclude && shortcut_equal(bound, shortcut) &&
-            (!editing_behavior || (!editing_audio &&
-                !audio_binding(&config->behavior_shortcuts[i])))) return true;
+        if (shortcut_equal(bound, shortcut)) return true;
     }
     return false;
-}
-
-static bool audio_binding(const BongoCatBehaviorShortcut *binding) {
-    const char *index = strrchr(binding->id, ':');
-    return index && index - binding->id >= 6 &&
-        strncmp(index - 6, ":sound", 6) == 0;
 }
 
 static void validate_shortcuts(BongoCatSettings *config) {
@@ -81,10 +68,6 @@ static void validate_shortcuts(BongoCatSettings *config) {
         bool duplicate = false;
         for (size_t j = 0; j < sizeof(global) / sizeof(global[0]); ++j)
             duplicate = duplicate || shortcut_equal(shortcut, global[j]);
-        for (size_t j = 0; j < i; ++j)
-            duplicate = duplicate || (!audio_binding(&config->behavior_shortcuts[i]) &&
-                !audio_binding(&config->behavior_shortcuts[j]) && shortcut_equal(shortcut,
-                config->behavior_shortcuts[j].shortcut));
         if (duplicate) shortcut[0] = '\0';
     }
 }

@@ -77,8 +77,12 @@ static const char *primary_name(SDL_Keycode key, char output[24]) {
     if (key >= SDLK_0 && key <= SDLK_9) {
         output[0] = (char)('0' + key - SDLK_0); output[1] = '\0'; return output;
     }
-    if (key >= SDLK_F1 && key <= SDLK_F24) {
+    /* SDL places navigation and keypad keys between F12 and F13. */
+    if (key >= SDLK_F1 && key <= SDLK_F12) {
         snprintf(output, 24, "F%d", (int)(key - SDLK_F1 + 1)); return output;
+    }
+    if (key >= SDLK_F13 && key <= SDLK_F24) {
+        snprintf(output, 24, "F%d", (int)(key - SDLK_F13 + 13)); return output;
     }
     switch (key) {
     case SDLK_RETURN: case SDLK_KP_ENTER: return "Enter";

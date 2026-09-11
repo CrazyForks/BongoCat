@@ -1,6 +1,7 @@
 #include "window_menu.h"
 #include "bongo_cat/audio.h"
 #include "bongo_cat/i18n.h"
+#include "bongo_cat/shortcut.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -68,8 +69,10 @@ static void menu_label(char output[BONGO_CAT_MENU_LABEL_CAP],
     const BongoCatApp *app, const BongoCatBehaviorEntry *entry) {
     const char *label = behavior_label(app, entry);
     const char *shortcut = behavior_shortcut(app, entry->id);
+    char shortcut_label[BONGO_CAT_SHORTCUT_CAP * 2];
+    bongo_cat_shortcut_format(shortcut, shortcut_label, sizeof(shortcut_label));
     if (shortcut && shortcut[0]) snprintf(output, BONGO_CAT_MENU_LABEL_CAP,
-        "%s - %s", label, shortcut);
+        "%s - %s", label, shortcut_label);
     else snprintf(output, BONGO_CAT_MENU_LABEL_CAP, "%s", label);
 }
 

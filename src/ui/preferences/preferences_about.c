@@ -229,6 +229,6 @@ void bongo_cat_preferences_about_projects(BongoCatPreferences *value,
         value->catime_height, "Catime", "https://cati.me/", false, p);
     project(value, context, canvas, nk_rect(center + 42, bounds.y + 112,
         card_width, 200), value->vlaina_texture, value->vlaina_width,
-        value->vlaina_height, "vlaina", "https://vlaina.com",
+        value->vlaina_height, "vlaina", "https://vlaina.com/r/bongocat",
         true, p);
 }

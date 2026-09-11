@@ -1,5 +1,6 @@
 #include "preferences_state.h"
 #include "bongo_cat/audio.h"
+#include "bongo_cat/shortcut.h"
 #include "preferences_overlay.h"
 #include "preferences_shortcut_clear.h"
 #include "ui_animation.h"
@@ -67,9 +68,11 @@ static bool shortcut_editor(BongoCatPreferences *value,
         (hover ? p.hover : p.field), opacity));
     nk_stroke_rect(canvas, bounds, 10, 1, alpha(active ? p.pink :
         (hover ? p.accent : p.border_subtle), opacity));
+    char shortcut_label[BONGO_CAT_SHORTCUT_CAP * 2];
+    bongo_cat_shortcut_format(shortcut->shortcut, shortcut_label, sizeof(shortcut_label));
     const char *shown = active ? bongo_cat_i18n_get(value->app->i18n,
         "components.shortcut.hints.pressRecordShortcut", "Press shortcut") :
-        (shortcut->shortcut[0] ? shortcut->shortcut :
+        (shortcut->shortcut[0] ? shortcut_label :
         bongo_cat_i18n_get(value->app->i18n,
         "components.shortcut.hints.clickRecordShortcut",
         "Click to record shortcut"));

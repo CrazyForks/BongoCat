@@ -1,6 +1,12 @@
 #include "dial_internal.h"
 #include <stdio.h>
 
+static float reveal(uint64_t now, uint64_t started, int index) {
+    float elapsed = (float)(now - started) - index * DIAL_REVEAL_DELAY_MS;
+    float t = fmaxf(0, fminf(1, elapsed / DIAL_REVEAL_DURATION_MS));
+    return 1 - powf(1 - t, 3);
+}
+
 static uint32_t alpha(uint32_t color, float opacity) {
     return (color&0xffffff) | ((uint32_t)((float)(color>>24)*opacity)<<24);
 }
@@ -52,26 +58,29 @@ static int item_icon(DialItem item) {
         (item.checked && item.icon == 3 ? 13 : item.icon);
 }
 
-static void root(Dial *d, int index) {
+static void root(Dial *d, int index, uint64_t now) {
     DialItem item = d->items[index];
     float angle = -DIAL_PI / 2 + index * 2 * DIAL_PI / d->count;
     float x = 132 * cosf(angle), y = 132 * sinf(angle);
-    float lift = d->lift[index], zoom = 1 + .055f * lift;
-    float pull = 7.5f * lift;
-    if (d->pressed == index) { zoom = .96f; pull *= .4f; }
+    float ease = reveal(now, d->opened_at, index);
+    /* Keep the first sector hittable on transparent native windows. */
+    if (index == 0) ease = fmaxf(.15f, ease);
+    float lift = d->lift[index], zoom = .72f + .28f * ease + .055f * lift;
+    float pull = -26 * (1 - ease) + 7.5f * lift;
+    if (d->pressed == index) { zoom *= .96f; pull *= .4f; }
     dial_transform(d, zoom, x * (1 - zoom) + cosf(angle) * pull,
         y * (1 - zoom) + sinf(angle) * pull);
     bool active = index == d->active;
-    float opacity = 1.0f;
+    float opacity = ease;
     int tint = active ? (index >= 10 ? 3 : 1) : 0;
     surface(d, &d->paint.roots[index], tint, opacity);
     uint32_t color = active ? 0xffffffff : (item.checked ? 0xfff77daa : item.color);
     if (index >= 6 && index <= 8 && !item.children) opacity *= .4f;
     dial_icon(d, item_icon(item), x, y, 28 * (1 + .15f * lift), alpha(color, opacity));
-    if (item.checked) {
+    if (item.checked && item.command != BONGO_CAT_MENU_ALWAYS_ON_TOP) {
         for (int i = 4; i > 0; --i)
-            dial_dot(d, x + 17, y - 17, 3.2f + i * 1.5f, 0x0af77daa);
-        dial_dot(d, x + 17, y - 17, 3.2f, 0xfff77daa);
+            dial_dot(d, x + 17, y - 17, 3.2f + i * 1.5f, alpha(0x0af77daa, ease));
+        dial_dot(d, x + 17, y - 17, 3.2f, alpha(0xfff77daa, ease));
     }
 }
 
@@ -96,9 +105,8 @@ static void center(Dial *d) {
 
 static void children(Dial *d, uint64_t now) {
     for (int i = 0; i < dial_child_count(d); ++i) {
-        float elapsed = (float)(now - d->changed_at) - i * 22;
-        float t = fmaxf(0, fminf(1, elapsed / 360));
-        float ease = 1 - powf(1 - t, 3);
+        /* Child indices increase with screen angle, so this reveals clockwise. */
+        float ease = reveal(now, d->changed_at, i);
         float angle = dial_child_angle(d, i), x = 230 * cosf(angle), y = 230 * sinf(angle);
         bool hover = i == d->child;
         float zoom = .72f + .28f * ease + (hover ? .06f : 0);
@@ -117,8 +125,9 @@ static void children(Dial *d, uint64_t now) {
 }
 
 void dial_scene(Dial *d) {
+    uint64_t now = SDL_GetTicks();
     for (int i = 0; i < d->count; ++i)
-        if (!d->child_focus || i == d->active) root(d,i);
+        if (!d->child_focus || i == d->active) root(d,i,now);
     center(d);
-    children(d,SDL_GetTicks());
+    children(d,now);
 }

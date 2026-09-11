@@ -57,7 +57,6 @@ struct BongoCatPreferences {
     bool font_reload_defer_once;
     size_t pending_import_name_count;
     char pending_import_names[BONGO_CAT_MODEL_CAP][BONGO_CAT_ID_CAP];
-    bool model_glyphs_loaded;
     bool model_directory_watch_active;
     bool model_directory_watch_known;
     bool model_directory_watch_refresh;
