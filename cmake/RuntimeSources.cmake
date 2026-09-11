@@ -178,6 +178,16 @@ set(BONGO_CAT_UI_BACKEND_SOURCES
   src/ui/backend/ui_tooltip.c)
 
 set(BONGO_CAT_UI_RENDERING_SOURCES
+  src/ui/dial/dial_window.c
+  src/ui/dial/dial_input.c
+  src/ui/dial/dial_items.c
+  src/ui/dial/dial_geometry.c
+  src/ui/dial/dial_paint.c
+  src/ui/dial/dial_draw.c
+  src/ui/dial/dial_scene.c
+  src/ui/dial/dial_fonts.c
+  src/ui/dial/dial_covers.c
+  src/ui/dial/dial_icons.c
   src/ui/rendering/ui_animation.c
   src/ui/rendering/ui_font.c
   src/ui/rendering/ui_font_atlas.c

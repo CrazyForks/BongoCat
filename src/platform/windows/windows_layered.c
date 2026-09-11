@@ -221,16 +221,6 @@ static bool read_frame(BongoCatWindowsLayered *value, int width, int height,
         STBIR_BGRA_PM) != NULL;
 }
 
-bool bongo_cat_windows_layered_present_popup(HWND window, HDC dc,
-    int width, int height, BYTE opacity) {
-    if (!window || !dc || width <= 0 || height <= 0) return false;
-    POINT source = {0, 0};
-    SIZE size = {width, height};
-    BLENDFUNCTION blend = {AC_SRC_OVER, 0, opacity, AC_SRC_ALPHA};
-    return UpdateLayeredWindow(window, NULL, NULL, &size, dc,
-        &source, 0, &blend, ULW_ALPHA) != FALSE;
-}
-
 bool bongo_cat_platform_present(BongoCatPlatform *platform, int width, int height) {
     if (!platform || !platform->window) return false;
     BongoCatWindowsLayered *value = platform->presenter;

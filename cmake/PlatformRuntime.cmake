@@ -2,13 +2,6 @@ if(WIN32)
   enable_language(RC)
   target_sources(bongo_cat_runtime PRIVATE
     src/platform/windows/windows.c
-    src/platform/windows/windows_menu.c
-    src/platform/windows/dial/dial_window.c
-    src/platform/windows/dial/dial_items.c
-    src/platform/windows/dial/dial_geometry.c
-    src/platform/windows/dial/dial_paint.c
-    src/platform/windows/dial/dial_icons.c
-    src/platform/windows/dial/dial_covers.c
     src/platform/windows/windows_directory.c
     src/platform/windows/windows_package.c
     src/platform/windows/windows_startup.c
@@ -37,7 +30,7 @@ if(WIN32)
     src/platform/windows)
   target_link_libraries(bongo_cat_runtime PRIVATE
     dwmapi ole32 shell32 user32 uuid windowscodecs advapi32
-    winhttp gdiplus gdi32)
+    winhttp)
 elseif(APPLE)
   find_package(CURL REQUIRED)
   enable_language(OBJC)
@@ -46,7 +39,6 @@ elseif(APPLE)
     src/platform/macos/macos_preferences.m
     src/platform/macos/macos_input.m
     src/platform/macos/macos_keys.m
-    src/platform/macos/macos_menu.m
     src/platform/macos/macos_tray.m)
   target_link_libraries(bongo_cat_runtime PRIVATE "-framework Cocoa"
     "-framework ApplicationServices" CURL::libcurl)
@@ -59,7 +51,6 @@ else()
   endif()
   target_sources(bongo_cat_runtime PRIVATE
     src/platform/linux/linux.c
-    src/platform/linux/linux_menu.c
     src/platform/linux/linux_x11.c)
   target_link_libraries(bongo_cat_runtime PRIVATE
     X11::X11 X11::Xi X11::Xfixes m CURL::libcurl)

@@ -193,13 +193,8 @@ static const IconContour icons[] = {
     {0, 2}, {2, 4}, {6, 4}, {10, 3}, {13, 4}, {17, 2}, {19, 1}, {20, 4}, {24, 3}, {27, 1}, {28, 3}, {31, 2}, {33, 2}, {35, 3}
 };
 
-void dial_icon(GpGraphics *g, int icon, float x, float y, float size, DWORD color) {
+void dial_icon(Dial *d, int icon, float x, float y, float size, uint32_t color) {
     if (icon < 0 || icon >= (int)(sizeof(icons) / sizeof(icons[0]))) return;
-    GpPen *pen = NULL;
-    if (GdipCreatePen1(color, 1.95f * size / 24, 2, &pen)) return;
-    GdipSetPenStartCap(pen, 2);
-    GdipSetPenEndCap(pen, 2);
-    GdipSetPenLineJoin(pen, 2);
     IconContour range = icons[icon];
     for (int i = 0; i < range.count; ++i) {
         IconContour contour = contours[range.offset + i];
@@ -210,7 +205,6 @@ void dial_icon(GpGraphics *g, int icon, float x, float y, float size, DWORD colo
             transformed[j] = (DialPoint){x + (p.x - 12) * size / 24,
                 y + (p.y - 12) * size / 24};
         }
-        GdipDrawLines(g, pen, transformed, contour.count);
+        dial_stroke(d, transformed, contour.count, 1.95f * size / 24, color, true);
     }
-    GdipDeletePen(pen);
 }

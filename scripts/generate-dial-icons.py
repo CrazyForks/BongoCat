@@ -4,7 +4,7 @@ import argparse, re, math, xml.etree.ElementTree as ET
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('reference', type=Path, help='Path to the reference index.html')
 parser.add_argument('--output', type=Path, default=Path(__file__).resolve().parents[1] /
-                    'src/platform/windows/dial/dial_icons.c')
+                    'src/ui/dial/dial_icons.c')
 args = parser.parse_args()
 html=args.reference.read_text(encoding='utf-8')
 icon_block = re.search(r'const\s+icons\s*=\s*\{(.*?)\n\s*\};', html, re.S)
@@ -94,13 +94,8 @@ for j in range(0,len(allpoints),4): lines.append('    '+', '.join('{%.4ff, %.4ff
 lines+=['};','static const IconContour contours[] = {']
 for j in range(0,len(contours),6): lines.append('    '+', '.join('{%d, %d}'%p for p in contours[j:j+6])+',')
 lines+=['};','static const IconContour icons[] = {','    '+', '.join('{%d, %d}'%p for p in ranges),'};', '''
-void dial_icon(GpGraphics *g, int icon, float x, float y, float size, DWORD color) {
+void dial_icon(Dial *d, int icon, float x, float y, float size, uint32_t color) {
     if (icon < 0 || icon >= (int)(sizeof(icons) / sizeof(icons[0]))) return;
-    GpPen *pen = NULL;
-    if (GdipCreatePen1(color, 1.95f * size / 24, 2, &pen)) return;
-    GdipSetPenStartCap(pen, 2);
-    GdipSetPenEndCap(pen, 2);
-    GdipSetPenLineJoin(pen, 2);
     IconContour range = icons[icon];
     for (int i = 0; i < range.count; ++i) {
         IconContour contour = contours[range.offset + i];
@@ -111,9 +106,8 @@ void dial_icon(GpGraphics *g, int icon, float x, float y, float size, DWORD colo
             transformed[j] = (DialPoint){x + (p.x - 12) * size / 24,
                 y + (p.y - 12) * size / 24};
         }
-        GdipDrawLines(g, pen, transformed, contour.count);
+        dial_stroke(d, transformed, contour.count, 1.95f * size / 24, color, true);
     }
-    GdipDeletePen(pen);
 }
 ''']
 assert max(n for _, n in contours) <= 512

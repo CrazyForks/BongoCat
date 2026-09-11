@@ -219,10 +219,6 @@ void bongo_cat_platform_single_instance_end(void) {
         [instance_observer release]; instance_observer = nil;
     }
 }
-BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
-    const BongoCatMenuLabels *labels) {
-    return bongo_cat_macos_context_menu(platform, labels);
-}
 BongoCatResult bongo_cat_platform_embedded_assets(const char *target, BongoCatError *error) {
     (void)target; (void)error; return BONGO_CAT_ERROR_PLATFORM;
 }

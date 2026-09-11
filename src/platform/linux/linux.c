@@ -242,10 +242,6 @@ BongoCatResult bongo_cat_platform_set_autostart(bool enabled, BongoCatError *err
     remove(path); bongo_cat_error_set(error, BONGO_CAT_ERROR_IO, "Cannot write Linux autostart entry");
     return BONGO_CAT_ERROR_IO;
 }
-BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
-    const BongoCatMenuLabels *labels) {
-    return bongo_cat_linux_context_menu(platform, labels);
-}
 BongoCatResult bongo_cat_platform_embedded_assets(const char *target, BongoCatError *error) {
     (void)target; (void)error; return BONGO_CAT_ERROR_PLATFORM;
 }

@@ -12,9 +12,6 @@ void bongo_cat_windows_layered_set_click_through(
 void bongo_cat_windows_layered_set_always_on_top(
     BongoCatPlatform *platform, bool enabled);
 HWND bongo_cat_windows_layered_proxy(HWND source);
-/* Present an owned popup's premultiplied BGRA surface without pet proxy state. */
-bool bongo_cat_windows_layered_present_popup(HWND window, HDC dc,
-    int width, int height, BYTE opacity);
 #endif
 
 #endif

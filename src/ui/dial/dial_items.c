@@ -93,7 +93,7 @@ void dial_select(Dial *d, int root, int child) {
     if (child >= 0) d->child_focus = true;
     if (changed) {
         d->page = 0;
-        d->changed_at = GetTickCount64();
+        d->changed_at = SDL_GetTicks();
         dial_child_paths(d);
     }
     char text[32];
@@ -101,7 +101,7 @@ void dial_select(Dial *d, int root, int child) {
         dial_child_item(d, child, text, sizeof(text)).command : BONGO_CAT_MENU_NONE;
     if (action != d->preview) {
         d->preview = action;
-        if (d->labels->preview) d->labels->preview(d->labels->preview_userdata, action);
+        dial_preview(d, action);
     }
     d->dirty = true;
 }
