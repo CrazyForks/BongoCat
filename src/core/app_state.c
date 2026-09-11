@@ -109,6 +109,16 @@ static void apply_gamepad(BongoCatApp *app, const BongoCatInputEvent *event) {
 
 void bongo_cat_app_reset_gamepad(BongoCatApp *app) {
     if (!app || !app->live2d) return;
+    for (size_t i = app->sound_shortcut_state.count; i > 0; --i) {
+        if (strncmp(app->sound_shortcut_state.held[i - 1], "Gamepad:", 8)) continue;
+        --app->sound_shortcut_state.count;
+        if (i - 1 != app->sound_shortcut_state.count)
+            memcpy(app->sound_shortcut_state.held[i - 1],
+                app->sound_shortcut_state.held[app->sound_shortcut_state.count], BONGO_CAT_ID_CAP);
+    }
+    for (size_t i = 0; i < app->settings.behavior_shortcut_count; ++i)
+        if (strstr(app->settings.behavior_shortcuts[i].shortcut, "Gamepad:"))
+            app->sound_shortcut_active[i] = false;
     app->left_stick_x = app->left_stick_y = 0.0f;
     app->right_stick_x = app->right_stick_y = 0.0f;
     app->left_stick_pressed = app->right_stick_pressed = false;

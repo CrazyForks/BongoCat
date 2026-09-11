@@ -142,6 +142,7 @@ static bool read_behaviors(yyjson_val *array, BongoCatSettings *settings,
         BongoCatBehaviorShortcut *entry = &settings->behavior_shortcuts[
             settings->behavior_shortcut_count++];
         memset(entry, 0, sizeof(*entry));
+        if (!read_bool(item, "shortcutDisabled", &entry->shortcut_disabled, error)) return false;
         if (!copy_text(entry->id, sizeof(entry->id), id, id_length,
                 "behaviorId", error) ||
             !copy_text(entry->shortcut, sizeof(entry->shortcut), shortcut,

@@ -98,7 +98,8 @@ struct BongoCatPreferences {
     uint64_t behavior_dialog_opened_ns;
     uint64_t behavior_dialog_closing_ns;
     uint64_t behavior_tab_transition_ns;
-    float behavior_scroll[2];
+    float behavior_scroll[3];
+    bool behavior_audio_playing[BONGO_CAT_BEHAVIOR_CAP];
     BongoCatPreferencesScrollbar behavior_scrollbar;
     BongoCatPreferencesTextSession behavior_rename;
     BongoCatPreferencesTextSession model_rename;

@@ -16,6 +16,7 @@ typedef struct LinuxMenuRow {
 #define LINUX_MENU_HINT ((BongoCatMenuAction)-4)
 #define LINUX_MENU_MOTIONS ((BongoCatMenuAction)-5)
 #define LINUX_MENU_EXPRESSIONS ((BongoCatMenuAction)-6)
+#define LINUX_MENU_AUDIO ((BongoCatMenuAction)-8)
 #define LINUX_MENU_SEPARATOR ((BongoCatMenuAction)-7)
 
 typedef struct LinuxMenuPalette {
@@ -190,7 +191,7 @@ BongoCatMenuAction bongo_cat_linux_context_menu(BongoCatPlatform *platform,
         labels->pass_through);
     snprintf(top, sizeof(top), "%s%s", labels->always_on_top_checked ? "[x] " : "",
         labels->always_on_top);
-    LinuxMenuRow main_rows[13]; int main_count = 0;
+    LinuxMenuRow main_rows[14]; int main_count = 0;
     main_rows[main_count++] = (LinuxMenuRow){labels->preferences, BONGO_CAT_MENU_PREFERENCES};
     main_rows[main_count++] = (LinuxMenuRow){labels->hide, BONGO_CAT_MENU_HIDE};
     main_rows[main_count++] = (LinuxMenuRow){pass, BONGO_CAT_MENU_PASS_THROUGH};
@@ -201,6 +202,8 @@ BongoCatMenuAction bongo_cat_linux_context_menu(BongoCatPlatform *platform,
         (LinuxMenuRow){labels->motion, LINUX_MENU_MOTIONS};
     if (labels->expression_count) main_rows[main_count++] =
         (LinuxMenuRow){labels->expression, LINUX_MENU_EXPRESSIONS};
+    if (labels->audio_count) main_rows[main_count++] =
+        (LinuxMenuRow){labels->audio, LINUX_MENU_AUDIO};
     main_rows[main_count++] = (LinuxMenuRow){labels->model, -3};
     main_rows[main_count++] = (LinuxMenuRow){NULL, LINUX_MENU_SEPARATOR};
     main_rows[main_count++] = (LinuxMenuRow){labels->exit, BONGO_CAT_MENU_EXIT};
@@ -246,6 +249,16 @@ BongoCatMenuAction bongo_cat_linux_context_menu(BongoCatPlatform *platform,
                 BONGO_CAT_MENU_MOTION_FIRST + (int)i};
         }
         action = popup_rows(display, owner, rows, (int)labels->motion_count, labels);
+    } else if (action == LINUX_MENU_AUDIO) {
+        LinuxMenuRow rows[BONGO_CAT_BEHAVIOR_CAP];
+        char text[BONGO_CAT_BEHAVIOR_CAP][BONGO_CAT_MENU_LABEL_CAP + 4];
+        for (size_t i = 0; i < labels->audio_count; ++i) {
+            snprintf(text[i], sizeof(text[i]), "%s%s",
+                labels->audio_checked && labels->audio_checked[i] ? "[x] " : "",
+                labels->audio_names[i]);
+            rows[i] = (LinuxMenuRow){text[i], BONGO_CAT_MENU_AUDIO_FIRST + (int)i};
+        }
+        action = popup_rows(display, owner, rows, (int)labels->audio_count, labels);
     } else if (action == LINUX_MENU_EXPRESSIONS) {
         LinuxMenuRow rows[BONGO_CAT_BEHAVIOR_CAP];
         char text[BONGO_CAT_BEHAVIOR_CAP][BONGO_CAT_ID_CAP];

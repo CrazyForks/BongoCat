@@ -110,10 +110,12 @@
           "moreModels": "その他のモデル"
         },
         "behaviorModal": {
-          "title": "モーションと表情",
+          "title": "モーション・表情・音声",
           "labels": {
             "motion": "モーション",
             "expression": "表情",
+            "audio": "音声",
+            "stopAllAudio": "すべての音声を停止",
             "motionIndex": "モーション {index}",
             "motionGroupIndex": "モーショングループ {index}",
             "expressionIndex": "表情 {index}"

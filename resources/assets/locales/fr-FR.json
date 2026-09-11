@@ -110,10 +110,12 @@
           "moreModels": "Plus de modèles"
         },
         "behaviorModal": {
-          "title": "Mouvements et expressions",
+          "title": "Mouvements, expressions et audio",
           "labels": {
             "motion": "Mouvement",
             "expression": "Expression",
+            "audio": "Audio",
+            "stopAllAudio": "Arrêter tous les sons",
             "motionIndex": "Mouvement {index}",
             "motionGroupIndex": "Groupe de mouvements {index}",
             "expressionIndex": "Expression {index}"

@@ -97,6 +97,7 @@ static bool read_adapter_assets(BongoCatBehaviorCatalog *catalog,
                 model->adapter_directory)) {
                 ok = false; break;
             }
+            catalog->entries[catalog->count - 1].sound_clear = sound;
             continue;
         }
         const char *asset = yyjson_get_str(yyjson_obj_get(item, effect ? "effect" : "sound"));
@@ -109,8 +110,11 @@ static bool read_adapter_assets(BongoCatBehaviorCatalog *catalog,
         if (!add_behavior(catalog, model, effect ? BONGO_CAT_BEHAVIOR_EFFECT :
             BONGO_CAT_BEHAVIOR_SOUND, NULL, current, label, asset,
             model->adapter_directory)) { ok = false; break; }
-        catalog->entries[catalog->count - 1].momentary =
-            yyjson_get_bool(yyjson_obj_get(item, "momentary"));
+        BongoCatBehaviorEntry *entry = &catalog->entries[catalog->count - 1];
+        bool momentary = yyjson_get_bool(yyjson_obj_get(item, "momentary"));
+        entry->momentary = effect && momentary;
+        yyjson_val *overlap = yyjson_obj_get(item, "overlap");
+        entry->sound_overlap = sound && (overlap ? yyjson_get_bool(overlap) : true);
     }
     yyjson_doc_free(document);
     return ok;

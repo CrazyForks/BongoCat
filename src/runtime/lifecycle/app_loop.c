@@ -1,4 +1,5 @@
 #include "runtime.h"
+#include "bongo_cat/audio.h"
 #include "bongo_cat/log.h"
 #include "model_cover.h"
 #include "bongo_cat/overlay.h"
@@ -191,6 +192,7 @@ void bongo_cat_app_loop(BongoCatApp *app) {
         bongo_cat_window_update_wheel_animation(app, now);
         bongo_cat_multi_pet_update(app, now);
         bongo_cat_random_expression_update(app, now);
+        bongo_cat_audio_update(app->audio);
         bongo_cat_window_update_display_recovery(app, now);
         bongo_cat_runtime_flow_update(app, now);
         bongo_cat_window_apply_pending_resize(app);

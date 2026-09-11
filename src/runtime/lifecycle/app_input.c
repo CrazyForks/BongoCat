@@ -13,6 +13,10 @@ void bongo_cat_app_drain_input(BongoCatApp *app, bool allow_shortcuts) {
         if (allow_shortcuts &&
             !bongo_cat_preferences_shortcuts_blocked(app->preferences))
             bongo_cat_app_shortcuts(app, &event);
+        else if (app->sound_shortcut_state.count) {
+            app->sound_shortcut_state.count = 0;
+            memset(app->sound_shortcut_active, 0, sizeof(app->sound_shortcut_active));
+        }
         bongo_cat_app_apply_input(app, &event);
     }
     uint64_t now = SDL_GetTicks();

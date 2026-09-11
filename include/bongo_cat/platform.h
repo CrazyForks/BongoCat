@@ -54,7 +54,8 @@ typedef enum BongoCatMenuAction {
     BONGO_CAT_MENU_REMOVE_PET,
     BONGO_CAT_MENU_MODEL_FIRST = 1000,
     BONGO_CAT_MENU_MOTION_FIRST = 2000,
-    BONGO_CAT_MENU_EXPRESSION_FIRST = 3000
+    BONGO_CAT_MENU_EXPRESSION_FIRST = 3000,
+    BONGO_CAT_MENU_AUDIO_FIRST = 4000
 } BongoCatMenuAction;
 typedef void (*BongoCatMenuPreview)(void *userdata, BongoCatMenuAction action);
 
@@ -76,6 +77,10 @@ typedef struct BongoCatMenuLabels {
     void *preview_userdata;
     const char *remove_pet;
     bool remove_pet_visible;
+    const char *audio;
+    const char (*audio_names)[BONGO_CAT_MENU_LABEL_CAP];
+    const bool *audio_checked;
+    size_t audio_count;
 } BongoCatMenuLabels;
 
 typedef void (*BongoCatTrayClick)(void *userdata);

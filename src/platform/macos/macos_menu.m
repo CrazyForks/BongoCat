@@ -102,6 +102,9 @@ BongoCatMenuAction bongo_cat_macos_context_menu(BongoCatPlatform *platform,
     add_named_menu(menu, target, labels->expression, labels->expression_names,
         labels->expression_count, BONGO_CAT_MENU_EXPRESSION_FIRST,
         NULL, labels->current_expression);
+    add_named_menu(menu, target, labels->audio, labels->audio_names,
+        labels->audio_count, BONGO_CAT_MENU_AUDIO_FIRST,
+        labels->audio_checked, labels->audio_count);
     NSMenuItem *modelRoot = [[NSMenuItem alloc] initWithTitle:text(labels->model)
         action:nil keyEquivalent:@""];
     NSMenu *models = [[NSMenu alloc] initWithTitle:text(labels->model)];

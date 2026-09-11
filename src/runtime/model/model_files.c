@@ -245,7 +245,9 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
         SDL_GetWindowSizeInPixels(app->window, &pixel_width, &pixel_height);
     }
     bongo_cat_live2d_resize(app->live2d, pixel_width, pixel_height);
-    bongo_cat_audio_stop(app->audio);
+    bongo_cat_audio_reset(app->audio);
+    memset(&app->sound_shortcut_state, 0, sizeof(app->sound_shortcut_state));
+    memset(app->sound_shortcut_active, 0, sizeof(app->sound_shortcut_active));
     commit_model(app, entry, true, replacing_model);
     bongo_cat_app_reapply_input(app);
     bongo_cat_app_apply_mouse(app);

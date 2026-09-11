@@ -8,6 +8,7 @@
 #include "bongo_cat/mouse.h"
 #include "bongo_cat/platform.h"
 #include "bongo_cat/shortcut.h"
+#include "bongo_cat/sound_shortcut.h"
 
 typedef struct BongoCatAudio BongoCatAudio;
 typedef struct BongoCatTray BongoCatTray;
@@ -25,6 +26,8 @@ typedef struct BongoCatApp {
     BongoCatSessionState session;
     BongoCatInputState input;
     BongoCatShortcutState shortcut_state;
+    BongoCatSoundShortcutState sound_shortcut_state;
+    bool sound_shortcut_active[BONGO_CAT_BEHAVIOR_BINDING_CAP];
     BongoCatModelCatalog models;
     BongoCatBehaviorCatalog behaviors;
     /* One immutable installed package's behavior catalog can be reused when

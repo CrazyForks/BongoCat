@@ -110,10 +110,12 @@
           "moreModels": "Weitere Modelle"
         },
         "behaviorModal": {
-          "title": "Bewegungen und Ausdrücke",
+          "title": "Bewegungen, Ausdrücke und Audio",
           "labels": {
             "motion": "Bewegung",
             "expression": "Ausdruck",
+            "audio": "Audio",
+            "stopAllAudio": "Alle Audios stoppen",
             "motionIndex": "Bewegung {index}",
             "motionGroupIndex": "Bewegungsgruppe {index}",
             "expressionIndex": "Ausdruck {index}"

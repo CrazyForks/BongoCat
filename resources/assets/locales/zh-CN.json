@@ -110,10 +110,12 @@
           "moreModels": "模型库"
         },
         "behaviorModal": {
-          "title": "动作与表情",
+          "title": "动作、表情与音频",
           "labels": {
             "motion": "动作",
             "expression": "表情",
+            "audio": "音频",
+            "stopAllAudio": "停止所有音频",
             "motionIndex": "动作{index}",
             "motionGroupIndex": "动作组{index}",
             "expressionIndex": "表情{index}"

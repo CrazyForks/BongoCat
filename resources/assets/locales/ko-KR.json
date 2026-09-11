@@ -110,10 +110,12 @@
           "moreModels": "더 많은 모델"
         },
         "behaviorModal": {
-          "title": "모션 및 표정",
+          "title": "모션, 표정 및 오디오",
           "labels": {
             "motion": "모션",
             "expression": "표정",
+            "audio": "오디오",
+            "stopAllAudio": "모든 오디오 중지",
             "motionIndex": "모션 {index}",
             "motionGroupIndex": "모션 그룹 {index}",
             "expressionIndex": "표정 {index}"

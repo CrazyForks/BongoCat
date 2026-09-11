@@ -70,7 +70,13 @@ void bongo_cat_window_show_context_menu(BongoCatApp *app) {
         bongo_cat_window_menu_restore, &preview,
         tr(app, "native.removeDesktopPet", "Close this desktop pet"),
         app->secondary_pet || (app->settings.model.multiple_pets &&
-            app->session.additional_model_count > 0)};
+            app->session.additional_model_count > 0), NULL, NULL, NULL, 0};
+    char audio_names[BONGO_CAT_BEHAVIOR_CAP][BONGO_CAT_MENU_LABEL_CAP];
+    bool audio_checked[BONGO_CAT_BEHAVIOR_CAP] = {false};
+    labels.audio = tr(app, "pages.preference.model.behaviorModal.labels.audio", "Audio");
+    labels.audio_names = audio_names;
+    labels.audio_checked = audio_checked;
+    bongo_cat_window_audio_labels(app, audio_names, audio_checked, &labels.audio_count);
     BongoCatMenuAction action = bongo_cat_platform_context_menu(
         &app->platform, &labels);
     if (bongo_cat_window_menu_preview_applied(&preview, action))

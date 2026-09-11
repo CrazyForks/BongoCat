@@ -66,6 +66,8 @@ typedef struct BongoCatBehaviorEntry {
     int index;
     BongoCatBehaviorKind kind;
     bool momentary;
+    bool sound_overlap;
+    bool sound_clear;
 } BongoCatBehaviorEntry;
 
 typedef struct BongoCatBehaviorCatalog {

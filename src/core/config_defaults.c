@@ -31,6 +31,8 @@ static bool normalize_text(char *text, size_t capacity) {
     return true;
 }
 
+static bool audio_binding(const BongoCatBehaviorShortcut *binding);
+
 bool bongo_cat_settings_shortcut_conflicts(const BongoCatSettings *config,
     const char *shortcut, const char *exclude) {
     if (!config || !shortcut || !shortcut[0]) return false;
@@ -43,11 +45,25 @@ bool bongo_cat_settings_shortcut_conflicts(const BongoCatSettings *config,
     size_t behavior_count = config->behavior_shortcut_count;
     if (behavior_count > BONGO_CAT_BEHAVIOR_BINDING_CAP)
         behavior_count = BONGO_CAT_BEHAVIOR_BINDING_CAP;
+    bool editing_audio = false, editing_behavior = false;
+    for (size_t i = 0; i < behavior_count; ++i)
+        if (config->behavior_shortcuts[i].shortcut == exclude) {
+            editing_behavior = true;
+            editing_audio = audio_binding(&config->behavior_shortcuts[i]);
+        }
     for (size_t i = 0; i < behavior_count; ++i) {
         const char *bound = config->behavior_shortcuts[i].shortcut;
-        if (bound != exclude && shortcut_equal(bound, shortcut)) return true;
+        if (bound != exclude && shortcut_equal(bound, shortcut) &&
+            (!editing_behavior || (!editing_audio &&
+                !audio_binding(&config->behavior_shortcuts[i])))) return true;
     }
     return false;
+}
+
+static bool audio_binding(const BongoCatBehaviorShortcut *binding) {
+    const char *index = strrchr(binding->id, ':');
+    return index && index - binding->id >= 6 &&
+        strncmp(index - 6, ":sound", 6) == 0;
 }
 
 static void validate_shortcuts(BongoCatSettings *config) {
@@ -66,8 +82,9 @@ static void validate_shortcuts(BongoCatSettings *config) {
         for (size_t j = 0; j < sizeof(global) / sizeof(global[0]); ++j)
             duplicate = duplicate || shortcut_equal(shortcut, global[j]);
         for (size_t j = 0; j < i; ++j)
-            duplicate = duplicate || shortcut_equal(shortcut,
-                config->behavior_shortcuts[j].shortcut);
+            duplicate = duplicate || (!audio_binding(&config->behavior_shortcuts[i]) &&
+                !audio_binding(&config->behavior_shortcuts[j]) && shortcut_equal(shortcut,
+                config->behavior_shortcuts[j].shortcut));
         if (duplicate) shortcut[0] = '\0';
     }
 }
@@ -85,8 +102,10 @@ static void compact_behavior_overrides(BongoCatSettings *config) {
         if (!bongo_cat_utf8_valid(entry.id) ||
             !bongo_cat_utf8_valid(entry.shortcut) ||
             !bongo_cat_utf8_valid(entry.label)) continue;
-        if (!entry.id[0] || (!entry.shortcut[0] && !entry.label[0])) continue;
+        if (entry.shortcut[0]) entry.shortcut_disabled = false;
+        if (!entry.id[0] || (!entry.shortcut[0] && !entry.label[0] && !entry.shortcut_disabled)) continue;
         BongoCatBehaviorShortcut canonical = {0};
+        canonical.shortcut_disabled = entry.shortcut_disabled;
         snprintf(canonical.id, sizeof(canonical.id), "%s", entry.id);
         snprintf(canonical.shortcut, sizeof(canonical.shortcut), "%s",
             entry.shortcut);
@@ -98,7 +117,8 @@ static void compact_behavior_overrides(BongoCatSettings *config) {
                 break;
             }
         if (existing < output_count) {
-            if (canonical.shortcut[0]) {
+            if (canonical.shortcut[0] || canonical.shortcut_disabled) {
+                config->behavior_shortcuts[existing].shortcut_disabled = canonical.shortcut_disabled;
                 memset(config->behavior_shortcuts[existing].shortcut, 0,
                     sizeof(config->behavior_shortcuts[existing].shortcut));
                 snprintf(

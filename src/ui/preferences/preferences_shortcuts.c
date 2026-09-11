@@ -20,6 +20,12 @@ bool bongo_cat_preferences_shortcut_active(const BongoCatPreferences *value,
 }
 
 static void finish(BongoCatPreferences *value) {
+    if (value->shortcut_target && strcmp(value->shortcut_target, value->shortcut_original))
+        for (size_t i = 0; i < value->app->settings.behavior_shortcut_count; ++i) {
+            BongoCatBehaviorShortcut *binding = &value->app->settings.behavior_shortcuts[i];
+            if (binding->shortcut == value->shortcut_target)
+                binding->shortcut_disabled = !binding->shortcut[0];
+        }
     value->shortcut_recording = false;
     value->shortcut_id[0] = '\0';
     value->shortcut_target = NULL;
@@ -27,6 +33,8 @@ static void finish(BongoCatPreferences *value) {
     value->shortcut_key = SDLK_UNKNOWN;
     value->shortcut_suppress_until_ns = SDL_GetTicksNS() + 250000000ULL;
     bongo_cat_shortcut_init(&value->app->shortcut_state);
+    memset(&value->app->sound_shortcut_state, 0, sizeof(value->app->sound_shortcut_state));
+    memset(value->app->sound_shortcut_active, 0, sizeof(value->app->sound_shortcut_active));
     value->render_dirty = true;
 }
 
@@ -50,6 +58,8 @@ void bongo_cat_preferences_shortcut_begin(BongoCatPreferences *value,
     value->shortcut_key = SDLK_UNKNOWN;
     value->shortcut_recording = true;
     bongo_cat_shortcut_init(&value->app->shortcut_state);
+    memset(&value->app->sound_shortcut_state, 0, sizeof(value->app->sound_shortcut_state));
+    memset(value->app->sound_shortcut_active, 0, sizeof(value->app->sound_shortcut_active));
     value->render_dirty = true;
 }
 

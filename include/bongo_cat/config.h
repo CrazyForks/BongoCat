@@ -93,6 +93,7 @@ typedef struct BongoCatBehaviorShortcut {
     char id[BONGO_CAT_BEHAVIOR_ID_CAP];
     char shortcut[BONGO_CAT_SHORTCUT_CAP];
     char label[BONGO_CAT_ID_CAP];
+    bool shortcut_disabled;
 } BongoCatBehaviorShortcut;
 
 typedef struct BongoCatModelLabel {

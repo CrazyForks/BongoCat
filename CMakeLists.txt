@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-set(BONGO_CAT_VERSION "1.6.0")
+set(BONGO_CAT_VERSION "1.8.0")
 project(BongoCat VERSION ${BONGO_CAT_VERSION} DESCRIPTION "BongoCat" HOMEPAGE_URL "https://github.com/vladelaina/BongoCat" LANGUAGES C CXX)
 include(cmake/Version.cmake)
 include(FetchContent)
@@ -31,6 +31,7 @@ else()
   endif()
 endif()
 include(cmake/Dependencies.cmake)
+include(cmake/AudioDecoder.cmake)
 find_package(OpenGL REQUIRED)
 set(BONGO_CAT_LIVE2D_SOURCES src/live2d/live2d_stub.c)
 set(BONGO_CAT_CUBISM_ENABLED OFF)
@@ -76,6 +77,7 @@ add_library(bongo_cat_core STATIC
   src/core/model_catalog.c
   src/core/model_behavior.c
   src/core/path.c src/core/path_io.c src/core/json.c src/core/shortcut.c
+  src/core/sound_shortcut.c
   src/core/update_release.c src/core/update_version.c)
 target_include_directories(bongo_cat_core PUBLIC "${BONGO_CAT_GENERATED_INCLUDE_DIR}" include)
 target_link_libraries(bongo_cat_core PUBLIC yyjson PRIVATE bongo_cat_warnings)

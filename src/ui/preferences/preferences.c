@@ -1,3 +1,4 @@
+#include "bongo_cat/audio.h"
 #include "bongo_cat/preferences.h"
 #include "bongo_cat/app.h"
 #include "bongo_cat/memory.h"
@@ -73,6 +74,18 @@ bool bongo_cat_preferences_needs_frame(BongoCatPreferences *value) {
         value->render_dirty = true;
     }
     if (!value->window || !value->visible) return false;
+    if (value->behavior_dialog && value->app) {
+        for (size_t i = 0; i < value->app->behaviors.count; ++i) {
+            const BongoCatBehaviorEntry *entry = &value->app->behaviors.entries[i];
+            bool playing = entry->kind == BONGO_CAT_BEHAVIOR_SOUND &&
+                (entry->sound_clear ? bongo_cat_audio_any_playing(value->app->audio) :
+                bongo_cat_audio_is_playing(value->app->audio, entry->sound));
+            if (value->behavior_audio_playing[i] != playing) {
+                value->behavior_audio_playing[i] = playing;
+                value->render_dirty = true;
+            }
+        }
+    }
     if (value->render_retry_ns > now) return false;
     bool raster_due = value->pending_raster_scale > 0.0f &&
         value->raster_retry_ns <= now;

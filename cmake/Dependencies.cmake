@@ -44,6 +44,7 @@ if(BONGO_CAT_FETCH_DEPS)
   # Motion metadata may reference WAV/MP3 files, so keep both decoders enabled.
   # FORCE also repairs build trees created by older size-only configurations.
   set(MINIAUDIO_NO_WAV OFF CACHE BOOL "" FORCE)
+  set(MINIAUDIO_NO_FLAC OFF CACHE BOOL "" FORCE)
   set(MINIAUDIO_NO_MP3 OFF CACHE BOOL "" FORCE)
   set(MINIAUDIO_NO_GENERATION ON CACHE BOOL "" FORCE)
   FetchContent_Declare(SDL3 URL https://github.com/libsdl-org/SDL/archive/402fc52af4e731184ad6a704068b5ccd27d8f1b8.tar.gz
@@ -103,16 +104,10 @@ else()
     bongo_cat_require_dependency_header(BONGO_CAT_MINIAUDIO_INCLUDE_DIR miniaudio.h
       "Install miniaudio headers or a miniaudio CMake package")
 
-    set(miniaudio_impl "${CMAKE_CURRENT_BINARY_DIR}/generated/miniaudio_impl.c")
-    file(CONFIGURE OUTPUT "${miniaudio_impl}" CONTENT [=[
-#define MINIAUDIO_IMPLEMENTATION
-#include <miniaudio.h>
-]=] @ONLY)
-    add_library(bongo_cat_miniaudio_system STATIC "${miniaudio_impl}")
-    target_include_directories(bongo_cat_miniaudio_system SYSTEM PUBLIC
+    # AudioDecoder.cmake supplies the implementation and the Vorbis backend.
+    add_library(bongo_cat_miniaudio_system INTERFACE)
+    target_include_directories(bongo_cat_miniaudio_system SYSTEM INTERFACE
       "${BONGO_CAT_MINIAUDIO_INCLUDE_DIR}")
-    target_compile_definitions(bongo_cat_miniaudio_system PRIVATE
-      MA_NO_ENCODING MA_NO_GENERATION)
     set(BONGO_CAT_MINIAUDIO_TARGET bongo_cat_miniaudio_system)
   endif()
 endif()

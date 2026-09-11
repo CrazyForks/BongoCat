@@ -47,9 +47,11 @@ BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
     HMENU models = CreatePopupMenu();
     HMENU motions = labels->motion_count ? CreatePopupMenu() : NULL;
     HMENU expressions = labels->expression_count ? CreatePopupMenu() : NULL;
+    HMENU audio = labels->audio_count ? CreatePopupMenu() : NULL;
     if (!sizes || !opacity || !models ||
         (labels->motion_count && !motions) ||
-        (labels->expression_count && !expressions)) {
+        (labels->expression_count && !expressions) || (labels->audio_count && !audio)) {
+        if (audio) DestroyMenu(audio);
         destroy_unattached(menu, sizes, opacity, models, motions, expressions);
         return BONGO_CAT_MENU_NONE;
     }
@@ -84,6 +86,10 @@ BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
     for (size_t i = 0; i < labels->expression_count; ++i)
         menu_text(expressions, MF_STRING, BONGO_CAT_MENU_EXPRESSION_FIRST + i,
             labels->expression_names[i]);
+    for (size_t i = 0; i < labels->audio_count; ++i)
+        menu_text(audio, MF_STRING |
+            (labels->audio_checked && labels->audio_checked[i] ? MF_CHECKED : 0),
+            BONGO_CAT_MENU_AUDIO_FIRST + i, labels->audio_names[i]);
     if (labels->current_expression < labels->expression_count)
         CheckMenuItem(expressions,
             (UINT)(BONGO_CAT_MENU_EXPRESSION_FIRST + labels->current_expression),
@@ -102,6 +108,12 @@ BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
         motion_label ? motion_label : L"");
     if (labels->expression_count) AppendMenuW(menu, MF_POPUP, (UINT_PTR)expressions,
         expression_label ? expression_label : L"");
+    if (audio) {
+        wchar_t *audio_label = wide(labels->audio);
+        if (!AppendMenuW(menu, MF_POPUP, (UINT_PTR)audio, audio_label ? audio_label : L""))
+            DestroyMenu(audio);
+        free(audio_label);
+    }
     AppendMenuW(menu, MF_POPUP, (UINT_PTR)models, model_label ? model_label : L"");
     free(size_label); free(opacity_label); free(model_label); free(motion_label);
     free(expression_label);

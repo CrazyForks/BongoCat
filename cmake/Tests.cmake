@@ -1,4 +1,11 @@
 if(BUILD_TESTING)
+  add_executable(bongo_cat_audio_tests tests/media/test_audio.c)
+  target_include_directories(bongo_cat_audio_tests PRIVATE src/media/audio tests/support)
+  target_link_libraries(bongo_cat_audio_tests PRIVATE bongo_cat_runtime bongo_cat_warnings)
+  target_compile_definitions(bongo_cat_audio_tests PRIVATE
+    BONGO_CAT_NATIVE_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  add_test(NAME audio COMMAND bongo_cat_audio_tests)
+
   add_executable(bongo_cat_log_policy_tests tests/core/test_log_policy.c)
   target_link_libraries(bongo_cat_log_policy_tests PRIVATE
     bongo_cat_runtime bongo_cat_warnings)
@@ -13,6 +20,7 @@ if(BUILD_TESTING)
     tests/core/test_models.c
     tests/core/test_mver_pointer.c
     tests/core/test_shortcut.c
+    tests/core/test_sound_shortcut.c
     tests/core/test_update.c
     src/platform/windows/windows_keys.c)
   target_link_libraries(bongo_cat_core_tests PRIVATE
@@ -51,6 +59,7 @@ if(BUILD_TESTING)
   add_test(NAME app-state COMMAND bongo_cat_app_state_tests)
 
   set(BONGO_CAT_MVER_IMPORT_TEST_SOURCES
+    tests/model_import/test_mver_audio.c
     tests/model_import/test_mver_import.c
     tests/model_import/test_model_import_source.c
     tests/model_import/test_mver_manifest.c

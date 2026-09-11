@@ -199,6 +199,7 @@ static void model_visual_curve(void) {
 }
 
 int main(void) {
+    test_mver_audio();
     failures += test_preferences_text();
     CHECK(chord("[17,65]", true, "Control+A"));
     CHECK(chord("[0]", true, "Gamepad:South"));

@@ -14,7 +14,8 @@ set(BONGO_CAT_RUNTIME_INTERNAL_INCLUDE_DIRS
   "${CMAKE_CURRENT_SOURCE_DIR}/src/ui/theme")
 
 set(BONGO_CAT_MEDIA_SOURCES
-  src/media/audio.c
+  src/media/audio/audio.c
+  src/media/audio/audio_playback.c
   src/media/image.c
   src/media/image_decode.c
   src/media/image_info.c
@@ -70,9 +71,11 @@ set(BONGO_CAT_RUNTIME_INPUT_SOURCES
   src/runtime/input/mouse_bounds.c
   src/runtime/input/mouse_mapping.c
   src/runtime/input/mouse_pipeline.c
-  src/runtime/input/shortcuts.c)
+  src/runtime/input/shortcuts.c
+  src/runtime/input/sound_shortcuts.c)
 
 set(BONGO_CAT_RUNTIME_MODEL_SOURCES
+  src/runtime/model/model_behavior.c
   src/runtime/model/model_behavior_cache.c
   src/runtime/model/model_behavior_state.c
   src/runtime/model/model_catalog_runtime.c
@@ -126,6 +129,7 @@ set(BONGO_CAT_RUNTIME_IMPORT_SOURCES
   src/runtime/model/import/mver/model_import_mver_image.c
   src/runtime/model/import/mver/model_import_mver_labels.c
   src/runtime/model/import/mver/model_import_mver_metadata.c
+  src/runtime/model/import/mver/model_import_mver_audio.c
   src/runtime/model/import/mver/model_import_mver_motion.c
   src/runtime/model/import/mver/model_import_mver_patch.c
   src/runtime/model/import/mver/model_import_mver_policy.c

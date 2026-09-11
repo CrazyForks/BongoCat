@@ -110,10 +110,12 @@
           "moreModels": "Другие модели"
         },
         "behaviorModal": {
-          "title": "Движения и выражения",
+          "title": "Движения, выражения и аудио",
           "labels": {
             "motion": "Движение",
             "expression": "Выражение",
+            "audio": "Аудио",
+            "stopAllAudio": "Остановить все звуки",
             "motionIndex": "Движение {index}",
             "motionGroupIndex": "Группа движений {index}",
             "expressionIndex": "Выражение {index}"

@@ -87,6 +87,8 @@ static bool write_behaviors(yyjson_mut_doc *doc, yyjson_mut_val *root,
         yyjson_mut_val *item = yyjson_mut_obj(doc);
         if (!item || !yyjson_mut_obj_add_strcpy(
                 doc, item, "behaviorId", value->id) ||
+            (value->shortcut_disabled && !yyjson_mut_obj_add_bool(
+                doc, item, "shortcutDisabled", true)) ||
             (value->shortcut[0] && !yyjson_mut_obj_add_strcpy(
                 doc, item, "shortcut", value->shortcut)) ||
             (value->label[0] && !yyjson_mut_obj_add_strcpy(
