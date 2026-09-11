@@ -41,6 +41,8 @@ typedef struct DialPaint {
     struct nk_font *font;
     nk_rune *ranges[4];
     DialPath roots[DIAL_ROOTS], children[DIAL_PAGE];
+    int child_path_count, child_path_active, child_path_roots;
+    float child_path_step;
     float zoom, offset_x, offset_y, alpha;
     bool failed;
 } DialPaint;

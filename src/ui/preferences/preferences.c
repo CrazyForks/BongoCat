@@ -230,6 +230,7 @@ bool bongo_cat_preferences_event(BongoCatPreferences *value, const SDL_Event *ev
     }
     if (bongo_cat_preferences_scale_event(value, event)) return true;
     if (event->type == SDL_EVENT_WINDOW_FOCUS_LOST) {
+        bongo_cat_ui_input_reset(&value->ui);
         if (value->chrome_dragging) SDL_CaptureMouse(false);
         value->chrome_dragging = false;
         value->import_drop_active = false;

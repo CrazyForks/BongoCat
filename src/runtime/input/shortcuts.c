@@ -144,5 +144,17 @@ bool bongo_cat_app_shortcuts_self_test(BongoCatApp *app) {
         app->settings.window.pass_through && app->settings.window.always_on_top &&
         bongo_cat_preferences_visible(app->preferences);
     bongo_cat_preferences_close(app->preferences);
+    bool ignored = app->smoke_ignore_global_input;
+    app->smoke_ignore_global_input = false;
+    test_key(app, BONGO_CAT_INPUT_KEY_DOWN, "ControlLeft");
+    BongoCatInputEvent release = {.kind = BONGO_CAT_INPUT_KEY_UP};
+    snprintf(release.name, sizeof(release.name), "ControlLeft");
+    bongo_cat_input_push(&app->input, &release);
+    bongo_cat_app_drain_input(app, false);
+    bool mirror = app->settings.model.mirror;
+    test_press(app, "KeyM");
+    result = result && !app->shortcut_state.control &&
+        app->settings.model.mirror == mirror;
+    app->smoke_ignore_global_input = ignored;
     return result;
 }

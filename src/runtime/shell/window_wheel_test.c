@@ -10,6 +10,8 @@ bool bongo_cat_window_wheel_self_test(BongoCatApp *app) {
     SDL_GetWindowPosition(app->window, &original_x, &original_y);
     SDL_GetWindowSize(app->window, &original_width, &original_height);
     SDL_Keymod modifiers = SDL_GetModState();
+    uint_fast8_t original_control = atomic_load(&app->input.control);
+    atomic_store(&app->input.control, 1);
     SDL_SetModState(modifiers | SDL_KMOD_CTRL);
     app->session.window.opacity_percent = 80.0f;
     app->session.window.scale_percent = 100.0f;
@@ -31,7 +33,11 @@ bool bongo_cat_window_wheel_self_test(BongoCatApp *app) {
         bongo_cat_window_update_wheel_animation(app, started + i * 16666667ull);
     bool opacity = SDL_fabsf(
         app->session.window.opacity_percent - 75.0f) < 0.1f;
+    atomic_store(&app->input.control, 0);
+#ifndef _WIN32
     SDL_SetModState(modifiers & ~SDL_KMOD_CTRL);
+#endif
+    /* On Windows leave SDL Ctrl set to reproduce a stale unfocused cache. */
     wheel.y = 1.0f;
     bongo_cat_window_wheel(app, &wheel);
     started = app->wheel_animation_ns;
@@ -41,7 +47,9 @@ bool bongo_cat_window_wheel_self_test(BongoCatApp *app) {
         app->session.window.scale_percent - 105.0f) < 0.1f;
     bongo_cat_window_update_wheel_animation(app,
         app->wheel_input_ns + BONGO_CAT_WHEEL_GESTURE_IDLE_NS + 1);
-    bool scale = responsive && !app->wheel_animation_active;
+    bool scale = responsive && !app->wheel_animation_active &&
+        SDL_fabsf(app->session.window.opacity_percent - 75.0f) < 0.1f;
+    SDL_SetModState(modifiers & ~SDL_KMOD_CTRL);
     bongo_cat_window_cancel_wheel_animation(app);
     bongo_cat_window_apply_geometry(app, original_x, original_y, 100.0f,
         original_width, original_height);
@@ -87,7 +95,8 @@ bool bongo_cat_window_wheel_self_test(BongoCatApp *app) {
     bongo_cat_window_wheel(app, &wheel);
     bool minimum = !app->wheel_animation_active;
     bongo_cat_window_cancel_wheel_animation(app);
-    SDL_SetModState(modifiers | SDL_KMOD_CTRL);
+    /* Right Ctrl must work even when SDL has not received the key press. */
+    atomic_store(&app->input.control, 2);
     app->session.window.opacity_percent = 100.0f;
     wheel.y = 1.0f;
     bongo_cat_window_wheel(app, &wheel);
@@ -100,6 +109,7 @@ bool bongo_cat_window_wheel_self_test(BongoCatApp *app) {
     bool rounding = bongo_cat_window_wheel_round_position(-10.6f) == -11 &&
         bongo_cat_window_wheel_round_position(10.6f) == 11;
     SDL_SetModState(modifiers);
+    atomic_store(&app->input.control, original_control);
     app->session.window = backup;
     bongo_cat_window_cancel_wheel_animation(app);
     bongo_cat_platform_set_opacity(&app->platform,

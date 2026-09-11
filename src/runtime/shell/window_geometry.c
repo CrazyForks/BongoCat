@@ -118,8 +118,11 @@ bool bongo_cat_window_set_scale(BongoCatApp *app, float scale) {
 }
 
 void bongo_cat_window_resize_by_pointer(BongoCatApp *app, const SDL_Event *event) {
-    bool shift = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0 ||
-        bongo_cat_input_shift_down(&app->input);
+    bool shift = bongo_cat_input_shift_down(&app->input);
+#ifndef _WIN32
+    shift = shift || (SDL_GetModState() & SDL_KMOD_SHIFT) != 0;
+#endif
+    /* Match wheel handling: SDL may retain modifiers without keyboard focus. */
     if (!(event->motion.state & SDL_BUTTON_RMASK) || !shift) return;
     bongo_cat_window_cancel_wheel_animation(app);
     if (!app->resize_gesture) {
@@ -247,6 +250,13 @@ bool bongo_cat_window_geometry_self_test(BongoCatApp *app) {
     bongo_cat_input_push(&app->input, &shift);
     bongo_cat_input_pop(&app->input, &discarded);
     app->resize_gesture = false;
+#ifdef _WIN32
+    SDL_SetModState(old_modifiers | SDL_KMOD_SHIFT);
+    float released_scale = app->session.window.scale_percent;
+    bongo_cat_window_resize_by_pointer(app, &motion);
+    gesture = gesture && !app->resize_gesture &&
+        app->session.window.scale_percent == released_scale;
+#endif
     SDL_SetModState(old_modifiers);
     bongo_cat_window_apply_geometry(app, original_x, original_y,
         state_backup.scale_percent, original_width, original_height);

@@ -90,8 +90,12 @@ void bongo_cat_window_wheel(BongoCatApp *app, const SDL_MouseWheelEvent *event) 
     app->wheel_gesture_active = true;
     float old_opacity_target = app->wheel_opacity_target;
     float old_scale_target = app->wheel_scale_target;
-    bool control = (SDL_GetModState() & SDL_KMOD_CTRL) != 0 ||
-        bongo_cat_input_control_down(&app->input);
+    bool control = bongo_cat_input_control_down(&app->input);
+#ifndef _WIN32
+    control = control || (SDL_GetModState() & SDL_KMOD_CTRL) != 0;
+#endif
+    /* Windows Raw Input tracks releases without keyboard focus; SDL's
+       cached modifiers can retain Ctrl after it has been released. */
     if (!control) {
         float minimum = SDL_max(10.0f,
             app->session.window.scale_percent - WHEEL_SCALE_TARGET_LEAD);

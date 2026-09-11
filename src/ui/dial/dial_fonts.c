@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+static bool contains(const uint8_t *used, nk_rune rune) {
+    return (used[rune >> 3] & (1u << (rune & 7))) != 0;
+}
+
 static void collect(uint8_t *used, const char *s) {
     if (!s) return;
     int length = (int)strlen(s);
@@ -11,15 +15,17 @@ static void collect(uint8_t *used, const char *s) {
         nk_rune rune;
         int n = nk_utf_decode(s,&rune,length);
         if (n <= 0) break;
-        if (rune >= 32 && rune < 0x110000) used[rune] = 1;
+        if (rune >= 32 && rune < 0x110000)
+            used[rune >> 3] |= (uint8_t)(1u << (rune & 7));
         s += n; length -= n;
     }
 }
 
 static nk_rune *ranges(Dial *d) {
-    uint8_t *used = calloc(0x110000,1);
+    uint8_t *used = calloc(0x110000 / 8,1);
     if (!used) return NULL;
-    for (int i = 32; i < 127; ++i) used[i] = 1;
+    for (int i = 32; i < 127; ++i)
+        used[i >> 3] |= (uint8_t)(1u << (i & 7));
     for (int i = 0; i < d->count; ++i) collect(used,d->items[i].label);
     collect(used,d->labels->add_model);
     for (size_t i = 0; i < d->labels->model_count; ++i) collect(used,d->labels->model_names[i]);
@@ -27,14 +33,15 @@ static nk_rune *ranges(Dial *d) {
     for (size_t i = 0; i < d->labels->expression_count; ++i) collect(used,d->labels->expression_names[i]);
     for (size_t i = 0; i < d->labels->audio_count; ++i) collect(used,d->labels->audio_names[i]);
     size_t count = 0;
-    for (nk_rune i = 32; i < 0x110000; ++i) if (used[i]) ++count;
+    for (nk_rune i = 32; i < 0x110000; ++i)
+        if (contains(used,i) && (i == 32 || !contains(used,i-1))) ++count;
     nk_rune *result = calloc(count*2+1,sizeof(*result));
     if (result) {
         size_t out = 0;
         for (nk_rune i = 32; i < 0x110000; ++i) {
-            if (!used[i]) continue;
+            if (!contains(used,i)) continue;
             result[out++] = i;
-            while (i+1 < 0x110000 && used[i+1]) ++i;
+            while (i+1 < 0x110000 && contains(used,i+1)) ++i;
             result[out++] = i;
         }
     }
@@ -65,7 +72,7 @@ bool dial_fonts_init(Dial *d) {
     p->font = bongo_cat_ui_font_add_family(&p->atlas,&sources[0],&sources[1],&sources[2],
         height,p->ranges[0],p->ranges[1],p->ranges[2],p->ranges[3]);
     int width = 0, rows = 0, maximum = 0;
-    const void *pixels = p->font ? nk_font_atlas_bake(&p->atlas,&width,&rows,NK_FONT_ATLAS_RGBA32) : NULL;
+    const void *pixels = p->font ? nk_font_atlas_bake(&p->atlas,&width,&rows,NK_FONT_ATLAS_ALPHA8) : NULL;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE,&maximum);
     bool ok = pixels && width > 0 && rows > 0 && width <= maximum && rows <= maximum;
     if (ok) {
@@ -75,7 +82,14 @@ bool dial_fonts_init(Dial *d) {
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,width,rows,0,GL_RGBA,GL_UNSIGNED_BYTE,pixels);
+        /* Match the preferences atlas: white RGB with single-channel alpha. */
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_SWIZZLE_R,GL_ONE);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_SWIZZLE_G,GL_ONE);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_SWIZZLE_B,GL_ONE);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_SWIZZLE_A,GL_RED);
+        glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+        glTexImage2D(GL_TEXTURE_2D,0,GL_R8,width,rows,0,GL_RED,GL_UNSIGNED_BYTE,pixels);
+        glPixelStorei(GL_UNPACK_ALIGNMENT,4);
         ok = p->font_texture && glGetError() == GL_NO_ERROR;
         nk_font_atlas_end(&p->atlas,nk_handle_id((int)p->font_texture),NULL);
     }

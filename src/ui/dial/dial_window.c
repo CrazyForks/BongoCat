@@ -1,6 +1,7 @@
 #include "dial_internal.h"
 #include "ui_backend.h"
 #include "bongo_cat/log.h"
+#include "bongo_cat/memory.h"
 #include <stdlib.h>
 
 static bool SDLCALL collect_event(void *userdata, SDL_Event *event) {
@@ -185,5 +186,7 @@ BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
     if (labels->restore) labels->restore(labels->preview_userdata,d->result);
     BongoCatMenuAction result = d->result;
     free(d);
+    /* Trim only after GL/CPU teardown and preview restoration have finished. */
+    bongo_cat_platform_trim_memory();
     return result;
 }

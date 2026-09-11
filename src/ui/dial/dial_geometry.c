@@ -83,11 +83,23 @@ void dial_sector(DialPath *p, float inner, float outer, float start, float end) 
     triangulate(p);
 }
 void dial_child_paths(Dial *d) {
+    int count = dial_child_count(d);
+    float step = dial_child_step(d);
+    DialPaint *p = &d->paint;
+    /* Page contents do not affect geometry. Keep the last layout even when
+       the child ring is temporarily hidden; the draw loop uses child_count. */
+    if (!count) return;
+    if (p->child_path_count == count && p->child_path_active == d->active &&
+        p->child_path_roots == d->count && p->child_path_step == step) return;
     memset(d->paint.children, 0, sizeof(d->paint.children));
-    for (int i = 0; i < dial_child_count(d); ++i) {
+    for (int i = 0; i < count; ++i) {
         float angle = dial_child_angle(d,i), half = dial_child_step(d)/2;
         dial_sector(&d->paint.children[i],198,262,angle-half,angle+half);
     }
+    p->child_path_count = count;
+    p->child_path_active = d->active;
+    p->child_path_roots = d->count;
+    p->child_path_step = step;
 }
 
 static float angle_distance(float a, float b) {
