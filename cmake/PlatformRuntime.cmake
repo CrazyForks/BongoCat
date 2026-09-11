@@ -3,6 +3,12 @@ if(WIN32)
   target_sources(bongo_cat_runtime PRIVATE
     src/platform/windows/windows.c
     src/platform/windows/windows_menu.c
+    src/platform/windows/dial/dial_window.c
+    src/platform/windows/dial/dial_items.c
+    src/platform/windows/dial/dial_geometry.c
+    src/platform/windows/dial/dial_paint.c
+    src/platform/windows/dial/dial_icons.c
+    src/platform/windows/dial/dial_covers.c
     src/platform/windows/windows_directory.c
     src/platform/windows/windows_package.c
     src/platform/windows/windows_startup.c
@@ -31,7 +37,7 @@ if(WIN32)
     src/platform/windows)
   target_link_libraries(bongo_cat_runtime PRIVATE
     dwmapi ole32 shell32 user32 uuid windowscodecs advapi32
-    winhttp)
+    winhttp gdiplus gdi32)
 elseif(APPLE)
   find_package(CURL REQUIRED)
   enable_language(OBJC)

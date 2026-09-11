@@ -28,12 +28,16 @@ static bool select_model(BongoCatApp *app, const char *id) {
 
 void bongo_cat_window_show_context_menu(BongoCatApp *app) {
     if (!app) return;
-    bool dark_theme = SDL_GetSystemTheme() == SDL_SYSTEM_THEME_DARK;
+    bool dark_theme = app->settings.app.theme == BONGO_CAT_THEME_DARK ||
+        (app->settings.app.theme == BONGO_CAT_THEME_AUTO &&
+            SDL_GetSystemTheme() == SDL_SYSTEM_THEME_DARK);
     BongoCatWindowMenuPreview preview;
     bongo_cat_window_menu_preview_init(&preview, app);
     const char *model_names[BONGO_CAT_MODEL_CAP];
+    const char *model_cover_directories[BONGO_CAT_MODEL_CAP];
     size_t current_model = app->models.count;
     for (size_t i = 0; i < app->models.count; ++i) {
+        model_cover_directories[i] = app->models.entries[i].adapter_directory;
         model_names[i] = bongo_cat_model_name(&app->settings,
             &app->models.entries[i]);
         if (!strcmp(app->models.entries[i].id, app->session.active_model_id))
@@ -70,7 +74,8 @@ void bongo_cat_window_show_context_menu(BongoCatApp *app) {
         bongo_cat_window_menu_restore, &preview,
         tr(app, "native.removeDesktopPet", "Close this desktop pet"),
         app->secondary_pet || (app->settings.model.multiple_pets &&
-            app->session.additional_model_count > 0), NULL, NULL, NULL, 0};
+            app->session.additional_model_count > 0), NULL, NULL, NULL, 0,
+        model_cover_directories};
     char audio_names[BONGO_CAT_BEHAVIOR_CAP][BONGO_CAT_MENU_LABEL_CAP];
     bool audio_checked[BONGO_CAT_BEHAVIOR_CAP] = {false};
     labels.audio = tr(app, "pages.preference.model.behaviorModal.labels.audio", "Audio");

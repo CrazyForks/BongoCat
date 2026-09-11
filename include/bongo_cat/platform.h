@@ -81,6 +81,7 @@ typedef struct BongoCatMenuLabels {
     const char (*audio_names)[BONGO_CAT_MENU_LABEL_CAP];
     const bool *audio_checked;
     size_t audio_count;
+    const char *const *model_cover_directories;
 } BongoCatMenuLabels;
 
 typedef void (*BongoCatTrayClick)(void *userdata);
