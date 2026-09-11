@@ -42,7 +42,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             cmake ninja-build cppcheck xvfb xauth libgl1-mesa-dri \
-            libgl1-mesa-dev libx11-dev libxi-dev libxfixes-dev \
+            libgl1-mesa-dev libegl1-mesa-dev libx11-dev libxi-dev libxfixes-dev \
             libcurl4-openssl-dev
 
       - name: Reject legacy product-name references
@@ -128,7 +128,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            cmake ninja-build libgl1-mesa-dev libx11-dev libxi-dev \
+            cmake ninja-build libgl1-mesa-dev libegl1-mesa-dev libx11-dev libxi-dev \
             libxfixes-dev libcurl4-openssl-dev xvfb xauth libgl1-mesa-dri
 
       - name: Configure Unix release
@@ -229,7 +229,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            cmake ninja-build libgl1-mesa-dev libx11-dev libxi-dev \
+            cmake ninja-build libgl1-mesa-dev libegl1-mesa-dev libx11-dev libxi-dev \
             libxfixes-dev libcurl4-openssl-dev xvfb xauth libgl1-mesa-dri
 
       - name: Configure release
@@ -352,31 +352,10 @@ jobs:
 
       - name: Install NSIS
         shell: pwsh
-        run: |
-          choco upgrade nsis --version $env:BONGO_CAT_NSIS_PACKAGE_VERSION `
-            --allow-downgrade --no-progress --yes
-          if ($LASTEXITCODE -ne 0) {
-            throw 'Pinned NSIS installation failed'
-          }
-          $nsisCommand = Get-Command makensis.exe -ErrorAction SilentlyContinue
-          $nsisRoots = @(
-            (Join-Path ${env:ProgramFiles(x86)} 'NSIS'),
-            (Join-Path $env:ProgramFiles 'NSIS')
-          )
-          if ($nsisCommand) { $nsisRoots += Split-Path $nsisCommand.Source }
-          $nsisRoot = $nsisRoots | Where-Object {
-            Test-Path -LiteralPath (Join-Path $_ 'makensis.exe')
-          } | Select-Object -First 1
-          if (-not $nsisRoot) {
-            throw 'NSIS was not installed (makensis.exe was not found)'
-          }
-          $makensis = Join-Path $nsisRoot 'makensis.exe'
-          $nsisVersion = (& $makensis /VERSION).Trim()
-          if ($nsisVersion -ne $env:BONGO_CAT_NSIS_COMPILER_VERSION) {
-            throw "Unexpected NSIS compiler version: $nsisVersion"
-          }
-          Write-Host "NSIS compiler: $makensis ($nsisVersion)"
-          $nsisRoot | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+        run: >-
+          & ./.github/scripts/install-nsis.ps1
+          -PackageVersion $env:BONGO_CAT_NSIS_PACKAGE_VERSION
+          -CompilerVersion $env:BONGO_CAT_NSIS_COMPILER_VERSION
 
       - name: Package Windows desktop release
         id: desktop-package

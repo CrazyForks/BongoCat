@@ -23,6 +23,8 @@ static bool set_gl_attributes(int samples) {
 
 static bool try_window(BongoCatApp *app, bool transparent, int samples,
     char *failure, size_t capacity) {
+    if (SDL_getenv("BONGO_CAT_TEST_DISABLE_PREFERENCES_TRANSPARENCY"))
+        transparent = false;
     if (!set_gl_attributes(samples)) {
         snprintf(failure, capacity, "OpenGL attributes: %s", SDL_GetError()); return false;
     }

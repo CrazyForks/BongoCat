@@ -31,7 +31,7 @@ jobs:
           - os: windows-2022
             platform: windows-x86
             cmake_arch: Win32
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             platform: linux-x64
             cmake_arch: ''
           - os: macos-15-intel
@@ -71,8 +71,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            cmake ninja-build libgl1-mesa-dev libx11-dev libxi-dev \
-            libxfixes-dev libcurl4-openssl-dev xvfb xauth libgl1-mesa-dri
+            cmake ninja-build libgl1-mesa-dev libegl1-mesa-dev libx11-dev libxi-dev \
+            libxfixes-dev libcurl4-openssl-dev xvfb xauth libgl1-mesa-dri \
+            curl file desktop-file-utils
 
       - name: Configure Unix release
         if: runner.os != 'Windows'
@@ -122,32 +123,10 @@ jobs:
       - name: Install NSIS
         if: runner.os == 'Windows'
         shell: pwsh
-        run: |
-          choco upgrade nsis --version $env:BONGO_CAT_NSIS_PACKAGE_VERSION `
-            --allow-downgrade --no-progress --yes
-          if ($LASTEXITCODE -ne 0) {
-            throw 'Pinned NSIS installation failed'
-          }
-          $nsisCommand = Get-Command makensis.exe -ErrorAction SilentlyContinue
-          $nsisRoots = @(
-            (Join-Path ${env:ProgramFiles(x86)} 'NSIS'),
-            (Join-Path $env:ProgramFiles 'NSIS')
-          )
-          if ($nsisCommand) { $nsisRoots += Split-Path $nsisCommand.Source }
-          $nsisRoot = $nsisRoots | Where-Object {
-            Test-Path -LiteralPath (Join-Path $_ 'makensis.exe')
-          } | Select-Object -First 1
-          if (-not $nsisRoot) {
-            throw 'NSIS was not installed (makensis.exe was not found)'
-          }
-          $makensis = Join-Path $nsisRoot 'makensis.exe'
-          $nsisVersion = (& $makensis /VERSION).Trim()
-          if ($nsisVersion -ne $env:BONGO_CAT_NSIS_COMPILER_VERSION) {
-            throw "Unexpected NSIS compiler version: $nsisVersion"
-          }
-          Write-Host "NSIS compiler: $makensis ($nsisVersion)"
-          $nsisRoot | Out-File -FilePath $env:GITHUB_PATH `
-            -Append -Encoding utf8
+        run: >-
+          & ./.github/scripts/install-nsis.ps1
+          -PackageVersion $env:BONGO_CAT_NSIS_PACKAGE_VERSION
+          -CompilerVersion $env:BONGO_CAT_NSIS_COMPILER_VERSION
 
       - name: Package Windows release
         if: runner.os == 'Windows'
@@ -245,6 +224,16 @@ jobs:
           New-Item -ItemType Directory -Path release-output -Force | Out-Null
           Copy-Item -LiteralPath $archive.FullName, $checksum `
             -Destination release-output
+
+          if ('${{ matrix.platform }}' -eq 'linux-x64') {
+            cmake --build build-release --target package-appimage
+            if ($LASTEXITCODE -ne 0) { throw 'AppImage packaging failed' }
+            $appimage = Get-Item build-release/dist/*.AppImage
+            bash ./.github/scripts/check-appimage.sh $appimage.FullName
+            $appimageHash = (Get-FileHash $appimage -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$appimageHash  $($appimage.Name)" | Set-Content "$($appimage.FullName).sha256" -Encoding ascii
+            Copy-Item -LiteralPath $appimage.FullName, "$($appimage.FullName).sha256" -Destination release-output
+          }
 
       - name: Upload packaged release
         uses: actions/upload-artifact@v7
@@ -357,6 +346,8 @@ jobs:
             $files += $archive
             $files += "$archive.sha256"
           }
+          $files += "release-output/BongoCat-$version-linux-x64.AppImage"
+          $files += "release-output/BongoCat-$version-linux-x64.AppImage.sha256"
           foreach ($file in $files) {
             if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
               throw "Release is incomplete: $file"
@@ -402,6 +393,7 @@ jobs:
             - [macOS Apple Silicon](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/BongoCat-${{ steps.version.outputs.version }}-macos-arm64.zip)
             - [macOS Intel](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/BongoCat-${{ steps.version.outputs.version }}-macos-x64.zip)
             - [Linux x64](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/BongoCat-${{ steps.version.outputs.version }}-linux-x64.tar.gz)
+            - [Linux x64 AppImage](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/BongoCat-${{ steps.version.outputs.version }}-linux-x64.AppImage)
 
           generate_release_notes: true
           fail_on_unmatched_files: true
@@ -411,3 +403,4 @@ jobs:
             release-output/*-setup.exe
             release-output/*.zip
             release-output/*.tar.gz
+            release-output/*.AppImage
