@@ -44,12 +44,13 @@
 </div>
 
 
+<img width="1149" height="904" alt="image" src="https://github.com/user-attachments/assets/aa376965-539e-4bbd-827d-bb9a29006069" />
+
+
 > [!TIP]
 > The model featured in this demonstration is from [宇痕冫](https://space.bilibili.com/348616056).
 >
 > 🎁 Looking for **free** models? We work with talented model creators to bring you a wide variety of free models, while continuously exploring more fun desktop experiences! Visit our official website: [bongocat.pet](https://bongocat.pet/models)
-
-
 <p align="center">
   <a href="https://bongocat.pet/models">
     <img height="1080" src="https://github.com/user-attachments/assets/dedd83ca-742a-4f8c-a64a-69e659fca564" />
