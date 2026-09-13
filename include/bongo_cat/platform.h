@@ -131,4 +131,12 @@ BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
     const BongoCatMenuLabels *labels);
 BongoCatResult bongo_cat_platform_embedded_assets(const char *target, BongoCatError *error);
 
+#ifdef __APPLE__
+/* Read the permission macOS grants the app right now, without prompting.
+   Callers refresh on a user action or a focus change, never per frame. */
+bool bongo_cat_platform_input_monitoring_authorized(void);
+/* Ask macOS for Input Monitoring; only an explicit user action may call it. */
+bool bongo_cat_platform_input_monitoring_request(void);
+#endif
+
 #endif

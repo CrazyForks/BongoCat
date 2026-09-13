@@ -157,6 +157,24 @@ if(BUILD_TESTING)
     add_test(NAME live2d-motion-state COMMAND bongo_cat_motion_state_tests)
   endif()
 
+  if(APPLE)
+    # The refresh helper runs the real page code with the platform read replaced
+    # per target, so the repaint decision is tested without touching TCC.
+    add_executable(bongo_cat_input_monitoring_refresh_tests
+      tests/ui/test_input_monitoring_refresh.c
+      src/ui/preferences/preferences_pages.c)
+    target_compile_definitions(bongo_cat_input_monitoring_refresh_tests PRIVATE
+      bongo_cat_platform_input_monitoring_authorized=bongo_cat_test_input_monitoring_authorized)
+    target_include_directories(bongo_cat_input_monitoring_refresh_tests PRIVATE
+      ${BONGO_CAT_RUNTIME_INTERNAL_INCLUDE_DIRS})
+    target_include_directories(bongo_cat_input_monitoring_refresh_tests SYSTEM PRIVATE
+      ${BONGO_CAT_NUKLEAR_INCLUDE_DIR})
+    target_link_libraries(bongo_cat_input_monitoring_refresh_tests PRIVATE
+      bongo_cat_runtime bongo_cat_warnings)
+    add_test(NAME macos-input-monitoring-refresh
+      COMMAND bongo_cat_input_monitoring_refresh_tests)
+  endif()
+
   if(WIN32)
     add_executable(bongo_cat_windows_input_tests
       tests/platform/test_windows_input.c

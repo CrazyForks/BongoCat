@@ -122,7 +122,18 @@ struct BongoCatPreferences {
     SDL_Keycode shortcut_key;
     bool shortcut_recording;
     uint64_t shortcut_suppress_until_ns;
+#ifdef __APPLE__
+    /* The permission changes while the user is in System Settings, so the page
+       reads it again when it becomes visible and when the window regains focus
+       instead of querying macOS per frame. */
+    bool input_monitoring_authorized;
+    bool input_monitoring_valid;
+#endif
 };
+
+#ifdef __APPLE__
+void bongo_cat_preferences_input_monitoring_refresh(BongoCatPreferences *value);
+#endif
 
 int bongo_cat_preferences_resolved_theme(const BongoCatPreferences *value);
 void bongo_cat_preferences_apply_theme(BongoCatPreferences *value);

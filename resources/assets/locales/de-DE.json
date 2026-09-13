@@ -63,8 +63,8 @@
         "hints": {
           "showTrayIcon": "Wenn aktiviert, wird das Anwendungssymbol im Infobereich angezeigt.",
           "autostartFailed": "Die Einstellung für den automatischen Start konnte nicht aktualisiert werden",
-          "inputMonitoringPermission": "Aktivieren Sie die Eingabeüberwachung, um Tastatur- und Mausereignisse vom System zu empfangen.",
-          "inputMonitoringPermissionGuide": "Die Berechtigung zur Eingabeüberwachung ist erforderlich, damit die Anwendung Tastatur- und Mausereignisse vom System empfangen kann.\n\nSchritte:\n1. Öffnen Sie Systemeinstellungen > Datenschutz & Sicherheit > Eingabeüberwachung.\n2. Falls BongoCat bereits aufgeführt ist, wählen Sie es aus und entfernen Sie es mit der Schaltfläche \"-\".\n3. Klicken Sie auf \"+\", um BongoCat zu suchen und hinzuzufügen.\n4. Starten Sie die Anwendung neu, damit die Berechtigung wirksam wird.",
+          "inputMonitoringPermission": "Nach dem Erlauben neu starten.",
+          "inputMonitoringPermissionGuide": "Die Eingabeüberwachung erlaubt BongoCat, in anderen Apps gedrückte Tasten zu sehen; die Maus funktioniert auch ohne sie. BongoCat baut die Überwachung beim Start auf, eine Berechtigungsänderung erfordert daher einen Neustart.\n\nSchritte:\n1. Öffnen Sie Systemeinstellungen → Datenschutz & Sicherheit → Eingabeüberwachung.\n2. Schalten Sie den bereits gelisteten BongoCat-Eintrag ein; entfernen Sie keine vorhandenen Einträge.\n3. Falls BongoCat fehlt, klicken Sie auf \"+\" und fügen Sie die laufende Kopie hinzu (prüfen Sie den Speicherort).\n4. Beenden Sie BongoCat vollständig und starten Sie es erneut, damit es die Überwachung neu aufbaut.\n\nWenn die Tastatur weiterhin nicht reagiert, können Sie den BongoCat-Eintrag selbst entfernen und neu hinzufügen.",
           "administratorPermission": "Als Administrator kann die Anwendung bestimmte Systemtasten und Eingabeereignisse zuverlässiger erfassen.",
           "administratorPermissionGuide": "Für eine zuverlässigere Erfassung bestimmter Systemtasten und Eingabeereignisse wird empfohlen, die Anwendung als Administrator auszuführen.\n\nVorgehen:\n1. Beenden Sie zuerst die Anwendung.\n2. Suchen Sie die exe-Datei oder ihre Verknüpfung im Datei-Explorer.\n3. Wählen Sie die Startart:\n   - Einmalig: Rechtsklick und \"Als Administrator ausführen\" wählen.\n   - Immer: Rechtsklick > Eigenschaften > Kompatibilität > \"Programm als Administrator ausführen\" aktivieren > OK."
         },
@@ -72,7 +72,8 @@
           "authorized": "Autorisiert",
           "adminEnabled": "Aktiviert",
           "authorize": "Aktivieren",
-          "viewGuide": "Anleitung anzeigen"
+          "viewGuide": "Anleitung anzeigen",
+          "openSettingsFailed": "Systemeinstellungen → Datenschutz & Sicherheit → Eingabeüberwachung."
         },
         "buttons": {
           "openNow": "Jetzt öffnen",

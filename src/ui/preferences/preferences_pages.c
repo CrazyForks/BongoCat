@@ -1,4 +1,5 @@
 #include "preferences_internal.h"
+#include "preferences_state.h"
 #include "preferences_theme.h"
 #include "preferences_widgets.h"
 #include "preferences_notice.h"
@@ -176,6 +177,76 @@ static void update_autostart(BongoCatApp *app, bool old_value) {
         "Unable to update launch-on-startup settings"), true);
 }
 
+#ifdef __APPLE__
+/* System Settings keeps Input Monitoring under Privacy & Security. */
+#define BONGO_CAT_INPUT_MONITORING_SETTINGS_URI \
+    "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
+
+void bongo_cat_preferences_input_monitoring_refresh(BongoCatPreferences *value) {
+    if (!value) return;
+    /* The refresh points are user actions, not frames: one read here. */
+    bool authorized = bongo_cat_platform_input_monitoring_authorized();
+    /* A button drawn from the old reading stays on screen until something
+       repaints, so a reading that changed - or arrives for the first time -
+       schedules the next frame; an unchanged one must not, or every refresh
+       point would keep the window rendering. */
+    if (value->input_monitoring_valid &&
+        value->input_monitoring_authorized == authorized) return;
+    value->input_monitoring_authorized = authorized;
+    value->input_monitoring_valid = true;
+    value->render_dirty = true;
+}
+
+static void enable_input_monitoring(BongoCatApp *app) {
+    BongoCatPreferences *value = app->preferences;
+    if (!value) return;
+    /* The permission can change while the page is open, so the button reads it
+       once more before acting: an already granted permission hides the button
+       instead of asking again or sending the user to System Settings. */
+    bongo_cat_preferences_input_monitoring_refresh(value);
+    if (value->input_monitoring_authorized) return;
+    /* The system prompt belongs to this button and to a missing permission; a
+       refusal is an answer, not a failure. */
+    (void)bongo_cat_platform_input_monitoring_request();
+    /* SDL_OpenURL is the whole entry point, so a failure is where the path has
+       to be spelled out: the item itself only says when to restart. */
+    if (!SDL_OpenURL(BONGO_CAT_INPUT_MONITORING_SETTINGS_URI))
+        bongo_cat_preferences_notice_show(app, tr(app,
+            "pages.preference.general.status.openSettingsFailed",
+            "Cannot open System Settings. Open Privacy & Security → Input "
+            "Monitoring."), true);
+    bongo_cat_preferences_input_monitoring_refresh(value);
+}
+
+static void input_monitoring_section(BongoCatApp *app,
+    struct nk_context *context) {
+    /* The page is drawn through the preferences that hold the cached reading; a
+       page drawn before the first refresh initializes it once, never per frame. */
+    BongoCatPreferences *value = app->preferences;
+    if (!value) return;
+    if (!value->input_monitoring_valid)
+        bongo_cat_preferences_input_monitoring_refresh(value);
+    bongo_cat_pref_section_icon(context, tr(app,
+        "pages.preference.general.labels.permissionsSettings",
+        "Permissions Settings"), BONGO_CAT_PREF_ICON_SECTION_APPLICATION);
+    const char *title = tr(app,
+        "pages.preference.general.labels.inputMonitoringPermission",
+        "Input Monitoring Permission");
+    /* Granted is a reading without an action; only a missing permission offers
+       the button, and nothing here asks for authorization twice. */
+    if (value->input_monitoring_authorized) {
+        bongo_cat_pref_status(context, "input-monitoring", title, tr(app,
+            "pages.preference.general.status.authorized", "Authorized"));
+        return;
+    }
+    if (bongo_cat_pref_button(context, "input-monitoring", title, tr(app,
+        "pages.preference.general.hints.inputMonitoringPermission",
+        "Restart after granting it."), tr(app,
+        "pages.preference.general.status.authorize", "Go to Enable")))
+        enable_input_monitoring(app);
+}
+#endif
+
 static void page_general(BongoCatApp *app, struct nk_context *context) {
     BongoCatApplicationPreferences *options = &app->settings.app;
     // Keep each option in its own native language so the list is recognizable
@@ -217,6 +288,10 @@ static void page_general(BongoCatApp *app, struct nk_context *context) {
     options->theme = (BongoCatTheme)bongo_cat_pref_theme(context,
         "theme", tr(app, "pages.preference.general.labels.themeMode",
         "Theme"), themes, options->theme);
+#ifdef __APPLE__
+    section_gap(context, 7);
+    input_monitoring_section(app, context);
+#endif
 }
 
 void bongo_cat_preferences_page_settings(BongoCatApp *app,

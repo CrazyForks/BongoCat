@@ -63,8 +63,8 @@
         "hints": {
           "showTrayIcon": "Al activarlo, el icono de la aplicación aparece en la bandeja del sistema.",
           "autostartFailed": "No se pudo actualizar la configuración de inicio automático",
-          "inputMonitoringPermission": "Active la supervisión de entrada para recibir eventos de teclado y ratón del sistema.",
-          "inputMonitoringPermissionGuide": "Se necesita el permiso de supervisión de entrada para que la aplicación reciba eventos de teclado y ratón del sistema.\n\nPasos:\n1. Abra Ajustes del Sistema > Privacidad y seguridad > Supervisión de entrada.\n2. Si BongoCat ya aparece en la lista, selecciónelo y pulse el botón \"-\" para eliminarlo.\n3. Pulse el botón \"+\" para buscar y añadir BongoCat.\n4. Reinicie la aplicación para que el permiso tenga efecto.",
+          "inputMonitoringPermission": "Reinicie tras autorizar.",
+          "inputMonitoringPermissionGuide": "La Supervisión de entrada permite que BongoCat vea las teclas pulsadas en otras aplicaciones; el ratón sigue funcionando sin ella. BongoCat crea la escucha al iniciarse, así que un cambio de permiso requiere reiniciar.\n\nPasos:\n1. Abra Ajustes del Sistema → Privacidad y seguridad → Supervisión de entrada.\n2. Active la entrada de BongoCat que ya aparece en la lista; no elimine entradas existentes.\n3. Si BongoCat no está en la lista, pulse \"+\" y añada la copia que está ejecutando (compruebe la ubicación de la aplicación).\n4. Cierre BongoCat por completo y vuelva a iniciarlo para que reconstruya la escucha.\n\nSi el teclado sigue sin responder, puede eliminar y volver a añadir la entrada de BongoCat.",
           "administratorPermission": "Ejecutar la aplicación como administrador ayuda a capturar con mayor fiabilidad algunas teclas del sistema y eventos de entrada.",
           "administratorPermissionGuide": "Para capturar con mayor fiabilidad algunas teclas del sistema y eventos de entrada, se recomienda ejecutar la aplicación como administrador.\n\nCómo hacerlo:\n1. Cierre primero la aplicación.\n2. Busque el archivo exe o su acceso directo en el Explorador de archivos.\n3. Elija cómo iniciarla:\n   - Una vez: haga clic con el botón derecho y elija \"Ejecutar como administrador\".\n   - Siempre: clic derecho > Propiedades > Compatibilidad > marque \"Ejecutar este programa como administrador\" > Aceptar."
         },
@@ -72,7 +72,8 @@
           "authorized": "Autorizado",
           "adminEnabled": "Activado",
           "authorize": "Activar",
-          "viewGuide": "Ver instrucciones"
+          "viewGuide": "Ver instrucciones",
+          "openSettingsFailed": "Ajustes del Sistema → Privacidad y seguridad → Supervisión de entrada."
         },
         "buttons": {
           "openNow": "Abrir ahora",

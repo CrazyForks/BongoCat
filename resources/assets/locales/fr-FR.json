@@ -63,8 +63,8 @@
         "hints": {
           "showTrayIcon": "Lorsque cette option est activée, l'icône de l'application apparaît dans la zone de notification.",
           "autostartFailed": "Impossible de modifier le lancement au démarrage",
-          "inputMonitoringPermission": "Activez la surveillance des entrées pour recevoir les événements clavier et souris du système.",
-          "inputMonitoringPermissionGuide": "L'autorisation de surveillance des entrées est nécessaire pour recevoir les événements clavier et souris du système.\n\nÉtapes :\n1. Ouvrez Réglages Système > Confidentialité et sécurité > Surveillance de l'entrée.\n2. Si BongoCat figure déjà dans la liste, sélectionnez-le et cliquez sur le bouton \"-\" pour le retirer.\n3. Cliquez sur le bouton \"+\" pour rechercher et ajouter BongoCat.\n4. Redémarrez l'application pour appliquer l'autorisation.",
+          "inputMonitoringPermission": "Redémarrez après l'autorisation.",
+          "inputMonitoringPermissionGuide": "La surveillance des entrées permet à BongoCat de voir les touches pressées dans d'autres applications ; la souris continue de fonctionner sans elle. BongoCat construit l'écoute à son démarrage, un changement d'autorisation demande donc un redémarrage.\n\nÉtapes :\n1. Ouvrez Réglages Système → Confidentialité et sécurité → Surveillance de l'entrée.\n2. Activez l'entrée BongoCat déjà présente dans la liste ; ne supprimez aucune entrée.\n3. Si BongoCat n'est pas listé, cliquez sur \"+\" et ajoutez la copie que vous exécutez (vérifiez son emplacement).\n4. Quittez complètement BongoCat puis relancez-le pour qu'il reconstruise l'écoute.\n\nSi le clavier reste sans réponse, vous pouvez supprimer puis rajouter vous-même l'entrée BongoCat.",
           "administratorPermission": "Exécuter l'application en tant qu'administrateur permet de capturer plus fiablement certaines touches système et certains événements d'entrée.",
           "administratorPermissionGuide": "Pour capturer plus fiablement certaines touches système et certains événements d'entrée, il est recommandé d'exécuter l'application en tant qu'administrateur.\n\nProcédure :\n1. Quittez d'abord l'application.\n2. Trouvez le fichier exe ou son raccourci dans l'Explorateur de fichiers.\n3. Choisissez le mode de lancement :\n   - Une fois : faites un clic droit et choisissez \"Exécuter en tant qu'administrateur\".\n   - Toujours : clic droit > Propriétés > onglet Compatibilité > cochez \"Exécuter ce programme en tant qu'administrateur\" > OK."
         },
@@ -72,7 +72,8 @@
           "authorized": "Autorisé",
           "adminEnabled": "Activé",
           "authorize": "Activer",
-          "viewGuide": "Voir les instructions"
+          "viewGuide": "Voir les instructions",
+          "openSettingsFailed": "Réglages Système → Confidentialité et sécurité → Surveillance de l'entrée."
         },
         "buttons": {
           "openNow": "Ouvrir maintenant",
