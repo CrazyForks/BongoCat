@@ -381,7 +381,7 @@ we need.
 
 ## 🙏 Special Thanks
 > [!TIP]
-> Every step BongoCat takes is powered by the spirit of open source. We sincerely thank all our community contributors for their selfless contributions (listed below in chronological order by contribution date). It is your support that makes desktop companionship more free and genuine.❤️‍🔥
+> Every step BongoCat takes is powered by the spirit of open source. We sincerely thank all our community contributors for their selfless contributions It is your support that makes desktop companionship more free and genuine.❤️‍🔥
 
 
 <a href="https://bongocat.pet">
