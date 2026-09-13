@@ -112,7 +112,9 @@ void NativeModel::build_projection(Csm::CubismMatrix44 &projection,
 
 void NativeModel::draw() {
     if (!_model || width_ <= 0 || height_ <= 0) return;
-    bind_model_vao();
+#ifdef CSM_TARGET_MAC_GL
+    CoreProfileBinding binding(core_buffers_);
+#endif
     auto *manager = Csm::Rendering::CubismOffscreenManager_OpenGLES2::GetInstance();
     manager->BeginFrameProcess();
     Csm::CubismMatrix44 projection;

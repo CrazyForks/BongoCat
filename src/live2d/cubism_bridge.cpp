@@ -87,7 +87,10 @@ bool start_framework(BongoCatError *error) {
         return false;
     }
     if (!glCreateShader || !glShaderSource || !glCompileShader ||
-        !glGetShaderiv || !glCreateProgram || !glGenFramebuffers) {
+        !glGetShaderiv || !glCreateProgram || !glGenFramebuffers ||
+        !glGenBuffers || !glBindBuffer || !glBufferData || !glDeleteBuffers ||
+        !glGenVertexArrays || !glBindVertexArray || !glDeleteVertexArrays ||
+        !glEnableVertexAttribArray || !glVertexAttribPointer) {
         runtime_count = 0;
         bongo_cat_error_set(error, BONGO_CAT_ERROR_PLATFORM,
             "Required OpenGL 3.3 functions are unavailable");
@@ -184,7 +187,10 @@ extern "C" void bongo_cat_live2d_reshape(BongoCatLive2D *runtime, int width, int
     if (runtime->model) runtime->model->reshape(width, height);
 }
 extern "C" bool bongo_cat_live2d_update(BongoCatLive2D *runtime, float elapsed) {
-    return runtime && runtime->model && runtime->model->update(elapsed);
+    if (!runtime) return false;
+    bool changed = runtime->model && runtime->model->update(elapsed);
+    // Finish deferred releases even when the replacement model is static.
+    return changed || runtime->retired_count > 0;
 }
 extern "C" void bongo_cat_live2d_draw(BongoCatLive2D *runtime) {
     if (!runtime) return;

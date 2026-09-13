@@ -1,7 +1,6 @@
 #include "runtime.h"
 #include "runtime_state.h"
 #include "bongo_cat/file.h"
-#include "bongo_cat/i18n.h"
 #include "bongo_cat/log.h"
 #include "bongo_cat/path.h"
 #include "storage_paths.h"
@@ -13,7 +12,6 @@
 
 #ifdef _WIN32
 #include "windows_package.h"
-#include <windows.h>
 #endif
 
 static char runtime_log_path[BONGO_CAT_PATH_CAP];
@@ -189,46 +187,10 @@ void bongo_cat_startup_ready(BongoCatApp *app) {
     SDL_LogInfo(BONGO_CAT_LOG_LIFECYCLE, "[runtime] Startup ready");
 }
 
-#ifdef _WIN32
-static void native_error_box(const char *message) {
-    int count = MultiByteToWideChar(CP_UTF8, 0, message, -1, NULL, 0);
-    wchar_t *wide = count > 0 ? calloc((size_t)count, sizeof(*wide)) : NULL;
-    if (wide) {
-        MultiByteToWideChar(CP_UTF8, 0, message, -1, wide, count);
-        MessageBoxW(NULL, wide, BONGO_CAT_NAME_W, MB_OK | MB_ICONERROR);
-        free(wide);
-    }
-}
-#endif
-
-static const char *startup_tr(BongoCatApp *app, const char *key,
-    const char *fallback) {
-    return app && app->i18n
-        ? bongo_cat_i18n_get(app->i18n, key, fallback) : fallback;
-}
-
 void bongo_cat_startup_failure(BongoCatApp *app, const BongoCatError *error) {
     const char *message = error && error->message[0] ? error->message : "Initialization failed";
     if (app) bongo_cat_startup_stage(app, "failed");
     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Startup failed: %s", message);
-    char body[BONGO_CAT_PATH_CAP + 384];
-    const char *heading = startup_tr(app, "native.startup.failed",
-        "BongoCat could not start.");
-    const char *detail = startup_tr(app, "native.startup.detail",
-        "See the diagnostic log for technical details.");
-    const char *diagnostic = startup_tr(app, "native.startup.diagnosticLog",
-        "Diagnostic log:");
-    bool has_log = runtime_log_path[0] != '\0';
-    snprintf(body, sizeof(body), "%s\n\n%s%s%s%s%s", heading, detail,
-        has_log ? "\n\n" : "", has_log ? diagnostic : "",
-        has_log ? "\n" : "", has_log ? runtime_log_path : "");
-    if (app && app->smoke) return;
-    if (!SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, BONGO_CAT_NAME, body,
-        app ? app->window : NULL)) {
-#ifdef _WIN32
-        native_error_box(body);
-#endif
-    }
 }
 
 void bongo_cat_startup_ci_failure(BongoCatApp *app,

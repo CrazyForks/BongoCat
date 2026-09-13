@@ -1,6 +1,10 @@
 #ifndef BONGO_CAT_CUBISM_MODEL_HPP
 #define BONGO_CAT_CUBISM_MODEL_HPP
 
+#ifdef CSM_TARGET_MAC_GL
+#include "cubism_core_profile.hpp"
+#endif
+
 #include "bongo_cat/model.h"
 #include "bongo_cat/image.h"
 
@@ -132,7 +136,6 @@ private:
     void release_renderer();
     bool create_renderer(BongoCatError *error);
     void bind_textures();
-    void bind_model_vao();
     std::vector<unsigned char> read(const std::string &path,
         size_t maximum = (size_t)-1) const;
     std::string path(const char *relative) const;
@@ -158,8 +161,9 @@ private:
     Csm::csmVector<Csm::CubismIdHandle> eye_blink_ids_;
     Csm::csmVector<Csm::CubismIdHandle> lip_sync_ids_;
     std::string directory_;
-    void *model_vao_context_ = nullptr;
-    GLuint model_vao_ = 0;
+#ifdef CSM_TARGET_MAC_GL
+    CoreProfileBuffers core_buffers_;
+#endif
     int width_ = 612;
     int height_ = 354;
     int renderer_width_ = 0;

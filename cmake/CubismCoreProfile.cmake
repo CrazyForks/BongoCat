@@ -1,22 +1,10 @@
-# Core-profile (macOS) compatibility for the Cubism GLES2 rendering path.
-#
-# The macOS build requests an OpenGL core profile context, which differs from
-# the compatibility contexts used on Windows and Linux in three ways that the
-# GLES2-style Cubism renderer does not expect:
-#
-#   1. GLSL 1.20 shaders do not compile, so the desktop `Standard` shaders are
-#      translated to GLSL 330 at configure time. The translated files replace
-#      the SDK ones everywhere the framework shaders are staged.
-#   2. Vertex-attributable calls require a bound VAO (handled in the runtime
-#      by NativeModel::bind_model_vao).
-#   3. Client-side vertex arrays are silently ignored, so DrawMeshOpenGL
-#      re-hosts the mesh in stream VBOs.
-#
-# Everything is guarded by CSM_TARGET_MAC_GL or applied to shader text only,
-# so Windows and Linux binaries are unchanged.
-
+# macOS core-profile shaders and buffer-backed drawing.
 set(BONGO_CAT_CUBISM_SHADER_SOURCE_DIR
-  "${CMAKE_CURRENT_BINARY_DIR}/generated/cubism-shaders")
+  "${CUBISM_FRAMEWORK_PATH}/src/Rendering/OpenGL/Shaders/Standard")
+if(APPLE)
+  set(BONGO_CAT_CUBISM_SHADER_SOURCE_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/cubism-shaders")
+endif()
 
 function(bongo_cat_core_profile_convert_shader input output)
   file(READ "${input}" text)
@@ -50,7 +38,8 @@ endfunction()
 function(bongo_cat_core_profile_prepare_shaders)
   set(source_dir "${CUBISM_FRAMEWORK_PATH}/src/Rendering/OpenGL/Shaders/Standard")
   file(MAKE_DIRECTORY "${BONGO_CAT_CUBISM_SHADER_SOURCE_DIR}")
-  file(GLOB shader_files "${source_dir}/*")
+  file(GLOB shader_files CONFIGURE_DEPENDS "${source_dir}/*")
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${shader_files})
   foreach(input IN LISTS shader_files)
     get_filename_component(name "${input}" NAME)
     bongo_cat_core_profile_convert_shader("${input}"
@@ -58,67 +47,59 @@ function(bongo_cat_core_profile_prepare_shaders)
   endforeach()
 endfunction()
 
+function(bongo_cat_core_profile_patch_shader variable)
+  set(source "${${variable}}")
+  string(ASCII 239 187 191 bom)
+  string(REPLACE "${bom}" "" source "${source}")
+  foreach(spec IN ITEMS
+      "AttributePositionLocation|vertexArray|model.GetDrawableVertexCount(index) * sizeof(csmFloat32) * 2|0"
+      "AttributeTexCoordLocation|uvArray|model.GetDrawableVertexCount(index) * sizeof(csmFloat32) * 2|1"
+      "AttributePositionLocation|renderTargetVertexArray|sizeof(renderTargetVertexArray)|0"
+      "AttributeTexCoordLocation|renderTargetUvArray|sizeof(renderTargetUvArray)|1"
+      "AttributeTexCoordLocation|renderTargetReverseUvArray|sizeof(renderTargetReverseUvArray)|1")
+    string(REPLACE "|" ";" fields "${spec}")
+    list(GET fields 0 attribute)
+    list(GET fields 1 data)
+    list(GET fields 2 size)
+    list(GET fields 3 slot)
+    bongo_cat_replace_cubism_text(source
+      "glVertexAttribPointer(shaderSet->${attribute}, 2, GL_FLOAT, GL_FALSE, sizeof(csmFloat32) * 2, ${data});"
+      "bongo_cat::CoreProfileBinding::attribute(${slot}, shaderSet->${attribute}, ${data}, ${size});"
+      "core-profile ${data}")
+  endforeach()
+  if(source MATCHES "glVertexAttribPointer[ \t\r\n]*\\(")
+    message(FATAL_ERROR "Unpatched Cubism client-side vertex attributes")
+  endif()
+  set(${variable} "#include \"cubism_core_profile.hpp\"\n${source}" PARENT_SCOPE)
+endfunction()
+
 function(bongo_cat_core_profile_patch_renderer target)
   set(source_path "${CUBISM_FRAMEWORK_PATH}/src/Rendering/OpenGL/CubismRenderer_OpenGLES2.cpp")
   set(output_dir "${CMAKE_CURRENT_BINARY_DIR}/generated/cubism")
   set(output_source "${output_dir}/CubismRenderer_OpenGLES2.cpp")
   file(READ "${source_path}" source)
+  string(ASCII 239 187 191 bom)
+  string(REPLACE "${bom}" "" source "${source}")
   string(REPLACE "\r\n" "\n" source "${source}")
-
-  set(legacy_draw [=[
-        csmInt32 indexCount = model.GetDrawableVertexIndexCount(index);
-        csmUint16* indexArray = const_cast<csmUint16*>(model.GetDrawableVertexIndices(index));
-        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_SHORT, indexArray);]=])
-  set(vbo_draw [=[
-        csmInt32 indexCount = model.GetDrawableVertexIndexCount(index);
-        csmUint16* indexArray = const_cast<csmUint16*>(model.GetDrawableVertexIndices(index));
-#if defined(CSM_TARGET_MAC_GL)
-        // Core-profile contexts reject client-side vertex arrays, so the
-        // GLES2-style mesh pointers are re-hosted in reused stream VBOs.
-        static GLuint meshVbo[3] = {0, 0, 0};
-        if (meshVbo[0] == 0)
-        {
-            glGenBuffers(3, meshVbo);
-        }
-        GLint positionLocation = glGetAttribLocation(currentProgram, "a_position");
-        GLint texCoordLocation = glGetAttribLocation(currentProgram, "a_texCoord");
-        csmInt32 vertexCount = model.GetDrawableVertexCount(index);
-        if (positionLocation >= 0)
-        {
-            glBindBuffer(GL_ARRAY_BUFFER, meshVbo[0]);
-            glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(csmFloat32) * 2,
-                model.GetDrawableVertices(index), GL_STREAM_DRAW);
-            glVertexAttribPointer(positionLocation, 2, GL_FLOAT, GL_FALSE,
-                sizeof(csmFloat32) * 2, NULL);
-        }
-        if (texCoordLocation >= 0)
-        {
-            glBindBuffer(GL_ARRAY_BUFFER, meshVbo[1]);
-            glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(csmFloat32) * 2,
-                model.GetDrawableVertexUvs(index), GL_STREAM_DRAW);
-            glVertexAttribPointer(texCoordLocation, 2, GL_FLOAT, GL_FALSE,
-                sizeof(csmFloat32) * 2, NULL);
-        }
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshVbo[2]);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(csmUint16),
-            indexArray, GL_STREAM_DRAW);
-        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_SHORT, NULL);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-#else
-        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_SHORT, indexArray);
-#endif]=])
-  string(FIND "${source}" "${legacy_draw}" position)
-  if(position EQUAL -1)
-    message(FATAL_ERROR "Core-profile renderer patch mismatch: mesh draw")
+  bongo_cat_replace_cubism_text(source
+    "glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_SHORT, indexArray);"
+    "bongo_cat::CoreProfileBinding::draw(indexCount, indexArray);"
+    "core-profile mesh indices")
+  bongo_cat_replace_cubism_text(source
+    "glDrawElements(GL_TRIANGLES, sizeof(ModelRenderTargetIndexArray) / sizeof(csmUint16), GL_UNSIGNED_SHORT, ModelRenderTargetIndexArray);"
+    "bongo_cat::CoreProfileBinding::draw(sizeof(ModelRenderTargetIndexArray) / sizeof(csmUint16), ModelRenderTargetIndexArray);"
+    "core-profile composite indices")
+  if(source MATCHES "glDrawElements[ \t\r\n]*\\(")
+    message(FATAL_ERROR "Unpatched Cubism client-side index draw")
   endif()
-  string(REPLACE "${legacy_draw}" "${vbo_draw}" source "${source}")
-
   file(MAKE_DIRECTORY "${output_dir}")
-  file(WRITE "${output_source}" "${source}")
+  file(WRITE "${output_source}" "#include \"cubism_core_profile.hpp\"\n${source}")
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${source_path}")
   get_target_property(framework_sources ${target} SOURCES)
   list(REMOVE_ITEM framework_sources "${source_path}")
   set_property(TARGET ${target} PROPERTY SOURCES "${framework_sources}")
   target_sources(${target} PRIVATE "${output_source}")
   target_include_directories(${target} PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/live2d"
     "${CUBISM_FRAMEWORK_PATH}/src/Rendering/OpenGL")
 endfunction()

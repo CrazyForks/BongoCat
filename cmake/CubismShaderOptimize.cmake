@@ -44,18 +44,6 @@ function(bongo_cat_optimize_cubism_shaders target)
     "/* Model upload owns minification filtering and fallback. */"
     "model texture minification ownership")
 
-  # Core-profile GL requires vertex attrib array 0 to be enabled; pin the
-  # position attribute there so GLES2-style draw calls stay valid on macOS.
-  bongo_cat_replace_cubism_text(source
-    [=[
-    GLint status;
-    glLinkProgram(shaderProgram);]=]
-    [=[
-    GLint status;
-    glBindAttribLocation(shaderProgram, 0, "a_position");
-    glLinkProgram(shaderProgram);]=]
-    "core-profile attribute-0 pin")
-
   set(compile_anchor [=[
 _shaderSets[ShaderNames_MultMaskedInvertedPremultipliedAlpha]->ShaderProgram = _shaderSets[ShaderNames_NormalMaskedInvertedPremultipliedAlpha]->ShaderProgram;]=])
   set(block_start [=[    {
@@ -119,6 +107,10 @@ void CubismShader_OpenGLES2::SetupShaderProgramForDrawable]=])
   set(offscreen_lazy "${offscreen_prefix}${lazy_body}")
   bongo_cat_replace_cubism_text(source "${offscreen_setup}" "${offscreen_lazy}"
     "offscreen lazy shader call")
+
+  if(APPLE)
+    bongo_cat_core_profile_patch_shader(source)
+  endif()
 
   file(MAKE_DIRECTORY "${output_dir}")
   file(REMOVE "${output_dir}/CubismShader_OpenGLES2.hpp")

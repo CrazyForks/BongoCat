@@ -132,6 +132,13 @@ if(BUILD_TESTING)
   endif()
 
   if(BONGO_CAT_CUBISM_ENABLED)
+    add_executable(bongo_cat_core_profile_tests tests/live2d/test_core_profile.cpp)
+    target_include_directories(bongo_cat_core_profile_tests PRIVATE src/live2d)
+    target_link_libraries(bongo_cat_core_profile_tests PRIVATE
+      bongo_cat_runtime bongo_cat_warnings)
+    add_test(NAME live2d-core-profile COMMAND bongo_cat_core_profile_tests)
+    set_tests_properties(live2d-core-profile PROPERTIES TIMEOUT 30)
+
     add_test(NAME model-startup-recovery COMMAND ${CMAKE_COMMAND}
       "-DEXECUTABLE=$<TARGET_FILE:bongo_cat_preferences_lifecycle_tests>"
       "-DASSET_ROOT=${CMAKE_CURRENT_SOURCE_DIR}/resources/assets"
