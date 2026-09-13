@@ -194,4 +194,9 @@ if(BUILD_TESTING)
     target_link_libraries(bongo_cat_ui_tests PRIVATE m)
     target_link_libraries(bongo_cat_app_state_tests PRIVATE m)
   endif()
+
+  if(APPLE)
+    add_test(NAME macos-bundle-signature COMMAND /usr/bin/codesign
+      --verify --strict --deep --verbose=2 "$<TARGET_BUNDLE_DIR:bongo_cat>")
+  endif()
 endif()
