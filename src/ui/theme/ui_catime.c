@@ -43,11 +43,11 @@ float bongo_cat_ui_sidebar_width(float window_width) {
 }
 
 bool bongo_cat_ui_native_chrome(void) {
-#ifdef __APPLE__
-    return true;
-#else
+    /* Applying NSWindowStyleMaskTitled to the SDL borderless preferences
+       window makes macOS 26 swallow every mouse event after the first
+       mouse-down, so the window stays borderless and the UI draws its own
+       window controls on every platform. */
     return false;
-#endif
 }
 
 void bongo_cat_ui_shell_draw(struct nk_context *context, float width,

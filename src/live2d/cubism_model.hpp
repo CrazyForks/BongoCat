@@ -132,6 +132,7 @@ private:
     void release_renderer();
     bool create_renderer(BongoCatError *error);
     void bind_textures();
+    void bind_model_vao();
     std::vector<unsigned char> read(const std::string &path,
         size_t maximum = (size_t)-1) const;
     std::string path(const char *relative) const;
@@ -157,6 +158,8 @@ private:
     Csm::csmVector<Csm::CubismIdHandle> eye_blink_ids_;
     Csm::csmVector<Csm::CubismIdHandle> lip_sync_ids_;
     std::string directory_;
+    void *model_vao_context_ = nullptr;
+    GLuint model_vao_ = 0;
     int width_ = 612;
     int height_ = 354;
     int renderer_width_ = 0;
