@@ -93,6 +93,41 @@ bool bongo_cat_windows_input_register(WindowsInputState *state) {
     return true;
 }
 
+unsigned bongo_cat_windows_input_restore(WindowsInputState *state, unsigned owned) {
+    if (owned == 3) return owned;
+    RAWINPUTDEVICE *items;
+    UINT count;
+    if (!registrations(state, &items, &count)) return owned;
+    unsigned blocked = 0;
+    for (UINT i = 0; i < count; ++i) {
+        /* Registrations are process-local. Leave another receiver (including
+           a foreground-only registration with no target) alone. */
+        if (items[i].hwndTarget != state->window)
+            blocked |= device_class(&items[i]);
+    }
+    free(items);
+    unsigned missing = 3u & ~(owned | blocked);
+    if (!missing) return owned;
+    RAWINPUTDEVICE devices[2];
+    UINT pending = 0;
+    if (missing & 1u) devices[pending++] = (RAWINPUTDEVICE){
+        1, 2, RIDEV_INPUTSINK | RIDEV_DEVNOTIFY, state->window};
+    if (missing & 2u) devices[pending++] = (RAWINPUTDEVICE){
+        1, 6, RIDEV_INPUTSINK | RIDEV_DEVNOTIFY, state->window};
+    if (!RegisterRawInputDevices(devices, pending, sizeof(devices[0]))) {
+        DWORD error = GetLastError();
+        if (error != state->recovery_error) SDL_LogWarn(SDL_LOG_CATEGORY_INPUT,
+            "[input] Raw Input recovery failed: classes=%u error=%lu",
+            missing, (unsigned long)error);
+        state->recovery_error = error;
+        return owned;
+    }
+    state->recovery_error = ERROR_SUCCESS;
+    SDL_LogInfo(BONGO_CAT_LOG_INPUT,
+        "[input] Raw Input background registration restored: classes=%u", missing);
+    return owned | missing;
+}
+
 void bongo_cat_windows_input_unregister(WindowsInputState *state) {
     RAWINPUTDEVICE *items;
     UINT count;

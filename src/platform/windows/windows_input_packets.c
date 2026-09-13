@@ -7,6 +7,7 @@ void bongo_cat_windows_input_packet(WindowsInputState *state,
     const RAWINPUT *packet, UINT bytes) {
     if (!state || !packet) return;
     if (bytes < sizeof(RAWINPUTHEADER) || packet->header.dwSize != bytes) {
+        state->diagnostic_invalid++;
         return;
     }
     UINT payload;
@@ -16,11 +17,18 @@ void bongo_cat_windows_input_packet(WindowsInputState *state,
     default: return;
     }
     if (bytes < offsetof(RAWINPUT, data) + payload) {
+        state->diagnostic_invalid++;
         return;
     }
+    if (packet->header.dwType == RIM_TYPEKEYBOARD) {
+        state->diagnostic_keys++;
+        if (GET_RAWINPUT_CODE_WPARAM(packet->header.wParam) == RIM_INPUTSINK)
+            state->diagnostic_background_keys++;
+    }
+    else state->diagnostic_mouse++;
     WindowsRawDevice *device = bongo_cat_windows_input_device(state,
         packet->header.hDevice);
-    if (!device) return;
+    if (!device) { state->diagnostic_device_drops++; return; }
     if (packet->header.dwType == RIM_TYPEKEYBOARD) {
         bongo_cat_windows_input_key(state, device, &packet->data.keyboard);
         return;

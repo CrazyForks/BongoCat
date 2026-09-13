@@ -15,8 +15,20 @@ timing, and window/cursor metadata, rather than typed text. Development tools
 that simulate input are separate `EXCLUDE_FROM_ALL` targets and are not part
 of the application target or its installation rules.
 
+Input diagnostics are enabled in the normal session log. At most once every
+10 seconds per running loop, they report cumulative receiver/consumer counters
+and a current display snapshot, including the foreground PID and monitor
+bounds. They do not log key names, scan codes, text, window titles, process
+paths, or device identifiers. Counter updates do not write a log per input
+event. Receiver startup/shutdown and registration failures are logged separately.
+
 Registration success alone does not establish that input messages are
 arriving. BongoCat does not attempt to bypass a game's input restrictions.
+The receiver checks its process-local registrations once per second and
+restores missing subscriptions or background flags on its own receiver.
+It leaves registrations targeting another receiver untouched. Recovery is
+not triggered by a period without input or by the foreground monitor, and
+is deferred while the normal input desktop is unavailable.
 
 Using documented Windows APIs does not guarantee acceptance by every
 anti-cheat product. The source checks in

@@ -23,6 +23,7 @@ void bongo_cat_windows_input_wake(WindowsInputState *state) {
         SDL_zero(wake);
         wake.type = platform->wake_event_type;
         if (SDL_PushEvent(&wake)) state->wake_pending = false;
+        else state->diagnostic_wake_failures++;
     }
     ReleaseSRWLockShared(&state->platform_lock);
 }
@@ -40,6 +41,9 @@ bool bongo_cat_windows_input_push_event(WindowsInputState *state,
         event.value = value;
         snprintf(event.name, sizeof(event.name), "%s", name);
         pushed = bongo_cat_input_push(platform->input, &event);
+        if (!pushed) state->diagnostic_queue_failures++;
+        else if (kind == BONGO_CAT_INPUT_KEY_DOWN || kind == BONGO_CAT_INPUT_KEY_UP)
+            state->diagnostic_queued_keys++;
     }
     ReleaseSRWLockShared(&state->platform_lock);
     if (pushed) state->wake_pending = true;
@@ -62,19 +66,67 @@ static bool input_desktop_available(void) {
 
 static void check_receiver(WindowsInputState *state) {
     unsigned ownership = bongo_cat_windows_input_ownership(state);
-    if (state->registration_error) ownership = state->ownership;
+    bool inspected = state->registration_error == ERROR_SUCCESS;
+    if (!inspected) ownership = state->ownership;
     bool unavailable = !input_desktop_available();
     if (ownership != state->ownership || unavailable != state->desktop_unavailable) {
+        if (ownership != state->ownership) SDL_LogWarn(SDL_LOG_CATEGORY_INPUT,
+            "[input] Raw Input ownership changed: previous=%u current=%u "
+            "mouse_flags=%lu keyboard_flags=%lu", state->ownership, ownership,
+            (unsigned long)state->mouse_registration_flags,
+            (unsigned long)state->keyboard_registration_flags);
         if (ownership != state->ownership || unavailable)
             bongo_cat_windows_input_clear_devices(state);
         else bongo_cat_windows_input_clear_motion(state);
         state->ownership = ownership;
         state->desktop_unavailable = unavailable;
     }
+    /* Repair a lost subscription on the normal input desktop, after releasing
+       stale keys. Never infer failure from silence or foreground monitor. */
+    if (inspected && !unavailable)
+        ownership = bongo_cat_windows_input_restore(state, ownership);
+    state->ownership = ownership;
     AcquireSRWLockExclusive(&state->relative_lock);
     /* Desktop inspection may be denied even when valid WM_INPUT still arrives. */
     state->receiving = (ownership & 1u) != 0;
     ReleaseSRWLockExclusive(&state->relative_lock);
+}
+
+static void log_receiver(WindowsInputState *state, const char *phase) {
+    HWND foreground = GetForegroundWindow();
+    DWORD pid = 0;
+    if (foreground) GetWindowThreadProcessId(foreground, &pid);
+    MONITORINFO monitor = {.cbSize = sizeof(monitor)};
+    bool monitor_known = foreground && GetMonitorInfoW(
+        MonitorFromWindow(foreground, MONITOR_DEFAULTTONULL), &monitor);
+    /* Snapshot only: counters span the whole interval, not just this window.
+       No process access, titles, device identifiers, or key values are logged. */
+    SDL_LogInfo(BONGO_CAT_LOG_INPUT,
+        "[input] receiver phase=%s uptime_ms=%llu keys=%llu mouse=%llu "
+        "background_keys=%llu filtered_keys=%llu duplicate_keys=%llu "
+        "queued_keys=%llu queue_failures=%llu wake_failures=%llu "
+        "invalid=%llu device_drops=%llu read_failures=%llu device_changes=%llu "
+        "owned=%u mouse_flags=%lu keyboard_flags=%lu desktop_unavailable=%d "
+        "query_error=%lu recovery_error=%lu last_read_error=%lu devices=%u "
+        "monitors=%d foreground_pid=%lu foreground_monitor_known=%d "
+        "foreground_primary=%d foreground_rect=%ld,%ld,%ld,%ld",
+        phase, (unsigned long long)GetTickCount64(),
+        state->diagnostic_keys, state->diagnostic_mouse,
+        state->diagnostic_background_keys, state->diagnostic_filtered_keys,
+        state->diagnostic_duplicate_keys,
+        state->diagnostic_queued_keys, state->diagnostic_queue_failures,
+        state->diagnostic_wake_failures, state->diagnostic_invalid,
+        state->diagnostic_device_drops, state->diagnostic_read_failures,
+        state->diagnostic_device_changes, state->ownership,
+        (unsigned long)state->mouse_registration_flags,
+        (unsigned long)state->keyboard_registration_flags,
+        state->desktop_unavailable, (unsigned long)state->registration_error,
+        (unsigned long)state->recovery_error, (unsigned long)state->read_error,
+        state->device_count,
+        GetSystemMetrics(SM_CMONITORS), (unsigned long)pid, monitor_known,
+        (monitor.dwFlags & MONITORINFOF_PRIMARY) != 0,
+        monitor.rcMonitor.left, monitor.rcMonitor.top,
+        monitor.rcMonitor.right, monitor.rcMonitor.bottom);
 }
 
 static DWORD WINAPI input_thread(void *context) {
@@ -90,6 +142,8 @@ static DWORD WINAPI input_thread(void *context) {
     if (state->registered) {
         state->ownership = 3;
         check_receiver(state);
+        log_receiver(state, "started");
+        state->diagnostic_ms = GetTickCount64();
     }
     SetEvent(state->ready);
     ULONGLONG last_check = GetTickCount64(), last_wake = 0;
@@ -109,6 +163,10 @@ static DWORD WINAPI input_thread(void *context) {
             check_receiver(state);
             last_check = now;
         }
+        if (now - state->diagnostic_ms >= 10000) {
+            log_receiver(state, "periodic");
+            state->diagnostic_ms = now;
+        }
         bongo_cat_windows_input_flush(state);
         if (now - last_wake >= 8) {
             bongo_cat_windows_input_wake(state);
@@ -120,6 +178,7 @@ static DWORD WINAPI input_thread(void *context) {
     ReleaseSRWLockExclusive(&state->relative_lock);
     bongo_cat_windows_input_clear_devices(state);
     bongo_cat_windows_input_wake(state);
+    if (state->registered) log_receiver(state, "stopping");
     bongo_cat_windows_input_receiver_destroy(state);
     release_state(state);
     return 0;

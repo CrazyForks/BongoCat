@@ -25,6 +25,11 @@ typedef struct BongoCatApp {
     BongoCatSettings settings;
     BongoCatSessionState session;
     BongoCatInputState input;
+    /* Main-thread-only cumulative input diagnostics. */
+    struct {
+        uint64_t log_ms, drained_keys, ignored_keys, mapped_keys;
+        uint64_t unmapped_keys, no_model_keys, presented_frames;
+    } input_diagnostics;
     BongoCatShortcutState shortcut_state;
     BongoCatSoundShortcutState sound_shortcut_state;
     bool sound_shortcut_active[BONGO_CAT_BEHAVIOR_BINDING_CAP];

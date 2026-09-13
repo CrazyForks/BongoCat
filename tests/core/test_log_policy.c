@@ -7,7 +7,7 @@ int main(void) {
     const int categories[] = {SDL_LOG_CATEGORY_APPLICATION,
         SDL_LOG_CATEGORY_INPUT, SDL_LOG_CATEGORY_VIDEO,
         BONGO_CAT_LOG_LIFECYCLE, BONGO_CAT_LOG_UPDATE,
-        BONGO_CAT_LOG_UPDATE + 1};
+        BONGO_CAT_LOG_INPUT, BONGO_CAT_LOG_INPUT + 1};
     for (unsigned i = 0; i < sizeof(categories) / sizeof(categories[0]); ++i) {
         int category = categories[i];
         for (int value = SDL_LOG_PRIORITY_TRACE;
@@ -16,7 +16,8 @@ int main(void) {
             bool expected = priority >= SDL_LOG_PRIORITY_WARN ||
                 (priority == SDL_LOG_PRIORITY_INFO &&
                     (category == BONGO_CAT_LOG_LIFECYCLE ||
-                        category == BONGO_CAT_LOG_UPDATE));
+                        category == BONGO_CAT_LOG_UPDATE ||
+                        category == BONGO_CAT_LOG_INPUT));
             if (bongo_cat_log_enabled(category, priority) != expected) {
                 fprintf(stderr, "Unexpected log policy: category=%d priority=%d\n",
                     category, value);

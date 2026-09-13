@@ -65,11 +65,12 @@ static void update_hands(BongoCatApp *app) {
         (right_stick || bongo_cat_overlay_hand_active(app->overlay, true)) ? 1.0f : 0.0f);
 }
 
-static void apply_key(BongoCatApp *app, const char *name, bool pressed) {
+static bool apply_key(BongoCatApp *app, const char *name, bool pressed) {
     int hand = bongo_cat_overlay_key(app->overlay, name, pressed);
-    if (hand < 0) return;
+    if (hand < 0) return false;
     update_hands(app);
     app->dirty = true;
+    return true;
 }
 
 static void set_axis(BongoCatApp *app, const char *id, float input) {
@@ -143,11 +144,21 @@ void bongo_cat_app_reset_gamepad(BongoCatApp *app) {
 }
 
 void bongo_cat_app_apply_input(BongoCatApp *app, const BongoCatInputEvent *event) {
-    if (!app || !event || !app->live2d) return;
+    if (!app || !event) return;
+    bool keyboard = event->kind == BONGO_CAT_INPUT_KEY_DOWN ||
+        event->kind == BONGO_CAT_INPUT_KEY_UP;
+    if (!app->live2d) {
+        if (keyboard) app->input_diagnostics.no_model_keys++;
+        return;
+    }
     active_input_update(app, event);
     switch (event->kind) {
-    case BONGO_CAT_INPUT_KEY_DOWN: apply_key(app, event->name, true); break;
-    case BONGO_CAT_INPUT_KEY_UP: apply_key(app, event->name, false); break;
+    case BONGO_CAT_INPUT_KEY_DOWN:
+    case BONGO_CAT_INPUT_KEY_UP:
+        if (apply_key(app, event->name, event->kind == BONGO_CAT_INPUT_KEY_DOWN))
+            app->input_diagnostics.mapped_keys++;
+        else app->input_diagnostics.unmapped_keys++;
+        break;
     case BONGO_CAT_INPUT_MOUSE_DOWN:
     case BONGO_CAT_INPUT_MOUSE_UP: {
         bool left = strcmp(event->name, "Left") == 0;

@@ -4,6 +4,7 @@
 #include "windows_input.h"
 #include "windows_input_detection.h"
 #include "windows_keys.h"
+#include "bongo_cat/log.h"
 
 #ifdef _WIN32
 #define BONGO_CAT_WINDOWS_RAW_DEVICE_LIMIT 64
@@ -37,6 +38,15 @@ typedef struct WindowsInputState {
     ATOM window_class;
     bool registered;
     DWORD startup_error, read_error, registration_error;
+    DWORD recovery_error;
+    /* Receiver-thread-only cumulative diagnostics; never store typed content. */
+    unsigned long long diagnostic_keys, diagnostic_mouse, diagnostic_invalid;
+    unsigned long long diagnostic_background_keys, diagnostic_filtered_keys;
+    unsigned long long diagnostic_duplicate_keys;
+    unsigned long long diagnostic_device_drops, diagnostic_read_failures;
+    unsigned long long diagnostic_queued_keys, diagnostic_queue_failures;
+    unsigned long long diagnostic_wake_failures, diagnostic_device_changes;
+    ULONGLONG diagnostic_ms;
     DWORD mouse_registration_flags, keyboard_registration_flags;
     DWORD test_start_delay_ms;
     unsigned ownership;
@@ -83,6 +93,7 @@ unsigned long long bongo_cat_windows_input_take_observation(
 bool bongo_cat_windows_input_register(WindowsInputState *state);
 void bongo_cat_windows_input_unregister(WindowsInputState *state);
 unsigned bongo_cat_windows_input_ownership(WindowsInputState *state);
+unsigned bongo_cat_windows_input_restore(WindowsInputState *state, unsigned owned);
 bool bongo_cat_windows_input_receiver_create(WindowsInputState *state);
 void bongo_cat_windows_input_receiver_destroy(WindowsInputState *state);
 bool bongo_cat_windows_input_dispatch(WindowsInputState *state);

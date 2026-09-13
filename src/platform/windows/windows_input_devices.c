@@ -59,9 +59,11 @@ void bongo_cat_windows_input_key(WindowsInputState *state,
     WindowsRawDevice *device, const RAWKEYBOARD *key) {
     if ((key->Flags & RI_KEY_E0) &&
         (key->MakeCode == 0x2a || key->MakeCode == 0x36)) {
+        state->diagnostic_filtered_keys++;
         return;
     }
     if ((key->Flags & RI_KEY_E1) && key->MakeCode == 0x1d) {
+        state->diagnostic_filtered_keys++;
         device->pending_e1 = true;
         return;
     }
@@ -73,15 +75,18 @@ void bongo_cat_windows_input_key(WindowsInputState *state,
     key = &normalized;
     char buffer[16];
     const char *name = bongo_cat_windows_key_name(key, buffer);
-    if (!name) return;
+    if (!name) { state->diagnostic_filtered_keys++; return; }
     unsigned index = bongo_cat_windows_key_index(key);
-    if (index >= BONGO_CAT_WINDOWS_RAW_KEY_COUNT) return;
+    if (index >= BONGO_CAT_WINDOWS_RAW_KEY_COUNT) {
+        state->diagnostic_filtered_keys++;
+        return;
+    }
     unsigned slot = device->keys[index];
     bool down = !(key->Flags & RI_KEY_BREAK);
-    if (down == (slot != 0)) return;
+    if (down == (slot != 0)) { state->diagnostic_duplicate_keys++; return; }
     if (down) {
         int found = held_slot(state, name);
-        if (found < 0) return;
+        if (found < 0) { state->diagnostic_filtered_keys++; return; }
         slot = (unsigned)found + 1;
         device->keys[index] = (unsigned short)slot;
         state->keys[slot - 1].references++;

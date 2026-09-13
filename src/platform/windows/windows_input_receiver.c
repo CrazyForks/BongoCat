@@ -20,6 +20,7 @@ static LRESULT CALLBACK receiver_proc(HWND window, UINT message,
             &bytes, sizeof(RAWINPUTHEADER));
         if (received == (UINT)-1) {
             DWORD error = GetLastError();
+            state->diagnostic_read_failures++;
             if (error != state->read_error) SDL_LogError(SDL_LOG_CATEGORY_INPUT,
                 "Raw Input read failed: error=%lu", (unsigned long)error);
             state->read_error = error;
@@ -27,6 +28,7 @@ static LRESULT CALLBACK receiver_proc(HWND window, UINT message,
         /* DefWindowProc performs the required foreground WM_INPUT cleanup. */
     } else if (state && message == WM_INPUT_DEVICE_CHANGE) {
         if (wparam == GIDC_REMOVAL || wparam == GIDC_ARRIVAL) {
+            state->diagnostic_device_changes++;
             bongo_cat_windows_input_remove_device(state, (HANDLE)lparam);
             bongo_cat_windows_input_clear_motion(state);
         }

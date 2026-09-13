@@ -89,8 +89,71 @@ static void test_registration_flags(void) {
     DestroyWindow(receiver);
 }
 
+static void test_registration_recovery(void) {
+    HWND receiver = CreateWindowExW(0, L"STATIC", L"", 0,
+        0, 0, 0, 0, HWND_MESSAGE, NULL, GetModuleHandleW(NULL), NULL);
+    HWND other = CreateWindowExW(0, L"STATIC", L"", 0,
+        0, 0, 0, 0, HWND_MESSAGE, NULL, GetModuleHandleW(NULL), NULL);
+    CHECK(receiver && other);
+    if (!receiver || !other) {
+        if (receiver) DestroyWindow(receiver);
+        if (other) DestroyWindow(other);
+        return;
+    }
+    WindowsInputState state = {.window = receiver};
+    RAWINPUTDEVICE mouse = {1, 2, RIDEV_INPUTSINK, receiver};
+    CHECK(RegisterRawInputDevices(&mouse, 1, sizeof(mouse)));
+    /* Restore only the missing keyboard; keep the healthy mouse unchanged. */
+    CHECK(bongo_cat_windows_input_restore(&state, registered_to(receiver)) == 3);
+    CHECK(registered_to(receiver) == 3);
+    CHECK(bongo_cat_windows_input_ownership(&state) == 3);
+    CHECK(state.mouse_registration_flags == RIDEV_INPUTSINK);
+    CHECK(state.keyboard_registration_flags & RIDEV_INPUTSINK);
+    CHECK(bongo_cat_windows_input_restore(&state, 3) == 3);
+
+    RAWINPUTDEVICE keyboard = {1, 6, 0, receiver};
+    CHECK(RegisterRawInputDevices(&keyboard, 1, sizeof(keyboard)));
+    CHECK(registered_to(receiver) == 1);
+    CHECK(bongo_cat_windows_input_restore(&state, 1) == 3);
+    CHECK(registered_to(receiver) == 3);
+
+    /* A competing receiver must not be overwritten, even without INPUTSINK. */
+    keyboard.hwndTarget = other;
+    CHECK(RegisterRawInputDevices(&keyboard, 1, sizeof(keyboard)));
+    CHECK(bongo_cat_windows_input_restore(&state, registered_to(receiver)) == 1);
+    keyboard.dwFlags = RIDEV_INPUTSINK;
+    CHECK(RegisterRawInputDevices(&keyboard, 1, sizeof(keyboard)));
+    CHECK(bongo_cat_windows_input_restore(&state, 1) == 1);
+    CHECK(registered_to(other) == 2);
+    keyboard.dwFlags = 0;
+    keyboard.hwndTarget = NULL;
+    CHECK(RegisterRawInputDevices(&keyboard, 1, sizeof(keyboard)));
+    CHECK(bongo_cat_windows_input_restore(&state, 1) == 1);
+
+    keyboard.dwFlags = RIDEV_REMOVE;
+    CHECK(RegisterRawInputDevices(&keyboard, 1, sizeof(keyboard)));
+    CHECK(bongo_cat_windows_input_restore(&state, 1) == 3);
+    bongo_cat_windows_input_unregister(&state);
+    CHECK(registered_to(receiver) == 0);
+    CHECK(bongo_cat_windows_input_restore(&state, 0) == 3);
+    CHECK(registered_to(receiver) == 3);
+    bongo_cat_windows_input_unregister(&state);
+    DestroyWindow(other);
+    DestroyWindow(receiver);
+}
+
+static void test_worker_recovery(HWND receiver) {
+    RAWINPUTDEVICE keyboard = {1, 6, RIDEV_REMOVE, NULL};
+    CHECK(RegisterRawInputDevices(&keyboard, 1, sizeof(keyboard)));
+    ULONGLONG deadline = GetTickCount64() + 3000;
+    while (registered_to(receiver) != 3 && GetTickCount64() < deadline)
+        SDL_Delay(10);
+    CHECK(registered_to(receiver) == 3);
+}
+
 void test_windows_raw_receiver(void) {
     test_registration_flags();
+    test_registration_recovery();
     BongoCatInputState input;
     bongo_cat_input_init(&input);
     BongoCatPlatform platform = {.input = &input};
@@ -123,6 +186,7 @@ void test_windows_raw_receiver(void) {
         CHECK(preferences != NULL);
         SDL_PumpEvents();
         CHECK(registered_to(receiver) == 3);
+        test_worker_recovery(receiver);
         SDL_DestroyWindow(preferences);
         bongo_cat_windows_input_stop(&platform);
         CHECK(platform.native == NULL && registered_to(receiver) == 0);

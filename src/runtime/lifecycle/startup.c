@@ -135,6 +135,7 @@ static void begin_log(BongoCatApp *app) {
     SDL_SetLogPriorities(SDL_LOG_PRIORITY_WARN);
     SDL_SetLogPriority(BONGO_CAT_LOG_LIFECYCLE, SDL_LOG_PRIORITY_INFO);
     SDL_SetLogPriority(BONGO_CAT_LOG_UPDATE, SDL_LOG_PRIORITY_INFO);
+    SDL_SetLogPriority(BONGO_CAT_LOG_INPUT, SDL_LOG_PRIORITY_INFO);
     SDL_LogInfo(BONGO_CAT_LOG_LIFECYCLE,
         "[runtime] Process started: version=%s platform=%s",
         BONGO_CAT_VERSION, SDL_GetPlatform());

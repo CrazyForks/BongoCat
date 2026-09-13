@@ -109,6 +109,7 @@ static bool render(BongoCatApp *app, bool present) {
     }
     if (reveal_startup) app->startup_visibility_pending = false;
     bongo_cat_frame_presented_audit(app);
+    app->input_diagnostics.presented_frames++;
     bongo_cat_startup_ready(app);
     bongo_cat_memory_policy_frame_presented();
     app->dirty = false;
