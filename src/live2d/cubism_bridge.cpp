@@ -1,6 +1,6 @@
 #include "bongo_cat/file.h"
 #include "bongo_cat/model.h"
-#if defined(CSM_TARGET_WIN_GL) || defined(CSM_TARGET_LINUX_GL)
+#if defined(CSM_TARGET_WIN_GL) || defined(CSM_TARGET_LINUX_GL) || defined(CSM_TARGET_MAC_GL)
 #include <GL/glew.h>
 #endif
 #include "cubism_runtime.hpp"
@@ -76,7 +76,7 @@ void release_file(Csm::csmByte *bytes) { std::free(bytes); }
 
 bool start_framework(BongoCatError *error) {
     if (runtime_count++) return true;
-#if defined(CSM_TARGET_WIN_GL) || defined(CSM_TARGET_LINUX_GL)
+#if defined(CSM_TARGET_WIN_GL) || defined(CSM_TARGET_LINUX_GL) || defined(CSM_TARGET_MAC_GL)
     glewExperimental = GL_TRUE;
     GLenum glew_result = glewInit();
     glGetError();

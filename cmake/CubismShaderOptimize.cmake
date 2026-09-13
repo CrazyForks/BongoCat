@@ -44,6 +44,18 @@ function(bongo_cat_optimize_cubism_shaders target)
     "/* Model upload owns minification filtering and fallback. */"
     "model texture minification ownership")
 
+  # Core-profile GL requires vertex attrib array 0 to be enabled; pin the
+  # position attribute there so GLES2-style draw calls stay valid on macOS.
+  bongo_cat_replace_cubism_text(source
+    [=[
+    GLint status;
+    glLinkProgram(shaderProgram);]=]
+    [=[
+    GLint status;
+    glBindAttribLocation(shaderProgram, 0, "a_position");
+    glLinkProgram(shaderProgram);]=]
+    "core-profile attribute-0 pin")
+
   set(compile_anchor [=[
 _shaderSets[ShaderNames_MultMaskedInvertedPremultipliedAlpha]->ShaderProgram = _shaderSets[ShaderNames_NormalMaskedInvertedPremultipliedAlpha]->ShaderProgram;]=])
   set(block_start [=[    {
