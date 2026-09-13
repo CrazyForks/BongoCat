@@ -1,10 +1,17 @@
 if(APPLE)
+  set(BONGO_CAT_APP_ICON "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/icon.icns")
   set_target_properties(bongo_cat PROPERTIES
     MACOSX_BUNDLE TRUE
     MACOSX_BUNDLE_BUNDLE_NAME "BongoCat"
     MACOSX_BUNDLE_GUI_IDENTIFIER com.bongocat.desktop
+    MACOSX_BUNDLE_ICON_FILE "icon.icns"
     MACOSX_BUNDLE_INFO_PLIST
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Info.plist.in")
+  # MACOSX_PACKAGE_LOCATION Resources lands the icon in Contents/Resources,
+  # which is where the CFBundleIconFile above is resolved from.
+  set_source_files_properties("${BONGO_CAT_APP_ICON}"
+    PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+  target_sources(bongo_cat PRIVATE "${BONGO_CAT_APP_ICON}")
   add_custom_command(TARGET bongo_cat POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E rm -rf
       "$<TARGET_BUNDLE_CONTENT_DIR:bongo_cat>/MacOS/assets"
