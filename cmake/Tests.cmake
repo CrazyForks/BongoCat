@@ -1,4 +1,9 @@
 if(BUILD_TESTING)
+  if(APPLE)
+    add_test(NAME macos-bundle-signature COMMAND /usr/bin/codesign
+      --verify --strict --deep --verbose=2 "$<TARGET_BUNDLE_DIR:bongo_cat>")
+  endif()
+
   add_executable(bongo_cat_hover_fade_tests
     tests/core/test_hover_fade.c src/runtime/input/mouse.c
     src/runtime/shell/modal_frame.c)
@@ -193,10 +198,5 @@ if(BUILD_TESTING)
   if(UNIX AND NOT APPLE)
     target_link_libraries(bongo_cat_ui_tests PRIVATE m)
     target_link_libraries(bongo_cat_app_state_tests PRIVATE m)
-  endif()
-
-  if(APPLE)
-    add_test(NAME macos-bundle-signature COMMAND /usr/bin/codesign
-      --verify --strict --deep --verbose=2 "$<TARGET_BUNDLE_DIR:bongo_cat>")
   endif()
 endif()
