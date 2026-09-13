@@ -30,6 +30,7 @@
           "maxFPS": "최대 프레임 속도"
         },
         "hints": {
+          "hoverUnavailable": "현재 데스크톱 환경에서는 마우스를 올려 숨기기 기능을 사용할 수 없습니다.",
           "gameInput": "게임 중 데스크톱 펫이 반응하지 않나요?",
           "gameInputHelp": "BongoCat을 관리자 권한으로 실행하고 게임을 창 모드로 설정해 보세요.",
           "passThrough": "활성화하면 클릭이 창에 영향을 주지 않고 뒤로 통과합니다.",

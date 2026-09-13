@@ -126,8 +126,11 @@ void bongo_cat_window_menu_action(BongoCatApp *app,
         bongo_cat_window_cancel_wheel_animation(app);
         app->session.window.opacity_percent =
             (float)(10 * (action - BONGO_CAT_MENU_OPACITY_10 + 1));
-        bongo_cat_platform_set_opacity(&app->platform,
-            app->session.window.opacity_percent / 100.0f);
+        if (!app->hover_hidden) {
+            bongo_cat_app_cancel_hover_fade(app);
+            bongo_cat_platform_set_opacity(&app->platform,
+                app->session.window.opacity_percent / 100.0f);
+        }
     } else if (bongo_cat_window_behavior_action(app, action)) {
         bongo_cat_app_render_now(app);
     } else if (action >= BONGO_CAT_MENU_MODEL_FIRST &&

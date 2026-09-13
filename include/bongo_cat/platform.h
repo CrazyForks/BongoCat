@@ -15,6 +15,7 @@ typedef struct BongoCatPlatform {
     void *presenter;
     uint32_t wake_event_type;
     float window_opacity;
+    bool hover_hide_unavailable;
 } BongoCatPlatform;
 
 typedef enum BongoCatMenuAction {

@@ -47,13 +47,22 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
         bongo_cat_window_mark_hit_dirty(app);
         bongo_cat_window_sync_click_through(app);
     }
-    if (window->pass_through && window->always_on_top) {
+    if (window->pass_through && window->always_on_top &&
+        app->platform.hover_hide_unavailable) {
+        bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_SHORTCUT_VISIBILITY);
+        bongo_cat_pref_status(context, "hover-unavailable", tr(app,
+            "pages.preference.cat.labels.hideOnHover", "Hide on Hover"), tr(app,
+            "pages.preference.cat.hints.hoverUnavailable",
+            "Hover hiding is unavailable in the current desktop environment."));
+    }
+    if (window->pass_through && window->always_on_top &&
+        !app->platform.hover_hide_unavailable) {
         bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_SHORTCUT_VISIBILITY);
         if (bongo_cat_pref_toggle(context, "hide-on-hover", tr(app,
             "pages.preference.cat.labels.hideOnHover", "Hide on Hover"), "",
             &window->hide_on_hover))
             bongo_cat_app_update_hover(app, SDL_GetTicksNS());
-        bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_SHORTCUT_VISIBILITY);
+        bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_HIDE_FADE);
         bongo_cat_pref_float(context, "hide-fade", tr(app,
             "pages.preference.cat.labels.hideFadeSeconds", "Fade Duration (s)"),
             "", 0.0f, &window->hide_fade_seconds,

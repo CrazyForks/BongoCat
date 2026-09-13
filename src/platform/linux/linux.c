@@ -75,6 +75,11 @@ BongoCatResult bongo_cat_platform_init(BongoCatPlatform *platform, SDL_Window *w
     platform->window = window;
     platform->input = input;
     platform->window_opacity = 1.0f;
+    const char *driver = SDL_GetCurrentVideoDriver();
+    platform->hover_hide_unavailable = !driver || strcmp(driver, "x11") != 0;
+    if (platform->hover_hide_unavailable)
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
+            "Hover hiding requires the X11 backend on Linux");
     platform->wake_event_type = SDL_RegisterEvents(1);
     if (platform->wake_event_type == (Uint32)-1) {
         bongo_cat_error_set(error, BONGO_CAT_ERROR_PLATFORM,
@@ -98,6 +103,8 @@ void bongo_cat_platform_set_click_through(BongoCatPlatform *platform,
 }
 bool bongo_cat_platform_set_opacity(BongoCatPlatform *platform, float opacity) {
     if (!platform || !platform->window) return false;
+    opacity = SDL_clamp(opacity, 0.0f, 1.0f);
+    if (opacity == platform->window_opacity) return true;
     if (!SDL_SetWindowOpacity(platform->window, opacity)) return false;
     platform->window_opacity = opacity;
     return true;

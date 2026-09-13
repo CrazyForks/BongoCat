@@ -26,10 +26,11 @@
           "randomExpression": "随机表情",
           "obsBackground": "纯色背景",
           "hideOnHover": "鼠标移入隐藏",
-          "hideFadeSeconds": "隐藏渐变时长 (秒)",
+          "hideFadeSeconds": "鼠标移入淡出时长（秒）",
           "maxFPS": "最大帧率"
         },
         "hints": {
+          "hoverUnavailable": "当前桌面环境暂不支持鼠标移入隐藏。",
           "gameInput": "游戏中桌宠没反应？",
           "gameInputHelp": "试试以管理员身份启动 BongoCat，并将游戏设为窗口模式。",
           "passThrough": "启用后，窗口不影响对其他应用程序的操作。",

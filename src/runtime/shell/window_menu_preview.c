@@ -60,9 +60,11 @@ void bongo_cat_window_menu_preview(void *userdata, BongoCatMenuAction action) {
         action <= BONGO_CAT_MENU_OPACITY_100) {
         app->session.window.opacity_percent =
             (float)(10 * (action - BONGO_CAT_MENU_OPACITY_10 + 1));
-        bongo_cat_app_cancel_hover_fade(app);
-        bongo_cat_platform_set_opacity(&app->platform,
-            app->session.window.opacity_percent / 100.0f);
+        if (!app->hover_hidden) {
+            bongo_cat_app_cancel_hover_fade(app);
+            bongo_cat_platform_set_opacity(&app->platform,
+                app->session.window.opacity_percent / 100.0f);
+        }
     } else if (action == state->applied &&
         bongo_cat_window_behavior_menu_action(action)) {
         bongo_cat_modal_frame_tick(&state->modal_frame);
@@ -123,9 +125,11 @@ void bongo_cat_window_menu_restore(void *userdata, BongoCatMenuAction selected) 
     if (!keep_opacity &&
         SDL_fabsf(app->session.window.opacity_percent - state->opacity) > .01f) {
         app->session.window.opacity_percent = state->opacity;
-        bongo_cat_app_cancel_hover_fade(app);
-        bongo_cat_platform_set_opacity(&app->platform,
-            state->opacity / 100.0f);
+        if (!app->hover_hidden) {
+            bongo_cat_app_cancel_hover_fade(app);
+            bongo_cat_platform_set_opacity(&app->platform,
+                state->opacity / 100.0f);
+        }
         changed = true;
     }
     if (!keep_expression &&

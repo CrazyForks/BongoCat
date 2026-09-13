@@ -30,6 +30,7 @@
           "maxFPS": "Fréquence d'images maximale"
         },
         "hints": {
+          "hoverUnavailable": "Le masquage au survol est indisponible dans cet environnement de bureau.",
           "gameInput": "La mascotte ne réagit pas en jeu ?",
           "gameInputHelp": "Essayez de lancer BongoCat en tant qu’administrateur et de passer le jeu en mode fenêtré.",
           "passThrough": "Lorsque cette option est activée, les clics traversent la fenêtre sans l'affecter.",

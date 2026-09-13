@@ -98,6 +98,8 @@ void bongo_cat_platform_set_click_through(BongoCatPlatform *platform,
 }
 bool bongo_cat_platform_set_opacity(BongoCatPlatform *platform, float opacity) {
     if (!platform || !platform->window) return false;
+    opacity = SDL_clamp(opacity, 0.0f, 1.0f);
+    if (opacity == platform->window_opacity) return true;
     if (!SDL_SetWindowOpacity(platform->window, opacity)) return false;
     platform->window_opacity = opacity;
     return true;

@@ -83,7 +83,9 @@ static void model_load_progress(void *userdata, float progress) {
     app->model_load_last_frame_ns = now;
     float elapsed = (float)((now - previous) / 1000000000.0);
     bongo_cat_app_drain_input(app, false);
+    now = SDL_GetTicksNS();
     bongo_cat_app_update_hover(app, now);
+    bongo_cat_app_update_hover_fade(app, now);
     if (!app->smoke_freeze_model && elapsed > 0.0f)
         bongo_cat_app_step_live2d(app, elapsed);
     app->last_frame_ns = now;

@@ -116,6 +116,8 @@ bool bongo_cat_windows_layered_update_proxy(BongoCatPlatform *platform,
     if (screen) ReleaseDC(NULL, screen);
     if (!presented) return SDL_SetError(
         "UpdateLayeredWindow failed (%lu)", (unsigned long)failure);
+    value->applied_alpha = blend.SourceConstantAlpha;
+    value->applied_alpha_valid = true;
     return true;
 }
 

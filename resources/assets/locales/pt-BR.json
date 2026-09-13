@@ -30,6 +30,7 @@
           "maxFPS": "Taxa Máxima de Quadros"
         },
         "hints": {
+          "hoverUnavailable": "Ocultar ao passar o mouse não está disponível no ambiente de desktop atual.",
           "gameInput": "O mascote não responde ao jogar?",
           "gameInputHelp": "Tente executar o BongoCat como administrador e colocar o jogo em modo janela.",
           "passThrough": "Quando ativado, a janela não afetará operações em outros aplicativos.",

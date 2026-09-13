@@ -25,6 +25,8 @@ static void adopt_pet_window(BongoCatApp *app,
             window->scale_percent, window->width, window->height)) return;
     app->session.window.opacity_percent = window->opacity_percent;
     bongo_cat_app_cancel_hover_fade(app);
+    app->hover_hidden = app->hover_inside = false;
+    app->hover_deadline_ns = 0;
     bongo_cat_platform_set_opacity(&app->platform,
         window->opacity_percent / 100.0f);
 }

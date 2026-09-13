@@ -1,4 +1,14 @@
 if(BUILD_TESTING)
+  add_executable(bongo_cat_hover_fade_tests
+    tests/core/test_hover_fade.c src/runtime/input/mouse.c
+    src/runtime/shell/modal_frame.c)
+  target_include_directories(bongo_cat_hover_fade_tests PRIVATE
+    "${BONGO_CAT_GENERATED_INCLUDE_DIR}" include tests/support
+    ${BONGO_CAT_RUNTIME_INTERNAL_INCLUDE_DIRS})
+  target_link_libraries(bongo_cat_hover_fade_tests PRIVATE
+    SDL3::SDL3-static bongo_cat_warnings)
+  add_test(NAME hover-fade COMMAND bongo_cat_hover_fade_tests)
+
   add_executable(bongo_cat_audio_tests tests/media/test_audio.c)
   target_include_directories(bongo_cat_audio_tests PRIVATE src/media/audio tests/support)
   target_link_libraries(bongo_cat_audio_tests PRIVATE bongo_cat_runtime bongo_cat_warnings)

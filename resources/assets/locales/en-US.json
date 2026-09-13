@@ -30,6 +30,7 @@
           "maxFPS": "Max Frame Rate"
         },
         "hints": {
+          "hoverUnavailable": "Hover hiding is unavailable in the current desktop environment.",
           "gameInput": "Pet not responding in games?",
           "gameInputHelp": "Try running BongoCat as administrator and setting the game to windowed mode.",
           "passThrough": "When enabled, clicks pass through the window without affecting it.",
