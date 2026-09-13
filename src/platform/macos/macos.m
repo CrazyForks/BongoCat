@@ -92,9 +92,33 @@ void bongo_cat_platform_shutdown(BongoCatPlatform *platform) {
     bongo_cat_macos_input_stop(platform);
     if (active_platform == platform) active_platform = NULL;
 }
+/* SDL rewrites NSWindow.ignoresMouseEvents from the window shape whenever a mouse move reaches the
+   window, and derives "ignore the mouse" from a transparent shape pixel. Telling SDL the same state
+   through that shape keeps the two from disagreeing, which would otherwise hand the pet back to the
+   window server on the next move. The native property is written afterwards: SDL's answer depends on
+   where the pointer is, while this state has to hold wherever the pointer is. */
+static void apply_click_through_shape(BongoCatPlatform *platform, bool enabled) {
+    if (!(SDL_GetWindowFlags(platform->window) & SDL_WINDOW_TRANSPARENT)) return;
+    SDL_Surface *shape = SDL_CreateSurface(1, 1, SDL_PIXELFORMAT_ARGB32);
+    if (!shape) {
+        SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO,
+            "Click-through window has no shape SDL can follow: %s", SDL_GetError());
+        return;
+    }
+    if (!SDL_WriteSurfacePixel(shape, 0, 0, 0, 0, 0,
+            enabled ? SDL_ALPHA_TRANSPARENT : SDL_ALPHA_OPAQUE) ||
+        !SDL_SetWindowShape(platform->window, shape))
+        SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO,
+            "Click-through state is not described to SDL: %s", SDL_GetError());
+    SDL_DestroySurface(shape);
+}
+
 void bongo_cat_platform_set_click_through(BongoCatPlatform *platform,
     bool forced, bool pointer_transparent) {
-    [native_window(platform) setIgnoresMouseEvents:forced || pointer_transparent];
+    if (!platform || !platform->window) return;
+    bool enabled = forced || pointer_transparent;
+    apply_click_through_shape(platform, enabled);
+    [native_window(platform) setIgnoresMouseEvents:enabled];
 }
 bool bongo_cat_platform_set_opacity(BongoCatPlatform *platform, float opacity) {
     if (!platform || !platform->window) return false;
