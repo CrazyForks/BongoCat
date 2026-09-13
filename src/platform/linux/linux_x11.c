@@ -1,5 +1,6 @@
 #include "linux_internal.h"
 #include "bongo_cat/common.h"
+#include "bongo_cat/log.h"
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <SDL3/SDL.h>
@@ -22,6 +23,7 @@ typedef struct LinuxX11State {
     Window window;
     SDL_Thread *thread;
     bool key_down[BONGO_CAT_INPUT_KEY_STATE_CAP];
+    bool xwayland;
     atomic_bool running;
     atomic_bool supported;
 } LinuxX11State;
@@ -164,6 +166,14 @@ bool bongo_cat_linux_x11_start(BongoCatPlatform *platform, BongoCatError *error)
     state->platform = platform; state->display = display; state->window = window;
     atomic_init(&state->running, true); atomic_init(&state->supported, false);
     platform->native = state;
+    /* XWayland advertises a marker extension that native X servers lack.
+       XWayland stops delivering pointer events for a window whose input region
+       is empty, so dynamic hit testing cannot restore the region by itself. */
+    int marker_opcode = 0, marker_event = 0, marker_error = 0;
+    state->xwayland = display && XQueryExtension(display, "XWAYLAND",
+        &marker_opcode, &marker_event, &marker_error);
+    if (state->xwayland) SDL_LogInfo(BONGO_CAT_LOG_LIFECYCLE,
+        "XWayland detected; automatic transparent-pixel click-through is disabled");
     if (!display || !window) return true;
     state->thread = SDL_CreateThread(input_thread,
         BONGO_CAT_SLUG "-x11-input", state);
@@ -185,6 +195,11 @@ void bongo_cat_linux_x11_stop(BongoCatPlatform *platform) {
 bool bongo_cat_linux_x11_supported(const BongoCatPlatform *platform) {
     const LinuxX11State *state = platform ? platform->native : NULL;
     return state && atomic_load(&state->supported);
+}
+
+bool bongo_cat_linux_x11_xwayland(const BongoCatPlatform *platform) {
+    const LinuxX11State *state = platform ? platform->native : NULL;
+    return state && state->xwayland;
 }
 
 void bongo_cat_linux_x11_click_through(BongoCatPlatform *platform, bool enabled) {

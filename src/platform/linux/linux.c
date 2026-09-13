@@ -181,7 +181,11 @@ void bongo_cat_platform_begin_drag(BongoCatPlatform *platform,
     bongo_cat_linux_x11_begin_drag(platform);
 }
 bool bongo_cat_platform_dynamic_hit_supported(void) {
-    return bongo_cat_linux_x11_supported(active_platform);
+    /* XWayland only forwards pointer events while one of its surfaces has
+       pointer focus, so an empty input region would hide the pointer
+       permanently and the pet could never become clickable again. */
+    return bongo_cat_linux_x11_supported(active_platform) &&
+        !bongo_cat_linux_x11_xwayland(active_platform);
 }
 
 bool bongo_cat_platform_open_directory(const char *path) {

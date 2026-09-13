@@ -44,7 +44,10 @@ bool bongo_cat_window_visible_at_pointer(BongoCatApp *app, float x, float y) {
 }
 
 void bongo_cat_window_capture_pointer_hit(BongoCatApp *app) {
+    /* Backends without dynamic hit testing would discard the readback, so the
+       alpha sample would only stall the pipeline for every presented frame. */
     if (!app || !app->window || !app->pointer_known ||
+        !bongo_cat_platform_dynamic_hit_supported() ||
         app->settings.window.pass_through || app->hover_hidden ||
         app->left_mouse_down || app->right_mouse_down) return;
     float local_x, local_y;
