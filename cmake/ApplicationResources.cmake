@@ -7,11 +7,10 @@ if(APPLE)
     MACOSX_BUNDLE_ICON_FILE "icon.icns"
     MACOSX_BUNDLE_INFO_PLIST
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Info.plist.in")
-  # MACOSX_PACKAGE_LOCATION Resources lands the icon in Contents/Resources,
-  # which is where the CFBundleIconFile above is resolved from.
-  set_source_files_properties("${BONGO_CAT_APP_ICON}"
-    PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-  target_sources(bongo_cat PRIVATE "${BONGO_CAT_APP_ICON}")
+  # Stage the icon with other resources before any later POST_BUILD signing.
+  # Relink when it changes so incremental builds also run the resource copy.
+  set_property(TARGET bongo_cat APPEND PROPERTY LINK_DEPENDS
+    "${BONGO_CAT_APP_ICON}")
   add_custom_command(TARGET bongo_cat POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E rm -rf
       "$<TARGET_BUNDLE_CONTENT_DIR:bongo_cat>/MacOS/assets"
@@ -19,6 +18,9 @@ if(APPLE)
       "$<TARGET_BUNDLE_CONTENT_DIR:bongo_cat>/Resources/assets"
     COMMAND ${CMAKE_COMMAND} -E make_directory
       "$<TARGET_BUNDLE_CONTENT_DIR:bongo_cat>/Resources/assets"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${BONGO_CAT_APP_ICON}"
+      "$<TARGET_BUNDLE_CONTENT_DIR:bongo_cat>/Resources/icon.icns"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
       "${CMAKE_CURRENT_SOURCE_DIR}/resources/assets"
       "$<TARGET_BUNDLE_CONTENT_DIR:bongo_cat>/Resources/assets"
