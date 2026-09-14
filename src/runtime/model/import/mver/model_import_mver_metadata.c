@@ -128,6 +128,8 @@ static bool add_render_profile(yyjson_mut_doc *output, yyjson_mut_val *root,
     yyjson_mut_val *render = yyjson_mut_obj_add_obj(output, root, "render");
     return render &&
         yyjson_mut_obj_add_str(output, render, "profile", "mver-0.1.6") &&
+        yyjson_mut_obj_add_bool(output, render, "autoFrame",
+            yyjson_get_bool(yyjson_obj_get(decoration, "l2d_auto_frame"))) &&
         yyjson_mut_obj_add_real(output, render, "projectionScale", scale) &&
         yyjson_mut_obj_add_real(output, render, "offsetX", offset_x) &&
         yyjson_mut_obj_add_real(output, render, "offsetY", offset_y) &&

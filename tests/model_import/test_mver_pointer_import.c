@@ -65,6 +65,7 @@ bool test_mver_pointer_adapter(const char *adapter, bool expected_enabled) {
     yyjson_doc_free(metadata);
     BongoCatLive2DRenderOptions render = {0};
     return valid && bongo_cat_import_render_options(adapter, &render) &&
+        !render.auto_frame &&
         render.pointer_left_handed && render.mouse_force_move &&
         render.mouse_speed > 1.249f && render.mouse_speed < 1.251f;
 }

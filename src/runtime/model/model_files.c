@@ -225,7 +225,7 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
     free(behaviors);
     optional = (BongoCatError){0};
     if (bongo_cat_overlay_load(app->overlay, entry->adapter_directory,
-        model_pointer, &optional) != BONGO_CAT_OK) {
+        model_pointer, &render_options, &optional) != BONGO_CAT_OK) {
         if (optional.message[0])
             SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", optional.message);
         bongo_cat_overlay_clear(app->overlay);

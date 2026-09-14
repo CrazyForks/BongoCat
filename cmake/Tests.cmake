@@ -111,7 +111,7 @@ if(BUILD_TESTING)
   target_include_directories(bongo_cat_mver_import_tests PRIVATE
     ${BONGO_CAT_RUNTIME_INTERNAL_INCLUDE_DIRS})
   target_include_directories(bongo_cat_mver_import_tests SYSTEM PRIVATE
-    ${BONGO_CAT_NUKLEAR_INCLUDE_DIR})
+    ${BONGO_CAT_NUKLEAR_INCLUDE_DIR} ${BONGO_CAT_STB_INCLUDE_DIR})
   target_link_libraries(bongo_cat_mver_import_tests PRIVATE bongo_cat_runtime)
   target_compile_definitions(bongo_cat_mver_import_tests PRIVATE
     BONGO_CAT_NATIVE_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")

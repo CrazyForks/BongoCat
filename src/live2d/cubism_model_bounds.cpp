@@ -107,9 +107,11 @@ static float frame_margin(float overflow, float padding) {
 
 void NativeModel::prepare_expression_frame() {
     frame_ = BongoCatLive2DFrame{};
-    /* Mver models have authored background/input layers in the same canvas;
-       changing their viewport would break that compatibility contract. */
-    if (!_model || render_options_.mver_projection) {
+    /* Authored Mver calibration keeps its exact frame. Legacy conversions
+       opt into extra space because their inferred projection can clip geometry.
+       The shared content viewport keeps background/input layers aligned. */
+    if (!_model || (render_options_.mver_projection &&
+            !render_options_.auto_frame)) {
         update_viewport();
         return;
     }

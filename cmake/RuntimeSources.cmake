@@ -27,6 +27,8 @@ set(BONGO_CAT_MEDIA_SOURCES
 set(BONGO_CAT_RENDER_SOURCES
   src/render/gl_api.c
   src/render/overlay.c
+  src/render/overlay_assets.c
+  src/render/overlay_input.c
   src/render/overlay_draw.c
   src/render/mver_pointer_overlay.c
   src/render/mver_pointer_overlay_draw.c)
@@ -141,7 +143,9 @@ set(BONGO_CAT_RUNTIME_IMPORT_SOURCES
   src/runtime/model/import/tauri/model_import_tauri_convert.c
   src/runtime/model/import/tauri/model_import_tauri_discovery.c
   src/runtime/model/import/tauri/model_import_tauri_images.c
+  src/runtime/model/import/tauri/model_import_tauri_input.c
   src/runtime/model/import/tauri/model_import_tauri_keys.c
+  src/runtime/model/import/tauri/model_import_tauri_legacy.c
   src/runtime/model/import/tauri/model_import_tauri_metadata.c
   src/runtime/model/import/tauri/model_import_tauri_resources.c
   src/runtime/model/import/tauri/model_import_tauri_tree.c

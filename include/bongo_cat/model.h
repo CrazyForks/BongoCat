@@ -112,6 +112,7 @@ typedef struct BongoCatLive2DFrame {
 
 typedef struct BongoCatLive2DRenderOptions {
     bool mver_projection;
+    bool auto_frame;
     bool source_mirror;
     bool custom_pointer_bounds;
     bool pointer_left_handed;

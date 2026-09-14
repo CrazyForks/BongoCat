@@ -67,6 +67,7 @@ Desktop.ini
 !/docs/README.id-ID.md
 !/docs/wechat.png
 !/docs/windows-multimonitor-input-validation.md
+!/docs/model-import-rendering.md
 
 # Local Windows audit tools
 /cmake/*.ps1
