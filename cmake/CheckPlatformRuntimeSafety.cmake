@@ -35,7 +35,7 @@ set(FORBIDDEN_TOKENS
   SE_DEBUG_NAME SeDebugPrivilege PROCESS_VM_READ PROCESS_VM_WRITE
   PROCESS_VM_OPERATION PROCESS_ALL_ACCESS THREAD_SET_CONTEXT
   kCGHIDEventTap kCGHeadInsertEventTap IOConnectCall
-  /dev/input /dev/uinput CAP_SYS_PTRACE CAP_SYS_ADMIN
+  /dev/uinput CAP_SYS_PTRACE CAP_SYS_ADMIN
   WH_KEYBOARD_LL WH_MOUSE_LL RIDEV_NOLEGACY RIDEV_CAPTUREMOUSE
   RIDEV_NOHOTKEYS RIDEV_APPKEYS RIDEV_EXCLUDE RIDEV_EXINPUTSINK)
 set(FAILURES "")
@@ -73,6 +73,7 @@ set(SENSITIVE_RULES
   "CGEventTapEnable|src/platform/macos/macos_input.m"
   "CGPreflightListenEventAccess|src/platform/macos/macos_input.m"
   "CGRequestListenEventAccess|src/platform/macos/macos_input.m"
+  "/dev/input|src/platform/linux/linux_evdev.c"
   "XISelectEvents|src/platform/linux/linux_x11.c"
   "XFixesSetWindowShapeRegion|src/platform/linux/linux_x11.c"
   "XSendEvent|src/platform/linux/linux.c|src/platform/linux/linux_x11.c"

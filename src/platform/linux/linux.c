@@ -91,9 +91,13 @@ BongoCatResult bongo_cat_platform_init(BongoCatPlatform *platform, SDL_Window *w
     BongoCatError input_error = {0};
     if (!bongo_cat_linux_x11_start(platform, &input_error) && input_error.message[0])
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", input_error.message);
+    input_error = (BongoCatError){0};
+    if (!bongo_cat_linux_evdev_start(platform, &input_error) && input_error.message[0])
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", input_error.message);
     return BONGO_CAT_OK;
 }
 void bongo_cat_platform_shutdown(BongoCatPlatform *platform) {
+    bongo_cat_linux_evdev_stop(platform);
     bongo_cat_linux_x11_stop(platform);
     if (active_platform == platform) active_platform = NULL;
 }
@@ -136,22 +140,41 @@ bool bongo_cat_platform_pointer_local(BongoCatPlatform *platform, double screen_
     return *local_x >= 0 && *local_x < width && *local_y >= 0 && *local_y < height;
 }
 bool bongo_cat_platform_pointer_locked(BongoCatPlatform *platform) {
-    (void)platform;
-    return false;
+    /* A Wayland compositor never hands the global cursor position to another
+       client: XInput2 only sees the pointer while it is over one of our own
+       windows, so absolute tracking freezes everywhere else. Follow relative
+       kernel motion instead. WAYLAND_DISPLAY is the reliable indicator here;
+       XQueryExtension("XWAYLAND") does not report it on every setup. */
+    const char *wayland = getenv("WAYLAND_DISPLAY");
+    bool wayland_session = (wayland && wayland[0]) ||
+        bongo_cat_linux_x11_xwayland(platform);
+    return bongo_cat_linux_evdev_pointer_active() && wayland_session;
 }
 bool bongo_cat_platform_relative_pointer(BongoCatPlatform *platform,
     double *x, double *y) {
-    (void)platform; (void)x; (void)y;
-    return false;
+    /* The kernel reports raw device deltas, while the real cursor additionally
+       gets the compositor's pointer acceleration and speed setting. Scaling up
+       compensates for that, so the pet tracks the cursor much more closely.
+       Tune here if the follow feels too fast or too slow. */
+    static const double gain = 2.0;
+    (void)platform;
+    if (!bongo_cat_linux_evdev_relative_pointer(x, y)) return false;
+    *x *= gain;
+    *y *= gain;
+    return true;
 }
 void bongo_cat_platform_relative_pointer_reset(BongoCatPlatform *platform) {
     (void)platform;
+    bongo_cat_linux_evdev_relative_pointer_reset();
 }
 void bongo_cat_platform_relative_pointer_release(BongoCatPlatform *platform) {
     (void)platform;
+    bongo_cat_linux_evdev_relative_pointer_reset();
 }
 void bongo_cat_platform_set_always_on_top(BongoCatPlatform *platform, bool enabled) {
+    if (!platform || !platform->window) return;
     SDL_SetWindowAlwaysOnTop(platform->window, enabled);
+    bongo_cat_linux_x11_set_above(platform, enabled);
     bongo_cat_linux_x11_configure_capture_window(platform);
 }
 void bongo_cat_platform_raise_window(SDL_Window *window) {

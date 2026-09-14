@@ -51,6 +51,7 @@ else()
   endif()
   target_sources(bongo_cat_runtime PRIVATE
     src/platform/linux/linux.c
+    src/platform/linux/linux_evdev.c
     src/platform/linux/linux_x11.c)
   target_link_libraries(bongo_cat_runtime PRIVATE
     X11::X11 X11::Xi X11::Xfixes m CURL::libcurl)
