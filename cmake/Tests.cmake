@@ -204,4 +204,10 @@ if(BUILD_TESTING)
     target_link_libraries(bongo_cat_ui_tests PRIVATE m)
     target_link_libraries(bongo_cat_app_state_tests PRIVATE m)
   endif()
+
+  if(APPLE)
+    add_test(NAME macos-bundle-icon COMMAND ${CMAKE_COMMAND}
+      "-DBUNDLE=$<TARGET_BUNDLE_DIR:bongo_cat>"
+      -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CheckMacOSBundleIcon.cmake")
+  endif()
 endif()
