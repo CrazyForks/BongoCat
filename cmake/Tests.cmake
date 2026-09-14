@@ -157,6 +157,16 @@ if(BUILD_TESTING)
     add_test(NAME live2d-motion-state COMMAND bongo_cat_motion_state_tests)
   endif()
 
+  if(APPLE)
+    add_executable(bongo_cat_macos_click_through_tests
+      tests/platform/test_macos_click_through.m)
+    target_link_libraries(bongo_cat_macos_click_through_tests PRIVATE
+      bongo_cat_runtime bongo_cat_warnings)
+    add_test(NAME macos-click-through COMMAND bongo_cat_macos_click_through_tests)
+    set_tests_properties(macos-click-through PROPERTIES
+      TIMEOUT 60 SKIP_RETURN_CODE 77)
+  endif()
+
   if(WIN32)
     add_executable(bongo_cat_windows_input_tests
       tests/platform/test_windows_input.c
