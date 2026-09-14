@@ -11,7 +11,7 @@ void NativeModel::bind_textures() {
     for (size_t i = 0; i < textures_.size(); ++i)
         if (textures_[i])
             renderer->BindTexture((Csm::csmInt32)i, textures_[i]);
-    renderer->IsPremultipliedAlpha(false);
+    renderer->IsPremultipliedAlpha(true);
 }
 
 void NativeModel::release_textures() {

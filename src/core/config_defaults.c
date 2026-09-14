@@ -209,8 +209,8 @@ void bongo_cat_settings_defaults(BongoCatSettings *config) {
 
 void bongo_cat_settings_validate(BongoCatSettings *config) {
     if (!config) return;
-    if (config->model.max_fps < 1) config->model.max_fps = 1;
-    if (config->model.max_fps > 240) config->model.max_fps = 240;
+    config->model.max_fps = config->model.max_fps > 0 &&
+        config->model.max_fps <= 30 ? 30 : BONGO_CAT_DEFAULT_MAX_FPS;
     config->window.hide_delay_seconds = clampf_or(
         config->window.hide_delay_seconds, 0.0f, 60.0f, 0.0f);
     config->window.hide_fade_seconds = clampf_or(

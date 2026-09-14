@@ -1,4 +1,12 @@
 if(BUILD_TESTING)
+  add_executable(bongo_cat_image_filter_tests tests/media/test_image_filter.c)
+  target_include_directories(bongo_cat_image_filter_tests PRIVATE
+    src/media tests/support)
+  target_include_directories(bongo_cat_image_filter_tests SYSTEM PRIVATE
+    ${BONGO_CAT_STB_INCLUDE_DIR})
+  target_link_libraries(bongo_cat_image_filter_tests PRIVATE
+    bongo_cat_runtime bongo_cat_warnings)
+  add_test(NAME image-filter COMMAND bongo_cat_image_filter_tests)
   if(APPLE)
     add_test(NAME macos-bundle-signature COMMAND /usr/bin/codesign
       --verify --strict --deep --verbose=2 "$<TARGET_BUNDLE_DIR:bongo_cat>")

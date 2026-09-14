@@ -50,7 +50,14 @@ static void check_defaults_and_validation(void) {
     memcpy(session.active_behaviors[2].model_id, "other", sizeof("other"));
     bongo_cat_settings_validate(&settings);
     bongo_cat_session_validate(&session);
-    CHECK(settings.model.max_fps == 240);
+    CHECK(settings.model.max_fps == 60);
+    const int old_fps[] = {-1, 0, 1, 24, 30, 31, 60, 120, 240};
+    const int new_fps[] = {60, 60, 30, 30, 30, 60, 60, 60, 60};
+    for (size_t i = 0; i < sizeof(old_fps) / sizeof(old_fps[0]); ++i) {
+        settings.model.max_fps = old_fps[i];
+        bongo_cat_settings_validate(&settings);
+        CHECK(settings.model.max_fps == new_fps[i]);
+    }
     CHECK(settings.window.hide_delay_seconds == 0.0f);
     CHECK(settings.window.random_expression_interval_seconds ==
         BONGO_CAT_DEFAULT_RANDOM_EXPRESSION_SECONDS);

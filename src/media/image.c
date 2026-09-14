@@ -32,6 +32,16 @@ void bongo_cat_image_free(BongoCatImage *image) {
 }
 static unsigned int upload(const BongoCatImage *image, GLuint texture,
     bool model_texture) {
+    /* Premultiply in place before any GPU filtering. Cubism must use its
+     * premultiplied shader for these model textures, including fallback. */
+    if (model_texture) {
+        size_t count = (size_t)image->width * image->height;
+        for (size_t i = 0; i < count; ++i) {
+            unsigned char *pixel = image->pixels + i * 4;
+            for (int c = 0; c < 3; ++c)
+                pixel[c] = (unsigned char)((pixel[c] * pixel[3] + 127) / 255);
+        }
+    }
     bool created = texture == 0;
     if (created) glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
