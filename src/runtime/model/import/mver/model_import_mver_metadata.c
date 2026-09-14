@@ -61,13 +61,14 @@ static bool add_standard_pointer(yyjson_mut_doc *output, yyjson_mut_val *root,
     const char *right = mouse ? "resources/mver-pointer/mouse_right.png" :
         "resources/mver-pointer/tablet_right.png";
     const char *side = mouse ? "resources/mver-pointer/mouse_side.png" : "";
-    bool enabled = pointer_asset(candidate, "arm.png") &&
+    /* Mver 0.1.6's l2d switch replaces the sprite renderer. The older
+       standalone mode 98 instead draws a sprite pointer over Live2D. */
+    bool sprite_pointer = !yyjson_is_true(live2d_value) ||
+        yyjson_get_int(yyjson_obj_get(config, "mode")) == 98;
+    bool enabled = sprite_pointer && pointer_asset(candidate, "arm.png") &&
         pointer_asset(candidate, mouse ? "mouse.png" : "tablet.png");
     yyjson_mut_val *pointer = yyjson_mut_obj_add_obj(output, root, "standardPointer");
     return pointer &&
-        /* Mver draws the pointer layer after the Live2D model in both standard
-           and Live2D-standard modes. Keep it enabled so the authored hand,
-           device, and button overlays continue to follow the pointer. */
         yyjson_mut_obj_add_bool(output, pointer, "enabled", enabled) &&
         yyjson_mut_obj_add_bool(output, pointer, "mouse", mouse) &&
         yyjson_mut_obj_add_bool(output, pointer, "leftHanded",
