@@ -5,6 +5,18 @@
 
 bool bongo_cat_linux_x11_start(BongoCatPlatform *platform, BongoCatError *error);
 void bongo_cat_linux_x11_stop(BongoCatPlatform *platform);
+/* Read-only evdev keyboard listener. Wayland compositors never forward other
+   applications' keys to an X11 client, so XInput2 alone cannot show key
+   presses on Wayland; this backend observes the kernel key stream instead. */
+bool bongo_cat_linux_evdev_start(BongoCatPlatform *platform, BongoCatError *error);
+void bongo_cat_linux_evdev_stop(BongoCatPlatform *platform);
+bool bongo_cat_linux_evdev_keyboard_active(void);
+bool bongo_cat_linux_evdev_pointer_active(void);
+/* Relative pointer delta accumulated by the evdev listener. Wayland never
+   exposes the global cursor position to other clients, so the pet follows
+   relative motion from the kernel instead of absolute coordinates. */
+bool bongo_cat_linux_evdev_relative_pointer(double *dx, double *dy);
+void bongo_cat_linux_evdev_relative_pointer_reset(void);
 bool bongo_cat_linux_x11_supported(const BongoCatPlatform *platform);
 bool bongo_cat_linux_x11_xwayland(const BongoCatPlatform *platform);
 void bongo_cat_linux_x11_click_through(BongoCatPlatform *platform, bool enabled);
