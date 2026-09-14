@@ -60,6 +60,24 @@ if(BUILD_TESTING)
   target_link_libraries(bongo_cat_ui_tests PRIVATE bongo_cat_warnings)
   add_test(NAME ui COMMAND bongo_cat_ui_tests)
 
+  if(APPLE)
+    # The refresh helper runs the real page code with the platform read replaced
+    # per target, so the repaint decision is tested without touching TCC.
+    add_executable(bongo_cat_input_monitoring_refresh_tests
+      tests/ui/test_input_monitoring_refresh.c
+      src/ui/preferences/preferences_pages.c)
+    target_compile_definitions(bongo_cat_input_monitoring_refresh_tests PRIVATE
+      bongo_cat_platform_input_monitoring_authorized=bongo_cat_test_input_monitoring_authorized)
+    target_include_directories(bongo_cat_input_monitoring_refresh_tests PRIVATE
+      ${BONGO_CAT_RUNTIME_INTERNAL_INCLUDE_DIRS})
+    target_include_directories(bongo_cat_input_monitoring_refresh_tests SYSTEM PRIVATE
+      ${BONGO_CAT_NUKLEAR_INCLUDE_DIR})
+    target_link_libraries(bongo_cat_input_monitoring_refresh_tests PRIVATE
+      bongo_cat_runtime bongo_cat_warnings)
+    add_test(NAME macos-input-monitoring-refresh
+      COMMAND bongo_cat_input_monitoring_refresh_tests)
+  endif()
+
   add_executable(bongo_cat_app_state_tests
     tests/core/test_app_state.c src/core/app_state.c
     src/runtime/model/model_behavior_state.c)

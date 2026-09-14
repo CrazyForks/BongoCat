@@ -104,6 +104,10 @@ static int SDLCALL input_thread(void *userdata) {
             CGEventMaskBit(kCGEventOtherMouseDown) | CGEventMaskBit(kCGEventOtherMouseUp) |
             CGEventMaskBit(kCGEventMouseMoved) | CGEventMaskBit(kCGEventLeftMouseDragged) |
             CGEventMaskBit(kCGEventRightMouseDragged) | CGEventMaskBit(kCGEventOtherMouseDragged);
+        /* The permission this listener is built with, kept only to word the
+           warning below; the page reads the current permission itself. */
+        bool permitted = false;
+        if (@available(macOS 10.15, *)) permitted = CGPreflightListenEventAccess();
         state->tap = CGEventTapCreate(kCGSessionEventTap, kCGTailAppendEventTap,
             kCGEventTapOptionListenOnly, mask, event_tap, state);
         if (state->tap) {
@@ -117,9 +121,16 @@ static int SDLCALL input_thread(void *userdata) {
             atomic_store(&global_supported, true);
         }
         SDL_SignalSemaphore(state->ready);
-        if (!atomic_load(&state->supported)) SDL_LogWarn(
-            SDL_LOG_CATEGORY_APPLICATION,
-            "macOS input monitoring permission is required for global input");
+        if (!atomic_load(&state->supported)) {
+            /* Not a permission verdict: a listener can also fail to build with
+               the permission already granted. */
+            if (permitted)
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                    "macOS input listener failed to initialize");
+            else
+                SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "macOS input "
+                    "monitoring permission is required for global keyboard input");
+        }
         while (atomic_load(&state->supported) &&
             !atomic_load(&state->stop_requested))
             CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.1, true);
@@ -136,9 +147,6 @@ static int SDLCALL input_thread(void *userdata) {
 }
 
 bool bongo_cat_macos_input_start(BongoCatPlatform *platform, BongoCatError *error) {
-    if (@available(macOS 10.15, *)) {
-        if (!CGPreflightListenEventAccess()) CGRequestListenEventAccess();
-    }
     MacInputState *state = calloc(1, sizeof(*state));
     if (!state) {
         bongo_cat_error_set(error, BONGO_CAT_ERROR_MEMORY,
@@ -184,4 +192,14 @@ void bongo_cat_macos_input_stop(BongoCatPlatform *platform) {
 }
 
 bool bongo_cat_macos_input_supported(void) { return atomic_load(&global_supported); }
+
+bool bongo_cat_macos_input_monitoring_authorized(void) {
+    if (@available(macOS 10.15, *)) return CGPreflightListenEventAccess();
+    return false;
+}
+
+bool bongo_cat_macos_input_monitoring_request(void) {
+    if (@available(macOS 10.15, *)) return CGRequestListenEventAccess();
+    return false;
+}
 #endif

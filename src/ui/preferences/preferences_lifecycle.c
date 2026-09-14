@@ -59,6 +59,9 @@ static void release_window(BongoCatPreferences *value) {
 
 void bongo_cat_preferences_show(BongoCatPreferences *value) {
     if (!value) return;
+#ifdef __APPLE__
+    bongo_cat_preferences_input_monitoring_refresh(value);
+#endif
     if (value->visible) {
         bongo_cat_platform_raise_window(value->window);
         bongo_cat_app_request_nearby_model_refresh(value->app);

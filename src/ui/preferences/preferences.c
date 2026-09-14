@@ -229,6 +229,13 @@ bool bongo_cat_preferences_event(BongoCatPreferences *value, const SDL_Event *ev
         return true;
     }
     if (bongo_cat_preferences_scale_event(value, event)) return true;
+#ifdef __APPLE__
+    /* The user returns from System Settings through this window. */
+    if (event->type == SDL_EVENT_WINDOW_FOCUS_GAINED) {
+        bongo_cat_preferences_input_monitoring_refresh(value);
+        value->render_dirty = true;
+    }
+#endif
     if (event->type == SDL_EVENT_WINDOW_FOCUS_LOST) {
         bongo_cat_ui_input_reset(&value->ui);
         if (value->chrome_dragging) SDL_CaptureMouse(false);

@@ -214,6 +214,14 @@ bool bongo_cat_platform_dynamic_hit_supported(void) {
     return bongo_cat_macos_input_supported();
 }
 
+bool bongo_cat_platform_input_monitoring_authorized(void) {
+    return bongo_cat_macos_input_monitoring_authorized();
+}
+
+bool bongo_cat_platform_input_monitoring_request(void) {
+    return bongo_cat_macos_input_monitoring_request();
+}
+
 bool bongo_cat_platform_open_directory(const char *path) {
     if (!path || !path[0]) return false;
     @autoreleasepool {
