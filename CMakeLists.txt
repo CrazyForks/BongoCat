@@ -136,6 +136,17 @@ endif()
 
 bongo_cat_stage_cubism_assets(bongo_cat)
 
+if(APPLE)
+  # The linker signs the executable on its own before the bundle's resources are
+  # copied in, which leaves strict verification failing with "code has no resources
+  # but signature indicates they must be present". Re-sign once every resource and
+  # executable change has landed, so this must stay the last POST_BUILD step.
+  add_custom_command(TARGET bongo_cat POST_BUILD
+    COMMAND /usr/bin/codesign --force --sign - "$<TARGET_BUNDLE_DIR:bongo_cat>"
+    COMMENT "Ad-hoc signing the BongoCat bundle"
+    VERBATIM)
+endif()
+
 add_custom_target(check-lines ALL
   COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_CURRENT_SOURCE_DIR}
     -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/CheckLines.cmake
