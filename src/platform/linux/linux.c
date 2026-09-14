@@ -172,7 +172,9 @@ void bongo_cat_platform_relative_pointer_release(BongoCatPlatform *platform) {
     bongo_cat_linux_evdev_relative_pointer_reset();
 }
 void bongo_cat_platform_set_always_on_top(BongoCatPlatform *platform, bool enabled) {
+    if (!platform || !platform->window) return;
     SDL_SetWindowAlwaysOnTop(platform->window, enabled);
+    bongo_cat_linux_x11_set_above(platform, enabled);
     bongo_cat_linux_x11_configure_capture_window(platform);
 }
 void bongo_cat_platform_raise_window(SDL_Window *window) {

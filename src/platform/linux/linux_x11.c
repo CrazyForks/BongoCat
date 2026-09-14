@@ -107,12 +107,21 @@ static void pointer(LinuxX11State *state, Display *display) {
 static void raw_event(LinuxX11State *state, Display *display, XIRawEvent *raw) {
     char buffer[16]; const char *name = NULL;
     if (raw->evtype == XI_RawKeyPress || raw->evtype == XI_RawKeyRelease) {
+        /* The evdev backend reports every key whenever it can read the kernel
+           key stream, and it is the only one that still works while focus is
+           on a native Wayland surface. Letting XInput2 report as well would
+           duplicate every press. */
+        if (bongo_cat_linux_evdev_keyboard_active()) return;
         name = key_name(XkbKeycodeToKeysym(display, (KeyCode)raw->detail, 0, 0), buffer);
         bool down = raw->evtype == XI_RawKeyPress;
         if (bongo_cat_input_edge(state->key_down, raw->detail, down))
             push(state, down ? BONGO_CAT_INPUT_KEY_DOWN :
                 BONGO_CAT_INPUT_KEY_UP, name, down ? 1.0f : 0.0f);
     } else if (raw->evtype == XI_RawButtonPress || raw->evtype == XI_RawButtonRelease) {
+        /* The evdev backend reports clicks for as long as it can read the
+           kernel input stream, which also covers the case where a click lands
+           while no XWayland surface holds the pointer. */
+        if (bongo_cat_linux_evdev_pointer_active()) return;
         if (raw->detail == 1) name = "Left";
         else if (raw->detail == 2) name = "Middle";
         else if (raw->detail == 3) name = "Right";
@@ -219,6 +228,16 @@ static void state_message(LinuxX11State *state, const char *name, long action) {
     event.xclient.data.l[0] = action; event.xclient.data.l[1] = (long)target;
     XSendEvent(state->display, DefaultRootWindow(state->display), False,
         SubstructureRedirectMask | SubstructureNotifyMask, &event); XFlush(state->display);
+}
+
+void bongo_cat_linux_x11_set_above(BongoCatPlatform *platform, bool enabled) {
+    LinuxX11State *state = platform ? platform->native : NULL;
+    if (!state || !state->display || !state->window) return;
+    /* SDL_SetWindowAlwaysOnTop answers success even when the request never
+       reaches the compositor, so is pushed through the same EWMH path that
+       already keeps _NET_WM_STATE_SKIP_TASKBAR applied. */
+    state_message(state, "_NET_WM_STATE_ABOVE", enabled ? 1 : 0);
+    XSync(state->display, False);
 }
 
 void bongo_cat_linux_x11_configure_capture_window(BongoCatPlatform *platform) {
