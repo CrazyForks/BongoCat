@@ -1,4 +1,30 @@
 if(BUILD_TESTING)
+  add_executable(bongo_cat_input_concurrent_tests tests/core/test_input_concurrent.c)
+  target_include_directories(bongo_cat_input_concurrent_tests PRIVATE tests/support)
+  target_link_libraries(bongo_cat_input_concurrent_tests PRIVATE
+    bongo_cat_core SDL3::SDL3-static bongo_cat_warnings)
+  add_test(NAME input-concurrent COMMAND bongo_cat_input_concurrent_tests)
+  set_tests_properties(input-concurrent PROPERTIES TIMEOUT 30)
+
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    add_executable(bongo_cat_linux_evdev_tests tests/platform/test_linux_evdev.c)
+    target_include_directories(bongo_cat_linux_evdev_tests PRIVATE
+      src/platform/linux tests/support)
+    target_link_libraries(bongo_cat_linux_evdev_tests PRIVATE
+      bongo_cat_runtime bongo_cat_warnings)
+    add_test(NAME linux-evdev COMMAND bongo_cat_linux_evdev_tests)
+    set_tests_properties(linux-evdev PROPERTIES TIMEOUT 15)
+    add_executable(bongo_cat_linux_window_tests tests/platform/test_linux_window.c)
+    target_include_directories(bongo_cat_linux_window_tests PRIVATE
+      ${BONGO_CAT_RUNTIME_INTERNAL_INCLUDE_DIRS} tests/support)
+    target_link_libraries(bongo_cat_linux_window_tests PRIVATE
+      bongo_cat_runtime bongo_cat_warnings)
+    add_test(NAME linux-window COMMAND bongo_cat_linux_window_tests
+      --ci-smoke --ci-ignore-global-input
+      "--storage-root=${CMAKE_CURRENT_BINARY_DIR}/linux-window-data")
+    set_tests_properties(linux-window PROPERTIES TIMEOUT 30
+      ENVIRONMENT "BONGOCAT_ENABLE_EVDEV=0;BONGO_CAT_DISABLE_NEARBY_MODEL_SCAN=1")
+  endif()
   add_executable(bongo_cat_image_filter_tests tests/media/test_image_filter.c)
   target_include_directories(bongo_cat_image_filter_tests PRIVATE
     src/media tests/support)

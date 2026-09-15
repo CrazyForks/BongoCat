@@ -73,7 +73,7 @@ set(SENSITIVE_RULES
   "CGEventTapEnable|src/platform/macos/macos_input.m"
   "CGPreflightListenEventAccess|src/platform/macos/macos_input.m"
   "CGRequestListenEventAccess|src/platform/macos/macos_input.m"
-  "/dev/input|src/platform/linux/linux_evdev.c"
+  "/dev/input|src/platform/linux/linux_evdev_devices.c"
   "XISelectEvents|src/platform/linux/linux_x11.c"
   "XFixesSetWindowShapeRegion|src/platform/linux/linux_x11.c"
   "XSendEvent|src/platform/linux/linux.c|src/platform/linux/linux_x11.c"
@@ -102,6 +102,28 @@ foreach(RULE IN LISTS SENSITIVE_RULES)
         "${RELATIVE_FILE}: ${CAPABILITY} is owned by ${OWNERS}")
     endif()
   endforeach()
+endforeach()
+
+# The reviewed evdev exception permits read-only observation, not device writes
+# or permission changes.
+file(READ "${ROOT}/src/platform/linux/linux_evdev_devices.c" LINUX_EVDEV)
+foreach(TOKEN O_WRONLY O_RDWR O_CREAT O_TRUNC)
+  string(FIND "${LINUX_EVDEV}" "${TOKEN}" POSITION)
+  if(NOT POSITION EQUAL -1)
+    list(APPEND FAILURES "linux_evdev_devices.c: forbidden open flag ${TOKEN}")
+  endif()
+endforeach()
+foreach(TOKEN O_RDONLY O_NONBLOCK O_CLOEXEC O_NOFOLLOW)
+  string(FIND "${LINUX_EVDEV}" "${TOKEN}" POSITION)
+  if(POSITION EQUAL -1)
+    list(APPEND FAILURES "linux_evdev_devices.c: missing open safeguard ${TOKEN}")
+  endif()
+endforeach()
+foreach(API chmod fchmod chown fchown system popen)
+  string(REGEX MATCH "(^|[^A-Za-z0-9_])${API}[ \t\r\n]*\\(" MATCHED "${LINUX_EVDEV}")
+  if(MATCHED)
+    list(APPEND FAILURES "linux_evdev_devices.c: forbidden API ${API}")
+  endif()
 endforeach()
 
 file(READ "${ROOT}/cmake/windows.manifest.in" WINDOWS_MANIFEST)

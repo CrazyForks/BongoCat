@@ -343,6 +343,24 @@ contains no ads, analytics tools, or user-tracking code. When an update check
 is performed, it only requests public release metadata; it does not send input,
 configuration, or usage data.
 
+### Linux Wayland Input
+
+X11 uses XInput2 by default. Experimental evdev input for Wayland is off by
+default. After reviewing [the input permission risks](SECURITY.md#linux-input),
+it can be explicitly selected for one launch:
+
+```sh
+BONGOCAT_ENABLE_EVDEV=1 ./build/BongoCat
+```
+
+This does not grant device permissions. Do not run the app as root or add
+your account to the `input` group to make it work. Raw input can include
+password keystrokes and is not paused on screen lock or session switching.
+Close the app to stop monitoring; hiding it does not stop input. Launch
+without the variable to return to the default backend. Evdev mouse following
+uses unaccelerated device motion; Wayland placement, click-through, and
+always-on-top support still depend on the compositor.
+
 ### 🖼️ Why OpenGL instead of Vulkan?
 
 We chose OpenGL not because Vulkan is bad, but because BongoCat does not need

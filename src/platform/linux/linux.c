@@ -86,19 +86,38 @@ BongoCatResult bongo_cat_platform_init(BongoCatPlatform *platform, SDL_Window *w
             "Cannot reserve the Linux input wake event");
         return BONGO_CAT_ERROR_PLATFORM;
     }
+    LinuxPlatformState *native = calloc(1, sizeof(*native));
+    if (!native) {
+        bongo_cat_error_set(error, BONGO_CAT_ERROR_PLATFORM,
+            "Cannot allocate Linux platform state");
+        return BONGO_CAT_ERROR_PLATFORM;
+    }
+    platform->native = native;
     active_platform = platform;
     publish_instance_window(window);
+    const char *wayland = getenv("WAYLAND_DISPLAY");
+    const char *session = getenv("XDG_SESSION_TYPE");
+    native->wayland = (wayland && wayland[0]) ||
+        (driver && strcmp(driver, "wayland") == 0) ||
+        (session && strcmp(session, "wayland") == 0);
+    native->evdev_selected = bongo_cat_linux_evdev_requested(
+        getenv("BONGOCAT_ENABLE_EVDEV"), native->wayland);
     BongoCatError input_error = {0};
     if (!bongo_cat_linux_x11_start(platform, &input_error) && input_error.message[0])
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", input_error.message);
-    input_error = (BongoCatError){0};
-    if (!bongo_cat_linux_evdev_start(platform, &input_error) && input_error.message[0])
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", input_error.message);
+    if (native->evdev_selected) {
+        input_error = (BongoCatError){0};
+        if (!bongo_cat_linux_evdev_start(platform, &input_error) && input_error.message[0])
+            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", input_error.message);
+    }
     return BONGO_CAT_OK;
 }
 void bongo_cat_platform_shutdown(BongoCatPlatform *platform) {
-    bongo_cat_linux_evdev_stop(platform);
+    if (!platform) return;
     bongo_cat_linux_x11_stop(platform);
+    bongo_cat_linux_evdev_stop(platform);
+    free(platform->native);
+    platform->native = NULL;
     if (active_platform == platform) active_platform = NULL;
 }
 void bongo_cat_platform_set_click_through(BongoCatPlatform *platform,
@@ -128,7 +147,11 @@ bool bongo_cat_platform_frame_alpha(const BongoCatPlatform *platform,
 void bongo_cat_platform_set_visible(BongoCatPlatform *platform, bool visible) {
     if (!platform || !platform->window) return;
     visible ? SDL_ShowWindow(platform->window) : SDL_HideWindow(platform->window);
-    if (visible) bongo_cat_linux_x11_configure_capture_window(platform);
+    if (visible) {
+        bongo_cat_linux_x11_configure_capture_window(platform);
+        const LinuxPlatformState *native = platform->native;
+        if (native) bongo_cat_linux_x11_set_above(platform, native->always_on_top);
+    }
 }
 bool bongo_cat_platform_pointer_local(BongoCatPlatform *platform, double screen_x,
     double screen_y, float *local_x, float *local_y) {
@@ -140,48 +163,31 @@ bool bongo_cat_platform_pointer_local(BongoCatPlatform *platform, double screen_
     return *local_x >= 0 && *local_x < width && *local_y >= 0 && *local_y < height;
 }
 bool bongo_cat_platform_pointer_locked(BongoCatPlatform *platform) {
-    /* A Wayland compositor never hands the global cursor position to another
-       client: XInput2 only sees the pointer while it is over one of our own
-       windows, so absolute tracking freezes everywhere else. Follow relative
-       kernel motion instead. WAYLAND_DISPLAY is the reliable indicator here;
-       XQueryExtension("XWAYLAND") does not report it on every setup. */
-    const char *wayland = getenv("WAYLAND_DISPLAY");
-    bool wayland_session = (wayland && wayland[0]) ||
-        bongo_cat_linux_x11_xwayland(platform);
-    return bongo_cat_linux_evdev_pointer_active() && wayland_session;
+    return bongo_cat_linux_evdev_pointer_active(platform);
 }
 bool bongo_cat_platform_relative_pointer(BongoCatPlatform *platform,
     double *x, double *y) {
-    /* The kernel reports raw device deltas, while the real cursor additionally
-       gets the compositor's pointer acceleration and speed setting. Scaling up
-       compensates for that, so the pet tracks the cursor much more closely.
-       Tune here if the follow feels too fast or too slow. */
-    static const double gain = 2.0;
-    (void)platform;
-    if (!bongo_cat_linux_evdev_relative_pointer(x, y)) return false;
-    *x *= gain;
-    *y *= gain;
-    return true;
+    return bongo_cat_linux_evdev_relative_pointer(platform, x, y);
 }
 void bongo_cat_platform_relative_pointer_reset(BongoCatPlatform *platform) {
-    (void)platform;
-    bongo_cat_linux_evdev_relative_pointer_reset();
+    bongo_cat_linux_evdev_relative_pointer_reset(platform);
 }
 void bongo_cat_platform_relative_pointer_release(BongoCatPlatform *platform) {
-    (void)platform;
-    bongo_cat_linux_evdev_relative_pointer_reset();
+    bongo_cat_linux_evdev_relative_pointer_reset(platform);
 }
 void bongo_cat_platform_set_always_on_top(BongoCatPlatform *platform, bool enabled) {
     if (!platform || !platform->window) return;
+    LinuxPlatformState *native = platform->native;
+    if (native) native->always_on_top = enabled;
     SDL_SetWindowAlwaysOnTop(platform->window, enabled);
     bongo_cat_linux_x11_set_above(platform, enabled);
     bongo_cat_linux_x11_configure_capture_window(platform);
 }
 void bongo_cat_platform_raise_window(SDL_Window *window) {
     if (!window) return;
-    SDL_ShowWindow(window);
     if (active_platform && active_platform->window == window)
-        bongo_cat_linux_x11_configure_capture_window(active_platform);
+        bongo_cat_platform_set_visible(active_platform, true);
+    else SDL_ShowWindow(window);
     SDL_RaiseWindow(window);
 }
 

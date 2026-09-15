@@ -167,26 +167,15 @@ bool bongo_cat_window_event(BongoCatApp *app, const SDL_Event *event) {
     if (event->type == SDL_EVENT_WINDOW_EXPOSED ||
         event->type == SDL_EVENT_WINDOW_SHOWN ||
         event->type == SDL_EVENT_WINDOW_RESTORED) {
-        /* XWayland can report MINIMIZED and then deliver only EXPOSED when the
-           surface comes back (no SHOWN/RESTORED), which left window_minimized
-           set forever and disabled the render loop entirely: the pet stayed on
-           screen but froze, keys stopped showing and the pointer stopped
-           tracking. An EXPOSED surface is drawable, so it is authoritative
-           proof that the window is no longer minimized. */
-        app->window_minimized = false;
+        /* An expose can arrive without a restore on XWayland, but a queued
+           expose is not proof that the window is currently restored. */
+        app->window_minimized =
+            (SDL_GetWindowFlags(app->window) & SDL_WINDOW_MINIMIZED) != 0;
         bongo_cat_app_reset_pointer_tracking(app);
         /* DWM can discard the transparent redirection surface after an
            Explorer/display refresh. Repaint even when the model is idle so
            the restored alpha surface is submitted immediately. */
         app->dirty = true;
-        /* XWayland drops _NET_WM_STATE_ABOVE while a surface is unmapped and
-           does not put it back when the surface is mapped again, which left the
-           pet behind other windows after every hide/show. Re-assert it here:
-           EXPOSED only arrives once the surface is actually on screen, so this
-           runs after the compositor has finished the remap and nothing
-           overwrites it afterwards. */
-        bongo_cat_platform_set_always_on_top(&app->platform,
-            app->settings.window.always_on_top);
     }
     if (event->type == SDL_EVENT_WINDOW_FOCUS_GAINED ||
         event->type == SDL_EVENT_WINDOW_FOCUS_LOST) {

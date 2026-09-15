@@ -36,9 +36,41 @@ anti-cheat product. The source checks in
 boundaries; they are not an anti-cheat certification or a substitute for
 testing the actual release build.
 
+## Linux Input
+
+X11 uses XInput2 by default. Experimental Wayland input through evdev is
+disabled unless the process is started with `BONGOCAT_ENABLE_EVDEV=1` in a
+Wayland session. Restart without that variable to disable it. This opt-in
+selects evdev for the entire session; unreadable devices do not trigger
+automatic backend switching. Window placement still depends on the compositor.
+
+The evdev backend opens existing input event devices read-only and never
+changes permissions, installs udev rules, requests root, grabs devices, or
+injects input. Do not run BongoCat as root or add your account to the
+`input` group just to enable this feature. Broad input-group membership or
+generic udev rules can also grant other processes under your account access
+to your keyboard. Device access must be managed separately by your system
+administrator with the narrowest permissions appropriate for the machine.
+
+Raw device input is more sensitive than compositor-mediated input: it can
+include keys entered in password fields, and this backend does not detect
+screen locking or session changes. Hiding the pet does not stop monitoring.
+Do not enable evdev where this scope is unacceptable; exit BongoCat before
+locking or switching sessions when using this experimental backend. Removing
+a device ACL is not a guarantee that already-open descriptors are revoked.
+Key events stay in memory for animation and shortcuts; diagnostics contain
+device counts, not key names or input contents. They are not uploaded.
+
+Each device has separate pressed state. Disconnects release its held inputs.
+On kernel buffer overflow, known keys are released and incomplete events are
+discarded until the next synchronization report. Since the backend deliberately
+does not query device state with ioctl, a key held across overflow must be
+released and pressed again. Relative mouse motion is raw and unaccelerated,
+not the compositor's global cursor position; absolute touchpad motion is not
+converted into relative motion.
+
 ## Reporting Security Issues
 
 We always aim to ship secure software and take security flaws seriously. Thank you for responsibly disclosing your findings to the team to keep the open source community a safe space.
 
 To report a security issue, reach us at vladelaina@gmail.com. We will be in touch should we need any additional information or guidance to fix the bug.
-

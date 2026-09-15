@@ -70,16 +70,15 @@ void bongo_cat_window_set_visible(BongoCatApp *app, bool visible) {
     app->session.window.visible = visible;
     if (!visible) {
         app->startup_visibility_pending = false;
-        /* Nothing reads the position while the surface is gone, and the
-           compositor is free to place a surface that gets mapped again, so the
-           coordinates have to be captured here or they are lost with the
-           window. This snapshot is what the reveal path restores. */
+#if defined(__linux__)
+        /* Remember XWayland placement before unmapping the surface. */
         int x = 0, y = 0;
         if (SDL_GetWindowPosition(app->window, &x, &y)) {
             app->session.window.x = x;
             app->session.window.y = y;
             app->session.window.position_known = true;
         }
+#endif
         bongo_cat_platform_set_visible(&app->platform, false);
         return;
     }
@@ -91,31 +90,18 @@ void bongo_cat_window_set_visible(BongoCatApp *app, bool visible) {
     bongo_cat_app_reset_pointer_tracking(app);
     bongo_cat_platform_set_opacity(&app->platform,
         app->session.window.opacity_percent / 100.0f);
-    /* Ask for the remembered spot while the native window is still off screen,
-       so the clamp/recover calls below judge the restored geometry instead of
-       wherever the compositor happened to park the surface. */
+#if defined(__linux__)
+    /* Restore before clamping so stale off-screen coordinates cannot undo it. */
     if (app->session.window.position_known)
         SDL_SetWindowPosition(app->window, app->session.window.x,
             app->session.window.y);
+#endif
     if (app->settings.window.keep_in_screen) bongo_cat_window_clamp_to_display(app);
     else bongo_cat_window_recover_to_display(app);
     /* Keep the native surface hidden until the first complete frame has been
        submitted. The render loop will reveal it next to that presentation. */
     bongo_cat_platform_set_visible(&app->platform,
         !app->startup_visibility_pending);
-    /* Mapping a surface is asynchronous, so the compositor can still apply its
-       own placement after the request above. Put the window back once the
-       surface exists and log both numbers, which makes any remaining jump
-       measurable instead of a guess. */
-    if (app->session.window.position_known)
-        SDL_SetWindowPosition(app->window, app->session.window.x,
-            app->session.window.y);
-    SDL_SyncWindow(app->window);
-    /* Unmapping a surface drops _NET_WM_STATE_ABOVE, so without pushing the
-       preference again a hidden and revealed pet sinks behind other windows
-       until the setting is toggled by hand. */
-    bongo_cat_platform_set_always_on_top(&app->platform,
-        app->settings.window.always_on_top);
     bongo_cat_window_mark_hit_dirty(app);
     app->dirty = true;
 }
