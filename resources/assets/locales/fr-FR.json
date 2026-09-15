@@ -33,7 +33,7 @@
           "hoverUnavailable": "Le masquage au survol est indisponible dans cet environnement de bureau.",
           "gameInput": "La mascotte ne réagit pas en jeu ?",
           "gameInputHelp": "Essayez de lancer BongoCat en tant qu’administrateur et de passer le jeu en mode fenêtré.",
-          "passThrough": "Lorsque cette option est activée, les clics traversent la fenêtre sans l'affecter.",
+          "passThrough": "Désactivation possible aussi par clic droit sur l’icône de la zone de notification",
           "alwaysOnTop": "Lorsque cette option est activée, la fenêtre reste au-dessus des autres fenêtres.",
           "keepInScreen": "Lorsque cette option est activée, la fenêtre reste automatiquement dans les limites de l'écran.",
           "obsBackground": "La capture de fenêtre est noire ?",

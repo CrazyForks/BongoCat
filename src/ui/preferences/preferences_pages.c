@@ -35,7 +35,9 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
             "Try running BongoCat as administrator and setting the game to windowed mode."));
     bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_PASS_THROUGH);
     if (bongo_cat_pref_toggle(context, "pass-through", tr(app,
-        "composables.useAppMenu.labels.passThrough", "Pass Through"), "",
+        "composables.useAppMenu.labels.passThrough", "Pass Through"), tr(app,
+        "pages.preference.cat.hints.passThrough",
+        "You can also turn this off by right-clicking the tray icon"),
         &window->pass_through)) {
         bongo_cat_window_mark_hit_dirty(app);
         bongo_cat_window_sync_click_through(app);

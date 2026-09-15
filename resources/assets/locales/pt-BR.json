@@ -33,7 +33,7 @@
           "hoverUnavailable": "Ocultar ao passar o mouse não está disponível no ambiente de desktop atual.",
           "gameInput": "O mascote não responde ao jogar?",
           "gameInputHelp": "Tente executar o BongoCat como administrador e colocar o jogo em modo janela.",
-          "passThrough": "Quando ativado, a janela não afetará operações em outros aplicativos.",
+          "passThrough": "Também é possível desativar pelo clique direito no ícone da bandeja",
           "alwaysOnTop": "Quando ativado, a janela sempre ficará acima de outros aplicativos.",
           "keepInScreen": "Quando ativado, a janela permanece automaticamente dentro dos limites da tela.",
           "obsBackground": "A captura da janela está preta?",

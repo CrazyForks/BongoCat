@@ -33,7 +33,7 @@
           "hoverUnavailable": "Hover hiding is unavailable in the current desktop environment.",
           "gameInput": "Pet not responding in games?",
           "gameInputHelp": "Try running BongoCat as administrator and setting the game to windowed mode.",
-          "passThrough": "When enabled, clicks pass through the window without affecting it.",
+          "passThrough": "You can also turn this off by right-clicking the tray icon",
           "alwaysOnTop": "When enabled, the window stays above all other windows.",
           "keepInScreen": "When enabled, the window automatically stays within the screen boundaries.",
           "obsBackground": "Window capture is black?",

@@ -33,7 +33,7 @@
           "hoverUnavailable": "目前桌面環境暫不支援滑鼠移入隱藏。",
           "gameInput": "遊戲中桌寵沒反應？",
           "gameInputHelp": "試試以系統管理員身分啟動 BongoCat，並將遊戲設為視窗模式。",
-          "passThrough": "啟用後，視窗不影響對其他應用程式的操作。",
+          "passThrough": "右鍵點擊系統匣圖示也可關閉此功能",
           "alwaysOnTop": "啟用後，視窗始終顯示在其他應用程式上方。",
           "keepInScreen": "啟用後，視窗會自動調整位置，防止超出螢幕邊界。",
           "obsBackground": "視窗擷取黑屏？",
