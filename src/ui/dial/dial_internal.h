@@ -11,6 +11,8 @@
 #define DIAL_REVEAL_DELAY_MS 22
 #define DIAL_REVEAL_DURATION_MS 360
 #define DIAL_PATH_POINTS 160
+#define DIAL_CENTER_SEGMENTS 64
+#define DIAL_CENTER_RINGS 16
 typedef struct DialPoint { float x, y; } DialPoint;
 typedef struct DialPath {
     DialPoint points[DIAL_PATH_POINTS];
@@ -44,6 +46,9 @@ typedef struct DialPaint {
     int child_path_count, child_path_active, child_path_roots;
     float child_path_step;
     float zoom, offset_x, offset_y, alpha;
+    DialPoint center_points[DIAL_CENTER_RINGS + 1][DIAL_CENTER_SEGMENTS];
+    uint8_t center_alpha[DIAL_CENTER_RINGS + 1];
+    bool center_ready;
     bool failed;
 } DialPaint;
 typedef struct Dial {

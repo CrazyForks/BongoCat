@@ -84,9 +84,48 @@ static void root(Dial *d, int index, uint64_t now) {
     }
 }
 
+static void center_background(Dial *d) {
+    enum { segments = DIAL_CENTER_SEGMENTS, rings = DIAL_CENTER_RINGS };
+    const float radius = 80.0f;
+    uint32_t color = d->dark ? 0x00010409 : 0x00f6f9ff;
+    DialPaint *p = &d->paint;
+    /* Cache the original mesh per menu; transforms and opening alpha stay live. */
+    if (!p->center_ready) {
+        DialPoint directions[segments];
+        for (int i = 0; i < segments; ++i) {
+            float angle = (float)i * 2 * DIAL_PI / segments;
+            directions[i] = (DialPoint){cosf(angle), sinf(angle)};
+        }
+        for (int ring = 0; ring <= rings; ++ring) {
+            float t = (float)ring / rings;
+            p->center_alpha[ring] = (uint8_t)(alpha(0xe6000000,
+                1 - t * t * (3 - 2 * t)) >> 24);
+            for (int i = 0; i < segments; ++i)
+                p->center_points[ring][i] = (DialPoint){
+                    radius * t * directions[i].x, radius * t * directions[i].y};
+        }
+        p->center_ready = true;
+    }
+    /* Adjacent rings share edges; smoothstep fades to a fully clear rim. */
+    for (int ring = 0; ring < rings; ++ring) {
+        uint32_t ci = color | ((uint32_t)p->center_alpha[ring] << 24);
+        uint32_t co = color | ((uint32_t)p->center_alpha[ring+1] << 24);
+        for (int i = 0; i < segments; ++i) {
+            int next = (i + 1) % segments;
+            DialPoint a = p->center_points[ring][i];
+            DialPoint b = p->center_points[ring+1][i];
+            DialPoint c = p->center_points[ring+1][next];
+            DialPoint e = p->center_points[ring][next];
+            dial_triangle(d, a, b, c, ci, co, co);
+            if (ring > 0) dial_triangle(d, a, c, e, ci, co, ci);
+        }
+    }
+}
+
 static void center(Dial *d) {
     if (d->active < 0) return;
     dial_transform(d, 1, 0, 0);
+    center_background(d);
     DialItem item = d->items[d->active];
     char buffer[32];
     bool child_hovered = d->child >= 0;
