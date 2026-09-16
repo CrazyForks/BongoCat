@@ -102,6 +102,8 @@ bool bongo_cat_windows_capture_handle_transparency_message(
     if (is_transparent(window)) {
         /* SDL's default erase handler fills the client area with black. */
         if (message == WM_ERASEBKGND) return true;
+        /* Ordinary moves/resizes preserve transparency. Repairing on every
+           WM_WINDOWPOSCHANGED repeatedly invalidates the animated surface. */
         switch (message) {
         case WM_DWMCOMPOSITIONCHANGED:
         case WM_DWMNCRENDERINGCHANGED:
@@ -112,7 +114,6 @@ bool bongo_cat_windows_capture_handle_transparency_message(
         case WM_NCACTIVATE:
         case WM_SHOWWINDOW:
         case WM_STYLECHANGED:
-        case WM_WINDOWPOSCHANGED:
             schedule_repair(window);
             break;
         default:

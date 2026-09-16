@@ -41,12 +41,22 @@ bool bongo_cat_window_wheel_self_test(BongoCatApp *app) {
     wheel.y = 1.0f;
     bongo_cat_window_wheel(app, &wheel);
     started = app->wheel_animation_ns;
-    for (int i = 1; i <= 8; ++i)
+    float scale_before_frame = app->session.window.scale_percent;
+    for (uint64_t offset = 1000000ull;
+        offset < BONGO_CAT_WHEEL_FRAME_INTERVAL_NS; offset += 1000000ull)
+        bongo_cat_window_update_wheel_animation(app, started + offset);
+    bool coalesced = app->session.window.scale_percent == scale_before_frame &&
+        app->wheel_animation_ns == started;
+    bongo_cat_window_update_wheel_animation(app,
+        started + BONGO_CAT_WHEEL_FRAME_INTERVAL_NS);
+    coalesced = coalesced && app->session.window.scale_percent > scale_before_frame &&
+        app->session.window.scale_percent < app->wheel_scale_target;
+    for (int i = 1; i <= 12; ++i)
         bongo_cat_window_update_wheel_animation(app, started + i * 16666667ull);
     bool responsive = SDL_fabsf(
         app->session.window.scale_percent - 105.0f) < 0.1f;
     bongo_cat_window_update_wheel_animation(app,
-        app->wheel_input_ns + BONGO_CAT_WHEEL_GESTURE_IDLE_NS + 1);
+        started + 250000000ull);
     bool scale = responsive && !app->wheel_animation_active &&
         SDL_fabsf(app->session.window.opacity_percent - 75.0f) < 0.1f;
     SDL_SetModState(modifiers & ~SDL_KMOD_CTRL);
@@ -118,12 +128,12 @@ bool bongo_cat_window_wheel_self_test(BongoCatApp *app) {
         original_width, original_height);
     bool passed = foreign && opacity && scale && burst && aggregated &&
         reversal && flipped && maximum && minimum && opacity_maximum &&
-        opacity_minimum && rounding;
+        opacity_minimum && rounding && coalesced;
     if (!passed)
         fprintf(stderr, "wheel self-test: foreign=%d opacity=%d scale=%d "
             "burst=%d aggregated=%d reversal=%d flipped=%d maximum=%d "
-            "minimum=%d opacity_max=%d opacity_min=%d rounding=%d\n",
+            "minimum=%d opacity_max=%d opacity_min=%d rounding=%d coalesced=%d\n",
             foreign, opacity, scale, burst, aggregated, reversal, flipped,
-            maximum, minimum, opacity_maximum, opacity_minimum, rounding);
+            maximum, minimum, opacity_maximum, opacity_minimum, rounding, coalesced);
     return passed;
 }

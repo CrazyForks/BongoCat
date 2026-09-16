@@ -6,10 +6,10 @@
 #define WHEEL_SCALE_STEP 5.0f
 #define WHEEL_SCALE_TARGET_LEAD 10.0f
 #define WHEEL_OPACITY_RESPONSE_SECONDS 0.05f
-#define WHEEL_SCALE_RESPONSE_SECONDS 0.01f
+#define WHEEL_SCALE_RESPONSE_SECONDS 0.025f
 #define WHEEL_OPACITY_SPEED_PER_SECOND 100.0f
 #define WHEEL_SCALE_SPEED_PER_SECOND 150.0f
-#define WHEEL_MAX_FRAME_SECONDS (1.0f / 60.0f)
+#define WHEEL_MAX_FRAME_SECONDS 0.05f
 
 static float wheel_delta(const SDL_MouseWheelEvent *event) {
     float value = event ? event->y : 0.0f;
@@ -85,7 +85,7 @@ void bongo_cat_window_wheel(BongoCatApp *app, const SDL_MouseWheelEvent *event) 
     uint64_t event_ns = event->timestamp ? event->timestamp : SDL_GetTicksNS();
     bool continuing = app->wheel_gesture_active && event_ns >= app->wheel_event_ns &&
         event_ns - app->wheel_event_ns < BONGO_CAT_WHEEL_GESTURE_IDLE_NS;
-    if (!initialize_targets(app, !continuing)) return;
+    if (!initialize_targets(app, !continuing && !app->wheel_animation_active)) return;
     app->wheel_event_ns = event_ns;
     app->wheel_gesture_active = true;
     float old_opacity_target = app->wheel_opacity_target;
@@ -161,6 +161,8 @@ void bongo_cat_window_update_wheel_animation(BongoCatApp *app, uint64_t now) {
     if (!app || !app->wheel_animation_active) return;
     uint64_t elapsed_ns = now >= app->wheel_animation_ns
         ? now - app->wheel_animation_ns : 0;
+    /* Resize/expose messages can wake the loop before the next animation frame. */
+    if (elapsed_ns < BONGO_CAT_WHEEL_FRAME_INTERVAL_NS) return;
     app->wheel_animation_ns = now;
     float elapsed_seconds = SDL_min((float)elapsed_ns / 1000000000.0f,
         WHEEL_MAX_FRAME_SECONDS);
@@ -169,7 +171,7 @@ void bongo_cat_window_update_wheel_animation(BongoCatApp *app, uint64_t now) {
         WHEEL_OPACITY_RESPONSE_SECONDS, WHEEL_OPACITY_SPEED_PER_SECOND, 0.01f);
     float scale = approach(app->session.window.scale_percent,
         app->wheel_scale_target, elapsed_seconds,
-        WHEEL_SCALE_RESPONSE_SECONDS, WHEEL_SCALE_SPEED_PER_SECOND, 0.5f);
+        WHEEL_SCALE_RESPONSE_SECONDS, WHEEL_SCALE_SPEED_PER_SECOND, 0.05f);
     bool changed = SDL_fabsf(opacity - app->session.window.opacity_percent) > 0.001f ||
         SDL_fabsf(scale - app->session.window.scale_percent) > 0.001f;
     if (SDL_fabsf(opacity - app->session.window.opacity_percent) > 0.001f) {

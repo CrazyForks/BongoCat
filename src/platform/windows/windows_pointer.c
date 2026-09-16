@@ -78,8 +78,8 @@ bool bongo_cat_platform_set_geometry(BongoCatPlatform *platform,
         size_changed ? height : current_height,
         SWP_NOZORDER | SWP_NOACTIVATE) != 0;
     if (!changed) return false;
-    bool synced = SDL_SyncWindow(platform->window);
-    if (synced) bongo_cat_windows_capture_repair_transparency(window);
-    return synced;
+    /* Geometry changes retain DWM alpha composition. Reapplying it here
+       invalidates the surface on every animation frame. */
+    return SDL_SyncWindow(platform->window);
 }
 #endif
