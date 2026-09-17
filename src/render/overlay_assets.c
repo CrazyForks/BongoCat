@@ -59,9 +59,10 @@ BongoCatResult bongo_cat_overlay_load(BongoCatOverlay *value,
     bongo_cat_overlay_clear_textures(value);
     bongo_cat_mver_pointer_overlay_clear(value->mver_pointer);
     GLuint background = 0;
+    int background_width = 0, background_height = 0;
     BongoCatError background_error = {0};
     if (bongo_cat_path_is_file(path)) background = bongo_cat_image_texture(path,
-        NULL, NULL, &background_error);
+        &background_width, &background_height, &background_error);
     BongoCatError pointer_error = {0};
     if (!model_pointer_preferred &&
         !bongo_cat_mver_pointer_overlay_load(value->mver_pointer, directory,
@@ -83,6 +84,20 @@ BongoCatResult bongo_cat_overlay_load(BongoCatOverlay *value,
     if (render_options && render_options->mver_projection) {
         value->reference_width = render_options->reference_width;
         value->reference_height = render_options->reference_height;
+        /* Some Mver packages enlarge the window while retaining the original
+           full-canvas sprites. Keep their shared sprite coordinates in memory.
+           Do not infer a canvas from arbitrary partial images or pointer art. */
+        if (background_width == 612 &&
+            (background_height == 352 || background_height == 354) &&
+            !bongo_cat_overlay_mver_pointer_enabled(value) &&
+            value->reference_width > background_width &&
+            value->reference_width % background_width == 0 &&
+            value->reference_height % background_height == 0 &&
+            value->reference_width / background_width ==
+                value->reference_height / background_height) {
+            value->reference_width = background_width;
+            value->reference_height = background_height;
+        }
     }
 #else
     (void)render_options;

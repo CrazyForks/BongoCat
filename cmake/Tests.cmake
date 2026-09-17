@@ -33,6 +33,15 @@ if(BUILD_TESTING)
   target_link_libraries(bongo_cat_image_filter_tests PRIVATE
     bongo_cat_runtime bongo_cat_warnings)
   add_test(NAME image-filter COMMAND bongo_cat_image_filter_tests)
+  if(BONGO_CAT_CUBISM_ENABLED)
+    add_executable(bongo_cat_overlay_layout_tests tests/media/test_overlay_layout.c)
+    target_include_directories(bongo_cat_overlay_layout_tests PRIVATE tests/support)
+    target_include_directories(bongo_cat_overlay_layout_tests SYSTEM PRIVATE
+      ${BONGO_CAT_STB_INCLUDE_DIR})
+    target_link_libraries(bongo_cat_overlay_layout_tests PRIVATE
+      bongo_cat_runtime bongo_cat_warnings)
+    add_test(NAME overlay-layout COMMAND bongo_cat_overlay_layout_tests)
+  endif()
   if(APPLE)
     add_test(NAME macos-bundle-signature COMMAND /usr/bin/codesign
       --verify --strict --deep --verbose=2 "$<TARGET_BUNDLE_DIR:bongo_cat>")
