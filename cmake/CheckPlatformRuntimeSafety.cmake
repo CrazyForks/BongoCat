@@ -137,17 +137,20 @@ if(MANIFEST_POSITION EQUAL -1)
     "cmake/windows.manifest.in: expected asInvoker with uiAccess=false")
 endif()
 
-file(READ "${ROOT}/cmake/Packaging.cmake" WINDOWS_PACKAGING)
-file(READ "${ROOT}/cmake/PackagingPlatform.cmake" WINDOWS_PACKAGE_PLATFORM)
-string(APPEND WINDOWS_PACKAGING "\n${WINDOWS_PACKAGE_PLATFORM}")
-string(FIND "${WINDOWS_PACKAGING}" "RequestExecutionLevel user"
+file(READ "${ROOT}/packaging/windows/BongoCat.iss.in" WINDOWS_PACKAGING)
+file(READ "${ROOT}/packaging/windows/install-lifecycle.iss.in" WINDOWS_INSTALL_LIFECYCLE)
+string(APPEND WINDOWS_PACKAGING "\n${WINDOWS_INSTALL_LIFECYCLE}")
+string(FIND "${WINDOWS_PACKAGING}" "PrivilegesRequired=lowest"
   INSTALLER_LEVEL_POSITION)
 string(FIND "${WINDOWS_PACKAGING}"
-  "set(CPACK_NSIS_INSTALL_ROOT \"$LOCALAPPDATA/Programs\")"
+  "DefaultDirName={code:GetInstallDir}"
   INSTALLER_ROOT_POSITION)
-if(INSTALLER_LEVEL_POSITION EQUAL -1 OR INSTALLER_ROOT_POSITION EQUAL -1)
+string(FIND "${WINDOWS_PACKAGING}"
+  "{localappdata}\\Programs\\BongoCat" INSTALLER_DEFAULT_POSITION)
+if(INSTALLER_LEVEL_POSITION EQUAL -1 OR INSTALLER_ROOT_POSITION EQUAL -1
+    OR INSTALLER_DEFAULT_POSITION EQUAL -1)
   list(APPEND FAILURES
-    "cmake/Packaging.cmake: expected current-user NSIS installation")
+    "packaging/windows/BongoCat.iss.in: expected current-user Inno installation")
 endif()
 
 file(READ "${ROOT}/cmake/Info.plist.in" MACOS_INFO)

@@ -29,21 +29,27 @@ bool bongo_cat_update_platform_installed(void) {
     const DWORD views[] = {
         RRF_SUBKEY_WOW6464KEY, RRF_SUBKEY_WOW6432KEY
     };
-    for (size_t index = 0; index < _countof(views); ++index) {
-        wchar_t install_root[2048] = {0};
-        DWORD size = sizeof(install_root);
-        LSTATUS result = RegGetValueW(HKEY_CURRENT_USER,
-            L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\BongoCat",
-            L"InstallLocation", RRF_RT_REG_SZ | views[index], NULL,
-            install_root, &size);
-        if (result != ERROR_SUCCESS || !install_root[0]) continue;
-        size_t length = wcslen(install_root);
-        while (length && (install_root[length - 1] == L'\\' ||
-            install_root[length - 1] == L'/')) install_root[--length] = L'\0';
-        static const wchar_t executable[] = L"\\BongoCat.exe";
-        if (length + _countof(executable) > _countof(install_root)) continue;
-        memcpy(install_root + length, executable, sizeof(executable));
-        if (_wcsicmp(running, install_root) == 0) return true;
+    const wchar_t *keys[] = {
+        L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\BongoCat_is1",
+        L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\BongoCat"
+    };
+    for (size_t key = 0; key < _countof(keys); ++key) {
+        for (size_t index = 0; index < _countof(views); ++index) {
+            wchar_t install_root[2048] = {0};
+            DWORD size = sizeof(install_root);
+            LSTATUS result = RegGetValueW(HKEY_CURRENT_USER,
+                keys[key],
+                L"InstallLocation", RRF_RT_REG_SZ | views[index], NULL,
+                install_root, &size);
+            if (result != ERROR_SUCCESS || !install_root[0]) continue;
+            size_t length = wcslen(install_root);
+            while (length && (install_root[length - 1] == L'\\' ||
+                install_root[length - 1] == L'/')) install_root[--length] = L'\0';
+            static const wchar_t executable[] = L"\\BongoCat.exe";
+            if (length + _countof(executable) > _countof(install_root)) continue;
+            memcpy(install_root + length, executable, sizeof(executable));
+            if (_wcsicmp(running, install_root) == 0) return true;
+        }
     }
     return false;
 }

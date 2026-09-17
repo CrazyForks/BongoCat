@@ -10,10 +10,6 @@ on:
 permissions:
   contents: read
 
-env:
-  BONGO_CAT_NSIS_PACKAGE_VERSION: '3.12.0'
-  BONGO_CAT_NSIS_COMPILER_VERSION: 'v3.12'
-
 concurrency:
   group: bongocat-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -351,12 +347,10 @@ jobs:
           "version=$($projectVersion.AppVersion)" |
             Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
-      - name: Install NSIS
+      - name: Install Inno Setup
         shell: pwsh
         run: >-
-          & ./.github/scripts/install-nsis.ps1
-          -PackageVersion $env:BONGO_CAT_NSIS_PACKAGE_VERSION
-          -CompilerVersion $env:BONGO_CAT_NSIS_COMPILER_VERSION
+          & ./.github/scripts/install-inno.ps1
 
       - name: Package Windows desktop release
         id: desktop-package
@@ -392,8 +386,8 @@ jobs:
           $cubismCore = "vendor/CubismSdkForNative/Core/lib/windows/$cubismArch/143/Live2DCubismCore_MT.lib"
           $cubismHash = (Get-FileHash -LiteralPath $cubismCore -Algorithm SHA256).Hash.ToLowerInvariant()
           $cmakeVersion = (& cmake --version | Select-Object -First 1).Trim()
-          $nsisCommand = Get-Command makensis.exe -ErrorAction Stop
-          $nsisVersion = (& $nsisCommand.Source /VERSION).Trim()
+          $innoInfo = & ./packaging/windows/find-inno.ps1 -PassThru
+          $innoVersion = $innoInfo.Version.ToString(3)
           @"
           ## Windows build provenance (${{ matrix.platform }})
 
@@ -402,7 +396,7 @@ jobs:
           | Commit | ``${{ github.sha }}`` |
           | Runner image | ``$env:ImageOS $env:ImageVersion`` |
           | CMake | ``$cmakeVersion`` |
-          | NSIS | ``$nsisVersion`` at ``$($nsisCommand.Source)`` |
+          | Inno Setup | ``$innoVersion`` at ``$($innoInfo.Path)`` |
           | Cubism Core SHA-256 | ``$cubismHash`` |
           | BongoCat.exe SHA-256 | ``$appHash`` |
           | Portable SHA-256 | ``$portableHash`` |

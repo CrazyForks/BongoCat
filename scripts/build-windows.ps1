@@ -23,7 +23,6 @@ Remove-Item Env:PATH -ErrorAction SilentlyContinue
 $env:Path = $canonicalPath
 $env:VSLANG = '1033'
 $env:MSBUILDDISABLENODEREUSE = '1'
-$requiredNsisCompilerVersion = 'v3.12'
 $root = [IO.Path]::GetFullPath((Split-Path $PSScriptRoot -Parent))
 if (-not $BuildDir) { $BuildDir = Join-Path $root 'build-cubism' }
 if (-not [IO.Path]::IsPathRooted($BuildDir)) {
@@ -81,75 +80,20 @@ function Write-GitHubBuildAnnotations {
         }
 }
 
-function Test-NsisCompiler {
-    param([string]$Path)
-    if (-not $Path -or
-        -not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
-    try {
-        $versionOutput = @(& $Path /VERSION 2>&1)
-        $versionStatus = $LASTEXITCODE
-    } catch {
-        return $false
-    }
-    if ($versionStatus -ne 0) { return $false }
-    $versionText = ($versionOutput | ForEach-Object { $_.ToString() }) -join "`n"
-    return $versionText.Trim() -eq $script:requiredNsisCompilerVersion
-}
-
 if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) {
     Write-Host 'Error: CMake was not found in PATH.'
     exit 1
 }
 
-if ($Package) {
-    $makensis = Get-Command makensis.exe -ErrorAction SilentlyContinue
-    $makensisPath = if ($makensis -and
-        (Test-NsisCompiler $makensis.Source)) { $makensis.Source } else { $null }
-    if (-not $makensisPath) {
-        $nsisCandidates = @()
-        foreach ($programFiles in @(${env:ProgramFiles(x86)}, $env:ProgramFiles)) {
-            if ($programFiles) {
-                $nsisCandidates += Join-Path $programFiles 'NSIS\makensis.exe'
-                $nsisCandidates += Join-Path $programFiles 'NSIS\Bin\makensis.exe'
-            }
-        }
-        $uninstallKeys = @(
-            'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
-            'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
-            'HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*')
-        foreach ($key in $uninstallKeys) {
-            Get-ItemProperty -Path $key -Name InstallLocation `
-                -ErrorAction SilentlyContinue | ForEach-Object {
-                    if ($_.InstallLocation) {
-                        # Some uninstall registry entries store the path with
-                        # surrounding quotes (for example, `"C:\Program Files\NSIS"`).
-                        # Strip those quotes before passing it to Join-Path;
-                        # otherwise PowerShell interprets the drive as `"C`.
-                        $installLocation = ([string]$_.InstallLocation).Trim().Trim('"')
-                        if ($installLocation) {
-                            $nsisCandidates += Join-Path $installLocation 'makensis.exe'
-                            $nsisCandidates += Join-Path $installLocation 'Bin\makensis.exe'
-                        }
-                    }
-                }
-        }
-        $nsisPath = $nsisCandidates |
-            Select-Object -Unique |
-            Where-Object { Test-NsisCompiler $_ } |
-            Select-Object -First 1
-        if ($nsisPath) {
-            $env:Path = "$(Split-Path $nsisPath -Parent);$env:Path"
-            $makensisPath = $nsisPath
-        }
-    }
-    if (-not $makensisPath) {
-        Write-Host 'Package build requires a working NSIS compiler (makensis.exe).'
-        Write-Host "NSIS v$($requiredNsisCompilerVersion.TrimStart('v')) was not found or failed its /VERSION check."
-        Write-Host 'Install or repair NSIS from https://nsis.sourceforge.io/Download and run again.'
-        Write-Host 'The normal application build does not require NSIS.'
+if ($Package -or $Target -contains 'package-installer') {
+    try {
+        $isccPath = & (Join-Path $root 'packaging/windows/find-inno.ps1')
+        $env:Path = "$(Split-Path $isccPath -Parent);$env:Path"
+        Write-Host "Inno Setup compiler: $isccPath"
+    } catch {
+        Write-Host $_.Exception.Message
         exit 1
     }
-    Write-Host "NSIS compiler: $makensisPath"
 }
 
 if ($Clean -and (Test-Path -LiteralPath $BuildDir)) {
@@ -315,8 +259,8 @@ if ($Package) {
     $packageStatus = $LASTEXITCODE
     if ($packageStatus -ne 0) {
         Write-Host 'Package generation failed.'
-        Write-Host 'Ensure NSIS is installed and available in PATH for the installer.'
-        Write-Host "CPack configuration: $(Join-Path $BuildDir 'CPackConfig.cmake')"
+        Write-Host 'Ensure Inno Setup 6.3 or newer is installed (ISCC.exe).'
+        Write-Host "Packaging build directory: $BuildDir"
         exit $packageStatus
     }
     $packageNameFile = Join-Path $BuildDir 'bongocat-package-name.txt'
