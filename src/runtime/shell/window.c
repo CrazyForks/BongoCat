@@ -48,6 +48,7 @@ static bool try_window(BongoCatApp *app, bool transparent, int samples,
 }
 
 BongoCatResult bongo_cat_window_create(BongoCatApp *app, BongoCatError *error) {
+    SDL_SetHintWithPriority(SDL_HINT_VIDEO_ALLOW_SCREENSAVER, "1", SDL_HINT_OVERRIDE);
     SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1");
 #ifdef _WIN32
     /* The native input thread owns keyboard Raw Input for this process. */

@@ -245,42 +245,31 @@ jobs:
 
   virus-total:
     name: security / virustotal
-    needs: build
     if: github.repository == 'vladelaina/BongoCat'
     runs-on: ubuntu-latest
+    timeout-minutes: 310
     # CI and releases share the same VirusTotal API quota.
     concurrency:
       group: bongocat-virustotal
       cancel-in-progress: false
     permissions:
       contents: read
-      actions: write
+      actions: read
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v5
 
-      - name: Download packaged releases
-        uses: actions/download-artifact@v8
-        with:
-          pattern: bongocat-release-*
-          path: vt-input
-          merge-multiple: false
-
-      - name: Scan all release artifacts with VirusTotal
+      # Discover artifacts while matrix jobs are still building. A single
+      # worker owns the rolling request window for every platform.
+      - name: Scan artifacts as they become available
         env:
           VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
-        run: |
-          set -euo pipefail
-          # Scan every packaged file, including future formats and platforms.
-          mapfile -d '' files < <(find vt-input -type f ! -iname '*.sha256' -print0 | sort -z)
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "::error::No packaged artifacts found for VirusTotal"
-            exit 1
-          fi
-          echo "Discovered ${#files[@]} VirusTotal inputs"
-          # One process shares the request quota across batches of four files.
-          python3 -u .github/scripts/scan-virustotal.py --report-directory . --file "${files[@]}"
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 -u .github/scripts/watch-virustotal.py
+          --artifact-prefix 'bongocat-release-'
+          --producer-prefix 'build / '
 
       - name: Add VirusTotal note when scanning is skipped
         if: always() && hashFiles('virustotal-report-*.json') == ''
@@ -288,7 +277,7 @@ jobs:
           {
             echo "## VirusTotal scans"
             echo
-            echo "No report was produced. Check that VIRUSTOTAL_API_KEY is configured."
+            echo "No report was produced. Check the scan logs and VIRUSTOTAL_API_KEY configuration."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload VirusTotal reports

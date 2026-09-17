@@ -24,7 +24,7 @@ from typing import Any
 
 API_ROOT = "https://www.virustotal.com/api/v3"
 MAX_DIRECT_UPLOAD_BYTES = 32 * 1024 * 1024
-REQUEST_WINDOW_SECONDS = 61
+REQUEST_WINDOW_SECONDS = 120
 REQUEST_LIMIT = 4
 BATCH_SIZE = 4
 BATCH_DELAY_SECONDS = 120
@@ -97,6 +97,7 @@ def api_request(
                 ) from exc
         except urllib.error.HTTPError as exc:
             response_body = exc.read().decode("utf-8", errors="replace")
+            exc.close()
             if exc.code in (429, 500, 502, 503, 504) and attempt < 4:
                 minimum_delay = 120 if exc.code == 429 else 5
                 retry_after = exc.headers.get("Retry-After", str(minimum_delay))
