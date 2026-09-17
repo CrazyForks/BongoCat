@@ -51,6 +51,16 @@ static void optional_mode_inputs(const char *temporary) {
         CHECK(discovery->count == 1);
         CHECK(child(adapter, sizeof(adapter), root, "adapter", false));
         CHECK(bongo_cat_import_prepare_adapter(&discovery->candidates[0], adapter, &error));
+        char report_path[BONGO_CAT_PATH_CAP];
+        CHECK(child(report_path, sizeof(report_path), adapter,
+            ".bongo-cat-import-report.json", false));
+        yyjson_doc *report = bongo_cat_json_read_file(report_path, 0, NULL);
+        yyjson_val *assets = yyjson_obj_get(yyjson_doc_get_root(report), "assets");
+        CHECK(report && yyjson_is_obj(assets));
+        CHECK(!yyjson_obj_get(assets, "hand") &&
+            !yyjson_obj_get(assets, "lefthand") &&
+            !yyjson_obj_get(assets, "sounds"));
+        yyjson_doc_free(report);
         size_t length = 0;
         char *original = SDL_LoadFile(path, &length);
         CHECK(original && length == strlen(config) && memcmp(original, config, length) == 0);

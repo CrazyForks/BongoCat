@@ -40,7 +40,7 @@ static bool add_stat(yyjson_mut_doc *output, yyjson_mut_val *stats,
     yyjson_val *mode, const BongoCatImportCandidate *candidate,
     const char *key, const char *directory, bool sound) {
     yyjson_val *rows = yyjson_obj_get(mode, key);
-    if (!rows) return true;
+    if (!rows || yyjson_is_null(rows)) return true;
     if (!yyjson_is_arr(rows)) return false;
     size_t declared = yyjson_arr_size(rows), available = 0;
     for (size_t i = 0; i < declared; ++i)
