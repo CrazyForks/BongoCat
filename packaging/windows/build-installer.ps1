@@ -37,7 +37,17 @@ try {
         Invoke-PackagingCommand -Executable $iscc -Arguments @(
             "/DPayloadDir=$stage", (Join-Path $BuildDir 'BongoCat.iss'))
         $output = Join-Path $BuildDir "dist/$PackageName-setup.exe"
-        $hash = (Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash.ToLowerInvariant()
+        # MSBuild launches Windows PowerShell with the runner's inherited module
+        # paths; Get-FileHash may be unavailable there. Use the .NET stream API.
+        $sha256 = [Security.Cryptography.SHA256]::Create()
+        $stream = $null
+        try {
+            $stream = [IO.File]::OpenRead($output)
+            $hash = [BitConverter]::ToString($sha256.ComputeHash($stream)).Replace('-', '').ToLowerInvariant()
+        } finally {
+            if ($null -ne $stream) { $stream.Dispose() }
+            $sha256.Dispose()
+        }
         "$hash  $PackageName-setup.exe" | Set-Content -LiteralPath "$output.sha256" -Encoding ascii
     } finally {
         # Only remove the unique stage directory directly below the build directory.
