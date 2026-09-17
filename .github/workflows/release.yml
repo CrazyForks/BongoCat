@@ -182,6 +182,14 @@ jobs:
           Copy-Item -LiteralPath $portable, $portableChecksum, $setup, `
             $setupChecksum -Destination release-output
 
+      - name: Upload Windows installer failure log
+        if: failure() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: installer-log-${{ matrix.platform }}-${{ github.run_attempt }}
+          path: build-release/installer.log
+          if-no-files-found: ignore
+
       - name: Package Unix release
         if: runner.os != 'Windows'
         timeout-minutes: 5

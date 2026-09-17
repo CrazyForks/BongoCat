@@ -406,6 +406,14 @@ jobs:
           "portable=$portable" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           "file=$setup" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
+      - name: Upload Windows installer failure log
+        if: failure() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: installer-log-${{ matrix.platform }}-${{ github.run_attempt }}
+          path: build-store/installer.log
+          if-no-files-found: ignore
+
       - name: Build Microsoft Store MSIX
         if: matrix.store_arch == 'x64'
         shell: pwsh
