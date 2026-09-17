@@ -56,7 +56,8 @@ static HWND native_window(SDL_Window *window) {
 static void initialize(void) {
     if (initialized) return;
     initialized = true;
-    HMODULE theme = LoadLibraryW(L"uxtheme.dll");
+    HMODULE theme = LoadLibraryExW(L"uxtheme.dll", NULL,
+        LOAD_LIBRARY_SEARCH_SYSTEM32);
     load_named(theme, "SetWindowTheme", &set_window_theme,
         sizeof(set_window_theme));
     if (windows_build() < 18362) return;

@@ -6,6 +6,8 @@
 AppId=BongoCat
 AppName=@BONGO_CAT_PACKAGE_PRODUCT@
 AppVersion=@PROJECT_VERSION@
+VersionInfoVersion=@PROJECT_VERSION@
+VersionInfoTextVersion=@PROJECT_VERSION@
 AppPublisher=vladelaina
 AppPublisherURL=@PROJECT_HOMEPAGE_URL@
 AppSupportURL=@PROJECT_HOMEPAGE_URL@
