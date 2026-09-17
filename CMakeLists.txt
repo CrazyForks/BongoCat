@@ -107,7 +107,7 @@ else()
     PROPERTIES COMPILE_OPTIONS "-w")
 endif()
 if(BONGO_CAT_CUBISM_ENABLED)
-  target_link_libraries(bongo_cat_runtime PUBLIC Framework Live2DCubismCore glew_s)
+  target_link_libraries(bongo_cat_runtime PUBLIC Framework)
   target_compile_definitions(bongo_cat_runtime PUBLIC BONGO_CAT_HAS_CUBISM=1)
 endif()
 target_compile_definitions(bongo_cat_runtime PRIVATE
@@ -123,6 +123,16 @@ bongo_cat_enable_release_ipo(Framework bongo_cat_core bongo_cat_runtime bongo_ca
 
 include(cmake/ValidationTools.cmake)
 include(cmake/ApplicationResources.cmake)
+if(MSVC AND BONGO_CAT_SDL_WINDOWS_TRIMMED)
+  get_filename_component(BONGO_CAT_MSVC_TOOL_DIR "${CMAKE_LINKER}" DIRECTORY)
+  find_program(BONGO_CAT_DUMPBIN dumpbin PATHS "${BONGO_CAT_MSVC_TOOL_DIR}" REQUIRED)
+  add_custom_command(TARGET bongo_cat POST_BUILD
+    COMMAND ${CMAKE_COMMAND} "-DEXECUTABLE=$<TARGET_FILE:bongo_cat>"
+      "-DDUMPBIN=${BONGO_CAT_DUMPBIN}"
+      -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CheckWindowsImports.cmake"
+    COMMENT "Checking the final Windows executable's input capabilities"
+    VERBATIM)
+endif()
 if(MSVC)
   set_property(SOURCE src/main.c APPEND PROPERTY COMPILE_OPTIONS "/experimental:c11atomics")
   get_target_property(BONGO_CAT_RUNTIME_SOURCES bongo_cat_runtime SOURCES)

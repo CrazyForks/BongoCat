@@ -22,7 +22,6 @@ else()
   endif()
   target_include_directories(bongo_cat_audio_decoder SYSTEM PRIVATE
     "${BONGO_CAT_STB_INCLUDE_DIR}")
-  target_compile_definitions(bongo_cat_audio_decoder PRIVATE MA_NO_ENCODING MA_NO_GENERATION)
   find_package(Threads REQUIRED)
   target_link_libraries(bongo_cat_audio_decoder PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
   if(UNIX)
@@ -30,5 +29,7 @@ else()
   endif()
   set(BONGO_CAT_MINIAUDIO_TARGET bongo_cat_audio_decoder)
 endif()
+target_compile_definitions(${BONGO_CAT_MINIAUDIO_TARGET} PUBLIC
+  MA_NO_ENCODING MA_NO_GENERATION MA_NO_CUSTOM)
 target_compile_definitions(${BONGO_CAT_MINIAUDIO_TARGET} PRIVATE
   BONGO_CAT_VORBIS_HEADER="${BONGO_CAT_VORBIS_HEADER}")

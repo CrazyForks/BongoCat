@@ -22,6 +22,7 @@ set(FORBIDDEN_APIS
   mouse_event SetWindowsHookEx SetWindowsHookExA SetWindowsHookExW DirectInput8Create
   SetCursorPos SetPhysicalCursorPos ClipCursor BlockInput
   SDL_SetWindowRelativeMouseMode
+  SDL_SetWindowKeyboardGrab
   CGEventPost CGEventPostToPid CGEventCreateKeyboardEvent
   CGEventCreateMouseEvent CGWarpMouseCursorPosition
   CGAssociateMouseAndMouseCursorPosition IOHIDManagerCreate
@@ -37,6 +38,7 @@ set(FORBIDDEN_TOKENS
   kCGHIDEventTap kCGHeadInsertEventTap IOConnectCall
   /dev/uinput CAP_SYS_PTRACE CAP_SYS_ADMIN
   WH_KEYBOARD_LL WH_MOUSE_LL RIDEV_NOLEGACY RIDEV_CAPTUREMOUSE
+  SDL_WINDOW_KEYBOARD_GRABBED SDL_HINT_FORCE_RAISEWINDOW
   RIDEV_NOHOTKEYS RIDEV_APPKEYS RIDEV_EXCLUDE RIDEV_EXINPUTSINK)
 set(FAILURES "")
 
