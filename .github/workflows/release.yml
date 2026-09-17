@@ -248,6 +248,10 @@ jobs:
     needs: build
     if: github.repository == 'vladelaina/BongoCat'
     runs-on: ubuntu-latest
+    # CI and releases share the same VirusTotal API quota.
+    concurrency:
+      group: bongocat-virustotal
+      cancel-in-progress: false
     permissions:
       contents: read
       actions: write
@@ -259,28 +263,24 @@ jobs:
       - name: Download packaged releases
         uses: actions/download-artifact@v8
         with:
-          pattern: bongocat-release-windows-*
+          pattern: bongocat-release-*
           path: vt-input
-          merge-multiple: true
+          merge-multiple: false
 
-      - name: Scan all Windows release artifacts with VirusTotal
+      - name: Scan all release artifacts with VirusTotal
         env:
           VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
         run: |
           set -euo pipefail
-          mapfile -d '' files < <(find vt-input -type f \( \
-            -iname '*-setup.exe' -o -iname '*-portable.exe' \) \
-            -print0 | sort -z)
-          if [ "${#files[@]}" -ne 4 ]; then
-            echo "::error::Expected 4 VirusTotal inputs, found ${#files[@]}"
-            printf 'Found: %s\n' "${files[@]}"
+          # Scan every packaged file, including future formats and platforms.
+          mapfile -d '' files < <(find vt-input -type f ! -iname '*.sha256' -print0 | sort -z)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "::error::No packaged artifacts found for VirusTotal"
             exit 1
           fi
-          for file in "${files[@]}"; do
-            report=$(basename "$file" | tr -c 'A-Za-z0-9._-' '_')
-            VT_REPORT_PATH="virustotal-report-$report.json" \
-              python3 .github/scripts/scan-virustotal.py --file "$file"
-          done
+          echo "Discovered ${#files[@]} VirusTotal inputs"
+          # One process shares the request quota across batches of four files.
+          python3 -u .github/scripts/scan-virustotal.py --report-directory . --file "${files[@]}"
 
       - name: Add VirusTotal note when scanning is skipped
         if: always() && hashFiles('virustotal-report-*.json') == ''
