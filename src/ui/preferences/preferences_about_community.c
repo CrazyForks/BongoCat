@@ -117,30 +117,6 @@ static void community_link(BongoCatPreferences *value,
     if (hit(context, bounds)) open_url(urls[index]);
 }
 
-static void coffee(BongoCatPreferences *value, struct nk_context *context,
-    struct nk_command_buffer *canvas, struct nk_rect bounds,
-    BongoCatUIPalette p) {
-    const char *label = tr(value, "native.support.coffee",
-        "Buy the developer a coffee?");
-    float width = value->ui.caption_font->width(value->ui.caption_font->userdata,
-        value->ui.caption_font->height, label, nk_strlen(label)) + 48.0f;
-    struct nk_rect pill = nk_rect(bounds.x + (bounds.w - width) * .5f,
-        bounds.y, width, 36);
-    bool hover = nk_input_is_mouse_hovering_rect(&context->input, pill);
-    if (p.effects) bongo_cat_ui_paint_shadow(context, pill, 18, 0,
-        hover ? 9.0f : 7.0f, hover ? 22.0f : 18.0f, 0,
-        nk_rgba(p.pink.r, p.pink.g, p.pink.b, hover ? 77 : 61));
-    nk_fill_rect(canvas, pill, 18, p.pink);
-    bongo_cat_preferences_icon_draw(value, canvas,
-        BONGO_CAT_UI_ICON_COFFEE,
-        nk_rect(pill.x + 16, pill.y + 10, 16, 16), nk_rgb(255, 255, 255));
-    centered(canvas, nk_rect(pill.x + 32, pill.y, pill.w - 38, pill.h), label,
-        value->ui.caption_font, nk_rgb(255, 255, 255));
-    if (hover) bongo_cat_ui_cursor_hover_rect(context, pill,
-        BONGO_CAT_UI_CURSOR_POINTER);
-    if (hit(context, pill)) open_url("https://bongocat.pet/support");
-}
-
 void bongo_cat_preferences_about_projects_heading(
     BongoCatPreferences *value, struct nk_context *context,
     struct nk_rect bounds) {
@@ -183,7 +159,7 @@ void bongo_cat_preferences_about_projects_heading(
 void bongo_cat_preferences_about_community(
     BongoCatPreferences *value, struct nk_context *context) {
     struct nk_rect bounds;
-    nk_layout_row_dynamic(context, 220, 1);
+    nk_layout_row_dynamic(context, 164, 1);
     if (nk_widget(&bounds, context) == NK_WIDGET_INVALID) return;
     BongoCatUIPalette p = bongo_cat_ui_palette(
         bongo_cat_ui_dark(context));
@@ -195,6 +171,4 @@ void bongo_cat_preferences_about_community(
         community_link(value, context, canvas,
             nk_rect(bounds.x + bounds.w * .5f - 289 + i * 298,
             bounds.y + 48, 280, 68), i, p);
-    coffee(value, context, canvas,
-        nk_rect(bounds.x, bounds.y + 136, bounds.w, 36), p);
 }
