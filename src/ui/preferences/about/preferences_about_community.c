@@ -1,3 +1,4 @@
+#include "preferences_about_internal.h"
 #include "preferences_about_community.h"
 #include "preferences_state.h"
 #include "ui_animation.h"
@@ -84,37 +85,57 @@ static void community_link(BongoCatPreferences *value,
     struct nk_context *context, struct nk_command_buffer *canvas,
     struct nk_rect bounds, int index, BongoCatUIPalette p) {
     const char *labels[] = {"Discord", tr(value,
-        "native.support.qqGroup", "QQ Group")};
-    const char *details[] = {"https://discord.gg/vf8jqnattk", "422616922"};
+        "native.support.qqGroup", "QQ Group"), tr(value,"native.about.wechat","WeChat")};
+    const char *details[] = {"https://discord.gg/vf8jqnattk", "422616922",
+        tr(value,"native.about.wechatHint","Hover to scan and chat")};
     const char *urls[] = {"https://discord.gg/vf8jqnattk",
         "https://qm.qq.com/q/6ksRMCZIuA"};
-    struct nk_color brand = index ? p.accent : nk_rgb(88, 101, 242);
-    bool hover = nk_input_is_mouse_hovering_rect(&context->input, bounds);
+    struct nk_color brand = index == 2 ? nk_rgb(7,193,96) : index ? p.accent : nk_rgb(88, 101, 242);
+    bool hover = nk_input_is_mouse_hovering_rect(&context->input, canvas->clip) &&
+        nk_input_is_mouse_hovering_rect(&context->input, bounds);
     char id[32]; snprintf(id, sizeof(id), "community-hover-%d", index);
     float lift = bongo_cat_ui_animate_eased(context, id,
         hover ? 1.0f : 0.0f, 220.0f, BONGO_CAT_UI_EASE_SWIFT);
     bounds.y -= 2.0f * lift;
-    struct nk_color background = bongo_cat_ui_color_mix(p.surface_glass,
-        brand, hover ? .10f : .055f);
+    const struct nk_color light[] = {nk_rgb(242, 244, 253), nk_rgb(242, 248, 254), nk_rgb(237, 248, 241)};
+    struct nk_color background = bongo_cat_ui_dark(context)
+        ? bongo_cat_ui_color_mix(p.surface_glass, brand, .055f) : light[index];
     if (hover && p.effects) bongo_cat_ui_paint_shadow(context, bounds, 18,
         0, 10, 24, 0, nk_rgba(brand.r, brand.g, brand.b, 28));
-    nk_fill_rect(canvas, bounds, 18, background);
-    struct nk_rect mark = nk_rect(bounds.x + 12, bounds.y + 12, 44, 44);
-    nk_fill_rect(canvas, mark, 14, brand);
-    bongo_cat_preferences_icon_draw(value, canvas,
+    nk_fill_rect(canvas, bounds, 16, background);
+    struct nk_rect mark = nk_rect(bounds.x + 12, bounds.y + (bounds.h-36)*.5f, 36, 36);
+    nk_fill_rect(canvas, mark, 12, brand);
+    if(index == 2) {
+        bongo_cat_about_wechat_icon(value, context, nk_rect(mark.x + 5.5f, mark.y + 5.5f, 25, 25));
+    } else bongo_cat_preferences_icon_draw(value, canvas,
         index ? BONGO_CAT_UI_ICON_QQ : BONGO_CAT_UI_ICON_DISCORD,
-        nk_rect(mark.x + 9.5f, mark.y + 9.5f, 25, 25), nk_rgb(255, 255, 255));
-    text(canvas, nk_rect(bounds.x + 68, bounds.y + 13, bounds.w - 94, 22),
-        labels[index], value->ui.label_font, p.text);
-    text(canvas, nk_rect(bounds.x + 68, bounds.y + 37, bounds.w - 94, 18),
-        details[index], value->ui.caption_font, p.muted);
-    nk_stroke_line(canvas, bounds.x + bounds.w - 22, bounds.y + 31,
-        bounds.x + bounds.w - 17, bounds.y + 34, 1.5f, brand);
-    nk_stroke_line(canvas, bounds.x + bounds.w - 17, bounds.y + 34,
-        bounds.x + bounds.w - 22, bounds.y + 37, 1.5f, brand);
+        nk_rect(mark.x + 5.5f, mark.y + 5.5f, 25, 25), nk_rgb(255, 255, 255));
+    text(canvas, nk_rect(bounds.x + 57, bounds.y + bounds.h*.5f-21, bounds.w - 77, 22),
+        labels[index], bongo_cat_about_font(value, 20), p.text);
+    const struct nk_user_font *detail_font = bongo_cat_about_font(value, 14.0f);
+    char detail[256];
+    snprintf(detail, sizeof(detail), "%s", details[index]);
+    int length = nk_strlen(detail);
+    float detail_width = NK_MAX(0.0f, bounds.w - 80.0f);
+    if (detail_font->width(detail_font->userdata, detail_font->height, detail, length) > detail_width) {
+        float dots = detail_font->width(detail_font->userdata, detail_font->height, "...", 3);
+        while (length && detail_font->width(detail_font->userdata, detail_font->height, detail, length) + dots > detail_width) {
+            length--;
+            while (length && ((unsigned char)detail[length] & 0xc0) == 0x80) length--;
+        }
+        snprintf(detail + length, sizeof(detail) - (size_t)length, "...");
+    }
+    text(canvas, nk_rect(bounds.x + 57, bounds.y + bounds.h*.5f+3, detail_width, 18),
+        detail, detail_font, p.muted);
+    float right = bounds.x + bounds.w - (bounds.h < 80 ? 20.0f : 10.0f);
+    float middle = bounds.y + bounds.h * .5f;
+    nk_stroke_line(canvas, right - 5, middle - 3, right, middle, 1.5f, brand);
+    nk_stroke_line(canvas, right, middle, right - 5, middle + 3, 1.5f, brand);
     if (hover) bongo_cat_ui_cursor_hover_rect(context, bounds,
         BONGO_CAT_UI_CURSOR_POINTER);
-    if (hit(context, bounds)) open_url(urls[index]);
+    if(index == 2) {
+        if(hover) bongo_cat_about_wechat(value,bounds);
+    } else if (hit(context, bounds)) open_url(urls[index]);
 }
 
 void bongo_cat_preferences_about_projects_heading(
@@ -159,16 +180,21 @@ void bongo_cat_preferences_about_projects_heading(
 void bongo_cat_preferences_about_community(
     BongoCatPreferences *value, struct nk_context *context) {
     struct nk_rect bounds;
-    nk_layout_row_dynamic(context, 164, 1);
+    float viewport, height;
+    bongo_cat_ui_logical_size(&value->ui, &viewport, &height);
+    (void)height;
+    bool stacked = viewport <= 780.0f;
+    nk_layout_row_dynamic(context, stacked ? 334.0f : 194.0f, 1);
     if (nk_widget(&bounds, context) == NK_WIDGET_INVALID) return;
     BongoCatUIPalette p = bongo_cat_ui_palette(
         bongo_cat_ui_dark(context));
     struct nk_command_buffer *canvas = nk_window_get_canvas(context);
-    centered(canvas, nk_rect(bounds.x, bounds.y, bounds.w, 30),
+    centered(canvas, nk_rect(bounds.x, bounds.y + 24, bounds.w, 30),
         tr(value, "native.support.community", "Community"),
-        value->ui.heading_font, p.text);
-    for (int i = 0; i < 2; ++i)
+        bongo_cat_about_font(value, 24), p.text);
+    for (int i = 0; i < 3; ++i)
         community_link(value, context, canvas,
-            nk_rect(bounds.x + bounds.w * .5f - 289 + i * 298,
-            bounds.y + 48, 280, 68), i, p);
+            nk_rect(bounds.x + (stacked?0:i*(bounds.w+12)/3),
+            bounds.y + 74 + (stacked?i*80:0), stacked?bounds.w:(bounds.w-24)/3,
+            stacked?68.0f:88.0f), i, p);
 }

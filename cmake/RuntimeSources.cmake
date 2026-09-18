@@ -215,12 +215,22 @@ set(BONGO_CAT_UI_THEME_SOURCES
   src/ui/theme/ui_catime_tabs.c
   src/ui/theme/ui_catime_theme.c)
 
+set(BONGO_CAT_UI_PREFERENCES_ABOUT_SOURCES
+  src/ui/preferences/about/preferences_about.c
+  src/ui/preferences/about/preferences_about_community.c
+  src/ui/preferences/about/preferences_about_contributors.c
+  src/ui/preferences/about/preferences_about_feed.c
+  src/ui/preferences/about/preferences_about_footer.c
+  src/ui/preferences/about/preferences_about_lifecycle.c
+  src/ui/preferences/about/preferences_about_online.c
+  src/ui/preferences/about/preferences_about_page.c
+  src/ui/preferences/about/preferences_about_svg.c
+  src/ui/preferences/about/preferences_about_text.c
+  src/ui/preferences/about/preferences_about_wechat.c)
+
 set(BONGO_CAT_UI_PREFERENCES_SOURCES
+  ${BONGO_CAT_UI_PREFERENCES_ABOUT_SOURCES}
   src/ui/preferences/preferences.c
-  src/ui/preferences/preferences_about.c
-  src/ui/preferences/preferences_about_community.c
-  src/ui/preferences/preferences_about_footer.c
-  src/ui/preferences/preferences_about_page.c
   src/ui/preferences/preferences_assets.c
   src/ui/preferences/preferences_behavior_dialog.c
   src/ui/preferences/preferences_behavior_rename.c

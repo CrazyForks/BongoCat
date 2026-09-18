@@ -154,18 +154,17 @@ static void draw_links(BongoCatPreferences *value,
     struct nk_rect feedback, struct nk_rect logs, const char *feedback_label,
     const char *logs_label, BongoCatUIPalette p) {
     const struct nk_user_font *small_font = logs_font(value);
-    struct nk_color feedback_color = link_color(context, feedback,
-        "support-feedback-hover", p);
+    float feedback_hover = bongo_cat_ui_animate_eased(context, "support-feedback-hover",
+        nk_input_is_mouse_hovering_rect(&context->input, feedback) ? 1.0f : 0.0f,
+        200, BONGO_CAT_UI_EASE_STANDARD);
+    struct nk_color feedback_color = bongo_cat_ui_color_mix(nk_rgb(111, 204, 225),
+        nk_rgb(78, 172, 192), feedback_hover);
     centered(canvas, feedback, feedback_label, value->ui.caption_font,
         feedback_color);
     link_cursor(context, feedback);
-    if (hit(context, feedback) && !SDL_OpenURL(
-            "https://github.com/vladelaina/BongoCat/issues"))
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
-            "Cannot open URL: %s", SDL_GetError());
+    if (hit(context, feedback) && !SDL_OpenURL("https://bongocat.pet/?feedback=1"))
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Cannot open feedback page: %s", SDL_GetError());
 
-    nk_stroke_line(canvas, logs.x - 10, logs.y + 11,
-        logs.x - 10, logs.y + logs.h - 11, 1, p.border_subtle);
     struct nk_color logs_color = link_color(context, logs,
         "support-logs-hover", p);
     float content_width = logs_content_width(small_font, logs_label);

@@ -1,3 +1,4 @@
+#include "preferences_about_internal.h"
 #include "preferences_state.h"
 #include "preferences_about_community.h"
 #include "preferences_about_footer.h"
@@ -147,7 +148,7 @@ static void hero_title(BongoCatPreferences *value, struct nk_context *context,
     text(canvas, link, developer, value->ui.caption_font,
         bongo_cat_ui_color_mix(p.accent, p.pink, amount));
     link_cursor(context, link); if (hit(context, link))
-        open_url("https://github.com/vladelaina/BongoCat");
+        open_url("https://vladelaina.com");
 }
 void bongo_cat_preferences_about_hero(BongoCatPreferences *value,
     struct nk_context *context) {

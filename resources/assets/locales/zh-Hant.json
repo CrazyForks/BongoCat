@@ -195,6 +195,24 @@
     }
   },
   "native": {
+    "about": {
+      "wechat": "微信群組",
+      "wechatHint": "懸停掃碼，一起交流",
+      "loading": "正在載入...",
+      "contributorsFailed": "貢獻者載入失敗，點擊重試。",
+      "qrUnavailable": "QR 碼暫時無法載入",
+      "reload": "重新載入",
+      "qrFailed": "二維碼暫時無法載入，點擊重新載入",
+      "contributorsTitle": "開源共建與 社群貢獻",
+      "contributorsText": "BongoCat 的每一步都源於開源的力量。感謝所有社群貢獻者的無私付出，是你們讓桌面陪伴變得更加自由與純粹。",
+      "joinTitle": "想出現在貢獻者名單中嗎？",
+      "joinText": "無論是提交程式碼、改善文件、回報 Bug 還是貢獻多語言翻譯，你的每一次參與都在讓 BongoCat 變得更好。",
+      "code": "程式碼貢獻",
+      "docs": "文件改進",
+      "bugs": "Bug 回報",
+      "translations": "翻譯國際化",
+      "joinGithub": "參與 GitHub 貢獻"
+    },
     "multiplePets": "同時顯示多個",
     "multiplePetsLimit": "\u6700\u591a\u53ef\u540c\u6642\u986f\u793a 8 \u500b\u684c\u5bf5",
     "removeDesktopPet": "\u95dc\u9589\u6b64\u684c\u5bf5",

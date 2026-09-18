@@ -28,6 +28,7 @@ static void release_window(BongoCatPreferences *value) {
         bongo_cat_pref_controls_reset(&value->ui.context);
         bongo_cat_ui_animations_reset(&value->ui.context);
     }
+    bongo_cat_about_clear(value, context_ready);
     if (context_ready) bongo_cat_preferences_assets_clear(value);
     else bongo_cat_preferences_assets_abandon(value);
     if (value->ui_initialized) {
@@ -78,6 +79,7 @@ void bongo_cat_preferences_show(BongoCatPreferences *value) {
     if (value->ui_initialized) bongo_cat_ui_input_reset(&value->ui);
     value->shown_ns = requested_ns;
     value->visible = true;
+    bongo_cat_about_refresh(value);
     if (!opening) {
         SDL_StartTextInput(value->window);
         bongo_cat_preferences_live_resize_install(value);
@@ -107,6 +109,11 @@ void bongo_cat_preferences_close(BongoCatPreferences *value) {
     if (value->chrome_dragging) SDL_CaptureMouse(false);
     value->chrome_dragging = false;
     value->visible = false;
+    SDL_Window *previous_window = SDL_GL_GetCurrentWindow();
+    SDL_GLContext previous_context = SDL_GL_GetCurrentContext();
+    bool about_gl_ready = SDL_GL_MakeCurrent(value->window, value->gl_context);
+    bongo_cat_about_clear(value, about_gl_ready);
+    SDL_GL_MakeCurrent(previous_window, previous_context);
     SDL_HideWindow(value->window);
     bongo_cat_preferences_release_idle_window(value);
     bongo_cat_config_store_flush(value->app);
@@ -128,5 +135,7 @@ void bongo_cat_preferences_destroy(BongoCatPreferences *value) {
     value->import_dialog = NULL;
     bongo_cat_preferences_close(value);
     release_window(value);
+    bongo_cat_about_clear(value, false);
+    bongo_cat_about_shutdown(value);
     free(value);
 }

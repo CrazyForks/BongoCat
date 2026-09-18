@@ -195,6 +195,24 @@
     }
   },
   "native": {
+    "about": {
+      "wechat": "微信群",
+      "wechatHint": "悬停扫码，一起交流",
+      "loading": "正在加载...",
+      "contributorsFailed": "贡献者加载失败，点击重试。",
+      "qrUnavailable": "二维码暂时无法加载",
+      "reload": "重新加载",
+      "qrFailed": "二维码暂时无法加载，点击重新加载",
+      "contributorsTitle": "开源共建与 社区贡献",
+      "contributorsText": "BongoCat 的每一步都源于开源的力量。感谢所有社区贡献者的无私付出，是你们让桌面陪伴变得更加自由与纯粹。",
+      "joinTitle": "想出现在贡献者名单中吗？",
+      "joinText": "无论是提交代码、改善文档、报告 Bug 还是贡献多语言翻译，你的每一次参与都在让 BongoCat 变得更好。",
+      "code": "代码贡献",
+      "docs": "文档改进",
+      "bugs": "Bug 反馈",
+      "translations": "翻译国际化",
+      "joinGithub": "参与 GitHub 贡献"
+    },
     "multiplePets": "同时显示多个",
     "multiplePetsLimit": "\u6700\u591a\u53ef\u540c\u65f6\u663e\u793a 8 \u4e2a\u684c\u5ba0",
     "removeDesktopPet": "\u5173\u95ed\u6b64\u684c\u5ba0",

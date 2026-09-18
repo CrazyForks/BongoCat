@@ -195,6 +195,24 @@
     }
   },
   "native": {
+    "about": {
+      "wechat": "WeChat",
+      "wechatHint": "Hover to scan and chat",
+      "loading": "Loading...",
+      "contributorsFailed": "Cannot load contributors. Click to retry.",
+      "qrUnavailable": "QR code unavailable",
+      "reload": "Reload",
+      "qrFailed": "QR code unavailable. Click to retry.",
+      "contributorsTitle": "Open source & community contributions",
+      "contributorsText": "Every step of BongoCat comes from the power of open source. Thank you to all community contributors for making desktop companionship freer and simpler.",
+      "joinTitle": "Want to appear in the contributors list?",
+      "joinText": "Whether you contribute code, improve documentation, report bugs or translate, every contribution makes BongoCat better.",
+      "code": "Code",
+      "docs": "Documentation",
+      "bugs": "Bug reports",
+      "translations": "Translations",
+      "joinGithub": "Contribute on GitHub"
+    },
     "multiplePets": "複数を同時に表示",
     "multiplePetsLimit": "\u4e00\u5ea6\u306b\u8868\u793a\u3067\u304d\u308b\u30c7\u30b9\u30af\u30c8\u30c3\u30d7\u30da\u30c3\u30c8\u306f 8 \u4f53\u307e\u3067\u3067\u3059",
     "removeDesktopPet": "\u3053\u306e\u30c7\u30b9\u30af\u30c8\u30c3\u30d7\u30da\u30c3\u30c8\u3092\u9589\u3058\u308b",

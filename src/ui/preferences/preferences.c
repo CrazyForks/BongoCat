@@ -32,6 +32,7 @@ void bongo_cat_preferences_page_cache_clear(BongoCatPreferences *value,
     if (!value || previous_page == next_page) return;
     bool released = false;
     if (previous_page == 3 && next_page != 3) {
+        value->about.qr_open = false;
         bongo_cat_preferences_support_assets_clear(value);
         released = true;
     }
@@ -73,6 +74,8 @@ bool bongo_cat_preferences_needs_frame(BongoCatPreferences *value) {
         value->render_dirty = true;
     }
     if (!value->window || !value->visible) return false;
+    if (value->about.qr_open && SDL_GetTicks() >= value->about.qr_hide_at)
+        value->render_dirty = true;
     if (value->behavior_dialog && value->app) {
         for (size_t i = 0; i < value->app->behaviors.count; ++i) {
             const BongoCatBehaviorEntry *entry = &value->app->behaviors.entries[i];
@@ -151,6 +154,11 @@ void bongo_cat_preferences_drag_tick(BongoCatPreferences *value) {
 
 static bool chrome_event(BongoCatPreferences *value, const SDL_Event *event) {
     if (event->type == SDL_EVENT_KEY_DOWN && event->key.key == SDLK_ESCAPE) {
+        if (value->about.qr_open) {
+            value->about.qr_open = false;
+            value->render_dirty = true;
+            return true;
+        }
         if (bongo_cat_preferences_behavior_dialog_active(value)) {
             bongo_cat_preferences_behavior_dialog_close(value);
             value->render_dirty = true;
@@ -204,6 +212,7 @@ static bool chrome_event(BongoCatPreferences *value, const SDL_Event *event) {
 
 bool bongo_cat_preferences_event(BongoCatPreferences *value, const SDL_Event *event) {
     if (!value || !event) return false;
+    if (bongo_cat_about_event(value, event)) return true;
     if (bongo_cat_preferences_import_event(value->import_dialog, value->app,
         event)) { value->render_dirty = value->visible;
         return true; }

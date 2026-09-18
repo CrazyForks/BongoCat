@@ -68,9 +68,13 @@ void bongo_cat_preferences_render(BongoCatPreferences *value) {
         value->transparent_window ? 0.0f : palette.background.b / 255.0f,
         value->transparent_window ? 0.0f : 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    bongo_cat_ui_render(&value->ui);
+    bool rendered = bongo_cat_ui_render(&value->ui);
     bongo_cat_preferences_smoke_frame(value);
-    if (!SDL_GL_SwapWindow(value->window)) {
+    if (!rendered) {
+        /* Keep the last complete front buffer instead of presenting corruption. */
+        value->render_dirty = true;
+        value->render_retry_ns = now + 1000000000ull;
+    } else if (!SDL_GL_SwapWindow(value->window)) {
         value->render_dirty = true;
         value->render_retry_ns = now + 1000000000ull;
         SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO,

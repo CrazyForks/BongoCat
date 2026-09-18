@@ -195,6 +195,24 @@
     }
   },
   "native": {
+    "about": {
+      "wechat": "WeChat",
+      "wechatHint": "Hover to scan and chat",
+      "loading": "Loading...",
+      "contributorsFailed": "Cannot load contributors. Click to retry.",
+      "qrUnavailable": "QR code unavailable",
+      "reload": "Reload",
+      "qrFailed": "QR code unavailable. Click to retry.",
+      "contributorsTitle": "Open source & community contributions",
+      "contributorsText": "Every step of BongoCat comes from the power of open source. Thank you to all community contributors for making desktop companionship freer and simpler.",
+      "joinTitle": "Want to appear in the contributors list?",
+      "joinText": "Whether you contribute code, improve documentation, report bugs or translate, every contribution makes BongoCat better.",
+      "code": "Code",
+      "docs": "Documentation",
+      "bugs": "Bug reports",
+      "translations": "Translations",
+      "joinGithub": "Contribute on GitHub"
+    },
     "multiplePets": "Afficher plusieurs modèles",
     "multiplePetsLimit": "Jusqu'\u00e0 8 mascottes peuvent \u00eatre affich\u00e9es \u00e0 la fois",
     "removeDesktopPet": "Fermer cette mascotte de bureau",

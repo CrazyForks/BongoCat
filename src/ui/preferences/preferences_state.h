@@ -4,6 +4,7 @@
 #include "preferences_internal.h"
 #include "preferences_scrollbar.h"
 #include "preferences_text_session.h"
+#include "about/preferences_about.h"
 #include "ui_backend.h"
 
 #define BONGO_CAT_MODEL_LOAD_VISUAL_DURATION_NS 5000000000ull
@@ -41,6 +42,7 @@ struct BongoCatPreferences {
     int catime_width, catime_height;
     int vlaina_width, vlaina_height;
     bool support_assets_loaded;
+    BongoCatAboutState about;
     struct nk_user_font support_logs_font;
     int page;
     int style_theme;
