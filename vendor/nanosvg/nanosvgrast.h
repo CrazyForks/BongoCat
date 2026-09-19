@@ -767,9 +767,14 @@ static void nsvg__flattenShapeStroke(NSVGrasterizer* r, NSVGshape* shape, float 
 			closed = 1;
 		}
 
-		if (shape->strokeDashCount > 0) {
+		float allDashLen = 0.0f;
+		for (j = 0; j < shape->strokeDashCount; j++)
+			allDashLen += shape->strokeDashArray[j];
+		if (shape->strokeDashCount & 1)
+			allDashLen *= 2.0f;
+		if (shape->strokeDashCount > 0 && allDashLen > 0.0f) {
 			int idash = 0, dashState = 1;
-			float totalDist = 0, dashLen, allDashLen, dashOffset;
+			float totalDist = 0, dashLen, dashOffset;
 			NSVGpoint cur;
 
 			if (closed)
@@ -782,12 +787,6 @@ static void nsvg__flattenShapeStroke(NSVGrasterizer* r, NSVGshape* shape, float 
  			cur = r->points2[0];
 			nsvg__appendPathPoint(r, cur);
 
-			// Figure out dash offset.
-			allDashLen = 0;
-			for (j = 0; j < shape->strokeDashCount; j++)
-				allDashLen += shape->strokeDashArray[j];
-			if (shape->strokeDashCount & 1)
-				allDashLen *= 2.0f;
 			// Find location inside pattern
 			dashOffset = fmodf(shape->strokeDashOffset, allDashLen);
 			if (dashOffset < 0.0f)
