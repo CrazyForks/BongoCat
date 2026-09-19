@@ -144,6 +144,38 @@ static void behavior_labels_add_font_glyphs(void) {
     CHECK(range_has(ranges, 0x54aa));
     CHECK(range_has(ranges, 0x5f62));
     CHECK(range_has(ranges, 0x6001));
+    BongoCatPreferences *preferences = calloc(1, sizeof(*preferences));
+    CHECK(preferences != NULL);
+    if (preferences) {
+        preferences->app = app;
+        preferences->ui_initialized = true;
+        preferences->glyph_ranges[0] = 0x20;
+        preferences->glyph_ranges[1] = 0x7e;
+        CHECK(!bongo_cat_preferences_behavior_glyphs_ready(preferences));
+        bongo_cat_preferences_behavior_dialog_open(preferences);
+        CHECK(preferences->font_reload_pending);
+        bongo_cat_preferences_model_glyphs(app, preferences->glyph_ranges,
+            sizeof(preferences->glyph_ranges) / sizeof(preferences->glyph_ranges[0]));
+        CHECK(bongo_cat_preferences_behavior_glyphs_ready(preferences));
+        preferences->font_reload_pending = false;
+        bongo_cat_preferences_behavior_dialog_open(preferences);
+        CHECK(!preferences->font_reload_pending);
+        app->behaviors.count = 600;
+        for (size_t i = 0; i < app->behaviors.count; ++i) {
+            char *label = app->behaviors.entries[i].label;
+            int bytes = nk_utf_encode((nk_rune)(0x4e00 + i * 4), label,
+                BONGO_CAT_ID_CAP);
+            bytes += nk_utf_encode((nk_rune)(0x4e02 + i * 4), label + bytes,
+                BONGO_CAT_ID_CAP - bytes);
+            label[bytes] = '\0';
+        }
+        CHECK(!bongo_cat_preferences_behavior_glyphs_ready(preferences));
+        bongo_cat_preferences_model_glyphs(app, preferences->glyph_ranges,
+            sizeof(preferences->glyph_ranges) / sizeof(preferences->glyph_ranges[0]));
+        CHECK(bongo_cat_preferences_behavior_glyphs_ready(preferences));
+        CHECK(range_has(preferences->glyph_ranges, 0x4e02 + 599 * 4));
+        free(preferences);
+    }
     free(app);
 }
 

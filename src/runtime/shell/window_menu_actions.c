@@ -5,6 +5,7 @@
 #include "preferences_notice.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static const char *tr(BongoCatApp *app, const char *key,
@@ -28,6 +29,9 @@ static bool select_model(BongoCatApp *app, const char *id) {
 
 void bongo_cat_window_show_context_menu(BongoCatApp *app) {
     if (!app) return;
+    size_t capacity = app->behaviors.count ? app->behaviors.count : 1;
+    char (*names)[BONGO_CAT_MENU_LABEL_CAP] = calloc(capacity * 3, sizeof(*names));
+    if (!names) return;
     bool dark_theme = app->settings.app.theme == BONGO_CAT_THEME_DARK ||
         (app->settings.app.theme == BONGO_CAT_THEME_AUTO &&
             SDL_GetSystemTheme() == SDL_SYSTEM_THEME_DARK);
@@ -43,8 +47,8 @@ void bongo_cat_window_show_context_menu(BongoCatApp *app) {
         if (!strcmp(app->models.entries[i].id, app->session.active_model_id))
             current_model = i;
     }
-    char motion_names[BONGO_CAT_BEHAVIOR_CAP][BONGO_CAT_MENU_LABEL_CAP];
-    char expression_names[BONGO_CAT_BEHAVIOR_CAP][BONGO_CAT_MENU_LABEL_CAP];
+    char (*motion_names)[BONGO_CAT_MENU_LABEL_CAP] = names;
+    char (*expression_names)[BONGO_CAT_MENU_LABEL_CAP] = names + capacity;
     bool motion_checked[BONGO_CAT_BEHAVIOR_CAP] = {false};
     size_t motion_count, expression_count, current_expression;
     bongo_cat_window_behavior_labels(app, motion_names, motion_checked,
@@ -76,7 +80,7 @@ void bongo_cat_window_show_context_menu(BongoCatApp *app) {
         app->secondary_pet || (app->settings.model.multiple_pets &&
             app->session.additional_model_count > 0), NULL, NULL, NULL, 0,
         model_cover_directories};
-    char audio_names[BONGO_CAT_BEHAVIOR_CAP][BONGO_CAT_MENU_LABEL_CAP];
+    char (*audio_names)[BONGO_CAT_MENU_LABEL_CAP] = names + capacity * 2;
     bool audio_checked[BONGO_CAT_BEHAVIOR_CAP] = {false};
     labels.audio = tr(app, "pages.preference.model.behaviorModal.labels.audio", "Audio");
     labels.audio_names = audio_names;
@@ -84,6 +88,7 @@ void bongo_cat_window_show_context_menu(BongoCatApp *app) {
     bongo_cat_window_audio_labels(app, audio_names, audio_checked, &labels.audio_count);
     BongoCatMenuAction action = bongo_cat_platform_context_menu(
         &app->platform, &labels);
+    free(names);
     if (bongo_cat_window_menu_preview_applied(&preview, action))
         bongo_cat_preferences_invalidate(app->preferences);
     else bongo_cat_window_menu_action(app, action);

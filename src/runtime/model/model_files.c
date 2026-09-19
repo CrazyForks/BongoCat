@@ -252,6 +252,7 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
     memset(&app->sound_shortcut_state, 0, sizeof(app->sound_shortcut_state));
     memset(app->sound_shortcut_active, 0, sizeof(app->sound_shortcut_active));
     commit_model(app, entry, true, replacing_model);
+    bongo_cat_preferences_invalidate(app->preferences);
     bongo_cat_app_reapply_input(app);
     bongo_cat_app_apply_mouse(app);
     SDL_Log("[runtime] Model cover load phase: id=%s phase=%s",

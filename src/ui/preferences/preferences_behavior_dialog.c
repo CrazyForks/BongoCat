@@ -1,5 +1,6 @@
 #include "preferences_state.h"
 #include "preferences_overlay.h"
+#include "preferences_model_glyphs.h"
 #include "ui_animation.h"
 #include "ui_backend.h"
 #include "ui_icons.h"
@@ -72,6 +73,11 @@ void bongo_cat_preferences_behavior_dialog_open(
     SDL_Log("Preferences behavior dialog opened with %llu behaviors",
         (unsigned long long)value->app->behaviors.count);
     value->behavior_dialog = true;
+    if (value->ui_initialized &&
+        !bongo_cat_preferences_behavior_glyphs_ready(value)) {
+        value->font_reload_pending = true;
+        value->font_reload_defer_once = false;
+    }
     value->behavior_dialog_input_armed = false;
     value->behavior_dialog_opened_ns = SDL_GetTicksNS();
     value->behavior_dialog_closing_ns = 0;

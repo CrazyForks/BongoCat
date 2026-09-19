@@ -6,6 +6,7 @@
 #include "test_mver_import_internal.h"
 #include "test_mver_support.h"
 #include "bongo_cat/json.h"
+#include "bongo_cat/file.h"
 #include "bongo_cat/path.h"
 
 #include <SDL3/SDL.h>
@@ -84,6 +85,39 @@ static void multiple_mver_manifests(void) {
     free(discovery);
 }
 
+static void many_behaviors(const char *directory) {
+    BongoCatModelEntry model = {0};
+    snprintf(model.id, sizeof(model.id), "many-behaviors");
+    snprintf(model.directory, sizeof(model.directory), "%s", directory);
+    snprintf(model.setting_file, sizeof(model.setting_file), "many.model3.json");
+    char path[BONGO_CAT_PATH_CAP];
+    CHECK(child(path, sizeof(path), directory, model.setting_file, false));
+    FILE *file = bongo_cat_file_open(path, "wb");
+    CHECK(file != NULL);
+    if (!file) return;
+    fputs("{\"FileReferences\":{\"Motions\":{\"CAT_motion\":[", file);
+    for (int i = 0; i < 160; ++i)
+        fprintf(file, "%s{\"File\":\"motion%d.motion3.json\"}", i ? "," : "", i);
+    fputs("]},\"Expressions\":[", file);
+    for (int i = 0; i < 20; ++i)
+        fprintf(file, "%s{\"Name\":\"\\u5fae\\u7b11\",\"File\":\"exp%d.exp3.json\"}",
+            i ? "," : "", i);
+    fputs("]}}", file);
+    CHECK(fclose(file) == 0);
+    BongoCatBehaviorCatalog *catalog = calloc(1, sizeof(*catalog));
+    CHECK(catalog != NULL);
+    if (!catalog) return;
+    BongoCatError error = {0};
+    CHECK(bongo_cat_behaviors_load(catalog, &model, &error) == BONGO_CAT_OK);
+    CHECK(catalog->count == 180);
+    CHECK(catalog->entries[159].index == 159);
+    CHECK(catalog->entries[160].kind == BONGO_CAT_BEHAVIOR_EXPRESSION);
+    CHECK(catalog->entries[179].index == 19);
+    CHECK(strcmp(catalog->entries[160].label, "\xE5\xBE\xAE\xE7\xAC\x91") == 0);
+    CHECK(strcmp(catalog->entries[160].id, catalog->entries[161].id) != 0);
+    free(catalog);
+}
+
 void test_mver_manifest(void) {
     multiple_mver_manifests();
     char *temporary = SDL_GetCurrentDirectory();
@@ -95,6 +129,7 @@ void test_mver_manifest(void) {
     snprintf(root, sizeof(root), "%s/bongocat-manifest-%llu", temporary,
         (unsigned long long)SDL_GetTicksNS());
     CHECK(SDL_CreateDirectory(root));
+    many_behaviors(root);
     CHECK(child(package, sizeof(package), root, "source", true));
     CHECK(mver_fixture(package));
     CHECK(child(model, sizeof(model), package, "img/standard/cat_model", false));

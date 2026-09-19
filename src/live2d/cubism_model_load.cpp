@@ -157,8 +157,9 @@ void NativeModel::load_expressions() {
         Csm::ACubismMotion *motion = LoadExpression(bytes.data(),
             (Csm::csmSizeInt)bytes.size(), name);
         if (!motion) continue;
-        expressions_[name] = motion;
-        expression_names_[(size_t)i] = name;
+        std::string key = std::to_string(i);
+        expressions_[key] = motion;
+        expression_names_[(size_t)i] = key;
     }
     if (!expressions_.empty())
         _updateScheduler.AddUpdatableList(
@@ -245,7 +246,6 @@ void NativeModel::load_motions(BongoCatLive2DLoadProgress progress,
             if (std::strcmp(group, "Idle") == 0) idle_motion_keys_.push_back(key);
         }
     }
-    pair_motion_states();
     _motionManager->StopAllMotions();
 }
 

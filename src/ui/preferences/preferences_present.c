@@ -35,6 +35,13 @@ void bongo_cat_preferences_render(BongoCatPreferences *value) {
         value->import_dialog, NULL, NULL, NULL);
     value->import_render_active = importing;
     bool refreshing_models = bongo_cat_app_model_refresh_busy(value->app);
+    if (value->behavior_font_serial != value->app->model_selection_serial) {
+        value->behavior_font_serial = value->app->model_selection_serial;
+        if (!bongo_cat_preferences_behavior_glyphs_ready(value)) {
+            value->font_reload_pending = true;
+            value->font_reload_defer_once = false;
+        }
+    }
     if (!importing && !refreshing_models) {
         bongo_cat_preferences_refresh_raster(value);
         bongo_cat_preferences_reload_language(value);

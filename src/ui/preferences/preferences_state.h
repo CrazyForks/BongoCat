@@ -50,7 +50,8 @@ struct BongoCatPreferences {
     int page;
     int style_theme;
     BongoCatLanguage font_language;
-    nk_rune glyph_ranges[2048];
+    nk_rune glyph_ranges[16384];
+    uint64_t behavior_font_serial;
     bool input_active;
     bool import_requested;
     bool import_drop_active;

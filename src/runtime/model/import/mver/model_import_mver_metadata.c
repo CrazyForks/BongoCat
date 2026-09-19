@@ -7,6 +7,7 @@
 #include "bongo_cat/path.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <yyjson.h>
 
@@ -160,9 +161,14 @@ bool bongo_cat_import_adapter_metadata(const BongoCatImportCandidate *candidate,
         YYJSON_READ_JSON5 | YYJSON_READ_ALLOW_INVALID_UNICODE, NULL) : NULL;
     yyjson_val *config = source ? yyjson_doc_get_root(source) : NULL;
     yyjson_val *mode = yyjson_obj_get(config, bongo_cat_mode_name(candidate->mode));
-    BongoCatMverLabels labels = {0};
+    BongoCatMverLabels *labels = mver ? calloc(1, sizeof(*labels)) : NULL;
+    if (mver && !labels) {
+        yyjson_doc_free(source);
+        bongo_cat_error_set(error, BONGO_CAT_ERROR_MEMORY, "Cannot allocate Mver labels");
+        return false;
+    }
     if (mver) bongo_cat_mver_labels_load(candidate->config,
-        bongo_cat_mode_name(candidate->mode), &labels);
+        bongo_cat_mode_name(candidate->mode), labels);
     yyjson_mut_doc *output = yyjson_mut_doc_new(NULL);
     yyjson_mut_val *root = output ? yyjson_mut_obj(output) : NULL;
     yyjson_mut_val *items = root ? yyjson_mut_obj_add_arr(output, root, "bindings") : NULL;
@@ -175,9 +181,9 @@ bool bongo_cat_import_adapter_metadata(const BongoCatImportCandidate *candidate,
             format_name(candidate->format));
     if (ok && mver) ok = yyjson_is_obj(mode) &&
         add_render_profile(output, root, config, candidate) &&
-        bongo_cat_mver_add_behaviors(output, items, mode, candidate, &labels, error) &&
+        bongo_cat_mver_add_behaviors(output, items, mode, candidate, labels, error) &&
         bongo_cat_mver_add_audio(output, items, config, yyjson_obj_get(mode, "sounds"),
-            candidate, &labels, target) &&
+            candidate, labels, target) &&
         bongo_cat_mver_effects(output, items, config, mode, candidate, target);
     else if (ok) ok = add_native_render(output, root);
     char path[BONGO_CAT_PATH_CAP];
@@ -186,6 +192,7 @@ bool bongo_cat_import_adapter_metadata(const BongoCatImportCandidate *candidate,
         bongo_cat_json_write_file(path, output, YYJSON_WRITE_PRETTY, NULL);
     yyjson_mut_doc_free(output);
     yyjson_doc_free(source);
+    free(labels);
     if (!ok && error && !error->message[0])
         bongo_cat_error_set(error, BONGO_CAT_ERROR_FORMAT,
             "Cannot create runtime adapter metadata: %s", candidate->config);
