@@ -135,7 +135,8 @@ bool bongo_cat_mver_shortcuts_load(BongoCatApp *app, const BongoCatModelEntry *m
         }
         node->next = parsed; parsed = node;
         BongoCatBehaviorShortcut *value = &node->binding;
-        snprintf(value->id, sizeof(value->id), "%s", entry->id);
+        snprintf(value->id, sizeof(value->id), "%.*s",
+            (int)sizeof(value->id) - 1, entry->id);
         value->shortcut_external = true;
         value->shortcut[0] = '\0'; value->shortcut_disabled = true;
         if (!address(model, entry, &mode, &field, &index)) continue;
