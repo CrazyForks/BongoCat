@@ -21,8 +21,21 @@ typedef struct BongoCatUpdateService BongoCatUpdateService;
 
 #define BONGO_CAT_MODEL_COVER_PENDING_CAP 8
 
+/* File-backed bindings are runtime data, independent of user override limits.
+   Nodes keep editor pointers stable while a sibling model is refreshed. */
+typedef struct BongoCatModelShortcutNode {
+    BongoCatBehaviorShortcut binding;
+    struct BongoCatModelShortcutNode *next;
+} BongoCatModelShortcutNode;
+typedef struct BongoCatModelShortcutCache {
+    char model_id[BONGO_CAT_ID_CAP];
+    BongoCatModelShortcutNode *bindings;
+    struct BongoCatModelShortcutCache *next;
+} BongoCatModelShortcutCache;
+
 typedef struct BongoCatApp {
     BongoCatSettings settings;
+    BongoCatModelShortcutCache *model_shortcuts;
     BongoCatSessionState session;
     BongoCatInputState input;
     /* Main-thread-only cumulative input diagnostics. */
@@ -32,7 +45,6 @@ typedef struct BongoCatApp {
     } input_diagnostics;
     BongoCatShortcutState shortcut_state;
     BongoCatSoundShortcutState sound_shortcut_state;
-    bool sound_shortcut_active[BONGO_CAT_BEHAVIOR_BINDING_CAP];
     BongoCatModelCatalog models;
     BongoCatBehaviorCatalog behaviors;
     /* One immutable installed package's behavior catalog can be reused when
@@ -235,4 +247,16 @@ void bongo_cat_app_request_model_package_refresh(BongoCatApp *app,
 void bongo_cat_app_request_nearby_model_refresh(BongoCatApp *app);
 void bongo_cat_config_store_flush(BongoCatApp *app);
 
+const BongoCatBehaviorShortcut *bongo_cat_app_behavior_binding(
+    const BongoCatApp *app, const char *id);
+BongoCatBehaviorShortcut *bongo_cat_app_behavior_binding_mut(
+    BongoCatApp *app, const char *id);
+BongoCatBehaviorShortcut *bongo_cat_app_behavior_binding_target(
+    BongoCatApp *app, const char *target);
+const char *bongo_cat_app_behavior_label(const BongoCatApp *app, const char *id);
+void bongo_cat_app_reset_sound_bindings(BongoCatApp *app);
+void bongo_cat_app_model_shortcuts_clear(BongoCatApp *app);
+void bongo_cat_app_model_shortcuts_prune(BongoCatApp *app);
+bool bongo_cat_app_shortcut_conflicts(BongoCatApp *app,
+    const char *shortcut, const char *exclude);
 #endif

@@ -163,6 +163,9 @@ static void reload_secondary_settings(BongoCatApp *app) {
     bool window_changed = memcmp(&settings.window, &app->settings.window,
         sizeof(settings.window)) != 0;
     app->settings = settings;
+    const BongoCatModelEntry *active = bongo_cat_models_find(&app->models, app->loaded_model);
+    if (active && !bongo_cat_mver_shortcuts_load(app, active, &error))
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", error.message);
     if (model_changed) app->dirty = true;
     if (window_changed) {
         app->dirty = true;

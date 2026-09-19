@@ -15,6 +15,10 @@ BongoCatResult bongo_cat_model_catalog_scan(BongoCatApp *app, bool cleanup,
     const char *nearby_root);
 void bongo_cat_model_catalog_finish(BongoCatApp *app);
 bool bongo_cat_model_catalog_add_bundled(BongoCatApp *app, bool replace);
+bool bongo_cat_mver_shortcuts_load(BongoCatApp *app, const BongoCatModelEntry *model,
+    BongoCatError *error);
+bool bongo_cat_model_shortcut_save(BongoCatApp *app, const char *id,
+    const char *shortcut, BongoCatError *error);
 void bongo_cat_model_catalog_finish_package(BongoCatApp *app,
     const char *package_id);
 void bongo_cat_model_refresh_invalidate(BongoCatApp *app);

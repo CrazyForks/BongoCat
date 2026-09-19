@@ -43,6 +43,19 @@ BongoCatResult bongo_cat_import_source_directory(const char *source,
         return BONGO_CAT_ERROR_ARGUMENT;
     }
     const char *name = bongo_cat_path_name(source);
+    static const char *unsupported_archives[] = {
+        ".rar", ".7z", ".tar", ".gz", ".tgz", ".bz2", ".tbz2",
+        ".xz", ".txz", ".zst", ".cab"
+    };
+    for (size_t i = 0; i < SDL_arraysize(unsupported_archives); ++i) {
+        if (name && bongo_cat_import_has_suffix_ci(name,
+            unsupported_archives[i])) {
+            bongo_cat_error_set(error, BONGO_CAT_ERROR_UNSUPPORTED_ARCHIVE,
+                "Only ZIP archives are supported. Extract the archive and "
+                "import the model folder, or repack it as ZIP before importing");
+            return BONGO_CAT_ERROR_UNSUPPORTED_ARCHIVE;
+        }
+    }
     if (name && bongo_cat_import_has_suffix_ci(name, ".moc3"))
         return bongo_cat_import_probe_live2d_owner(source, directory,
             capacity, error);

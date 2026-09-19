@@ -75,13 +75,8 @@ bool bongo_cat_model_catalog_reconcile(BongoCatApp *app) {
             changed = true;
         }
     }
-    if (app->settings.model.multiple_pets) {
-        bongo_cat_model_selection_restore(app, &selection);
-        if (!selection_matches(app, &selection)) changed = true;
-    } else if (app->session.additional_model_count) {
-        bongo_cat_session_clear_additional_models(&app->session);
-        changed = true;
-    }
+    bongo_cat_model_selection_restore(app, &selection);
+    if (!selection_matches(app, &selection)) changed = true;
     if (app->loaded_model[0] && !loaded) {
         if (active && app->live2d) {
             BongoCatError error = {0};

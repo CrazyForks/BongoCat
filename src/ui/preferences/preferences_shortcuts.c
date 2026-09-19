@@ -1,6 +1,7 @@
 #include "preferences_state.h"
 #include "preferences_notice.h"
 #include "preferences_widgets.h"
+#include "runtime.h"
 #include "bongo_cat/i18n.h"
 #include "bongo_cat/shortcut.h"
 
@@ -20,12 +21,27 @@ bool bongo_cat_preferences_shortcut_active(const BongoCatPreferences *value,
 }
 
 static void finish(BongoCatPreferences *value) {
-    if (value->shortcut_target && strcmp(value->shortcut_target, value->shortcut_original))
-        for (size_t i = 0; i < value->app->settings.behavior_shortcut_count; ++i) {
-            BongoCatBehaviorShortcut *binding = &value->app->settings.behavior_shortcuts[i];
-            if (binding->shortcut == value->shortcut_target)
-                binding->shortcut_disabled = !binding->shortcut[0];
+    if (value->shortcut_target && strcmp(value->shortcut_target, value->shortcut_original)) {
+        BongoCatBehaviorShortcut *binding = bongo_cat_app_behavior_binding_target(
+            value->app, value->shortcut_target);
+        const char *behavior_id = binding ? binding->id : NULL;
+        BongoCatError error = {0};
+        if (behavior_id && !bongo_cat_model_shortcut_save(value->app, behavior_id,
+                value->shortcut_target, &error)) {
+            snprintf(value->shortcut_target, (size_t)value->shortcut_capacity,
+                "%s", value->shortcut_original);
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                "Model shortcut save failed: %s", error.message);
+            bongo_cat_preferences_notice_show(value->app, tr(value,
+                "pages.preference.model.hints.shortcutSaveFailed",
+                "Unable to save the model shortcut. Check file permissions and available disk space"), true);
         }
+    }
+    if (value->shortcut_target && strcmp(value->shortcut_target, value->shortcut_original)) {
+        BongoCatBehaviorShortcut *binding = bongo_cat_app_behavior_binding_target(
+            value->app, value->shortcut_target);
+        if (binding) binding->shortcut_disabled = !binding->shortcut[0];
+    }
     value->shortcut_recording = false;
     value->shortcut_id[0] = '\0';
     value->shortcut_target = NULL;
@@ -34,7 +50,7 @@ static void finish(BongoCatPreferences *value) {
     value->shortcut_suppress_until_ns = SDL_GetTicksNS() + 250000000ULL;
     bongo_cat_shortcut_init(&value->app->shortcut_state);
     memset(&value->app->sound_shortcut_state, 0, sizeof(value->app->sound_shortcut_state));
-    memset(value->app->sound_shortcut_active, 0, sizeof(value->app->sound_shortcut_active));
+    bongo_cat_app_reset_sound_bindings(value->app);
     value->render_dirty = true;
 }
 
@@ -59,7 +75,7 @@ void bongo_cat_preferences_shortcut_begin(BongoCatPreferences *value,
     value->shortcut_recording = true;
     bongo_cat_shortcut_init(&value->app->shortcut_state);
     memset(&value->app->sound_shortcut_state, 0, sizeof(value->app->sound_shortcut_state));
-    memset(value->app->sound_shortcut_active, 0, sizeof(value->app->sound_shortcut_active));
+    bongo_cat_app_reset_sound_bindings(value->app);
     value->render_dirty = true;
 }
 
@@ -141,7 +157,7 @@ static bool capture_key(BongoCatPreferences *value,
     if (event->mod & SDL_KMOD_ALT) append(shortcut, sizeof(shortcut), "Alt");
     if (event->mod & SDL_KMOD_GUI) append(shortcut, sizeof(shortcut), "Meta");
     append(shortcut, sizeof(shortcut), key);
-    if (bongo_cat_settings_shortcut_conflicts(&value->app->settings, shortcut,
+    if (bongo_cat_app_shortcut_conflicts(value->app, shortcut,
         value->shortcut_target)) {
         snprintf(value->shortcut_target, (size_t)value->shortcut_capacity, "%s",
             value->shortcut_original);

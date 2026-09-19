@@ -89,33 +89,54 @@ static void many_behaviors(const char *directory) {
     BongoCatModelEntry model = {0};
     snprintf(model.id, sizeof(model.id), "many-behaviors");
     snprintf(model.directory, sizeof(model.directory), "%s", directory);
+    snprintf(model.adapter_directory, sizeof(model.adapter_directory), "%s", directory);
     snprintf(model.setting_file, sizeof(model.setting_file), "many.model3.json");
     char path[BONGO_CAT_PATH_CAP];
     CHECK(child(path, sizeof(path), directory, model.setting_file, false));
-    FILE *file = bongo_cat_file_open(path, "wb");
-    CHECK(file != NULL);
-    if (!file) return;
-    fputs("{\"FileReferences\":{\"Motions\":{\"CAT_motion\":[", file);
-    for (int i = 0; i < 160; ++i)
-        fprintf(file, "%s{\"File\":\"motion%d.motion3.json\"}", i ? "," : "", i);
-    fputs("]},\"Expressions\":[", file);
-    for (int i = 0; i < 20; ++i)
-        fprintf(file, "%s{\"Name\":\"\\u5fae\\u7b11\",\"File\":\"exp%d.exp3.json\"}",
-            i ? "," : "", i);
-    fputs("]}}", file);
-    CHECK(fclose(file) == 0);
-    BongoCatBehaviorCatalog *catalog = calloc(1, sizeof(*catalog));
-    CHECK(catalog != NULL);
-    if (!catalog) return;
-    BongoCatError error = {0};
-    CHECK(bongo_cat_behaviors_load(catalog, &model, &error) == BONGO_CAT_OK);
-    CHECK(catalog->count == 180);
-    CHECK(catalog->entries[159].index == 159);
-    CHECK(catalog->entries[160].kind == BONGO_CAT_BEHAVIOR_EXPRESSION);
-    CHECK(catalog->entries[179].index == 19);
-    CHECK(strcmp(catalog->entries[160].label, "\xE5\xBE\xAE\xE7\xAC\x91") == 0);
-    CHECK(strcmp(catalog->entries[160].id, catalog->entries[161].id) != 0);
-    free(catalog);
+    BongoCatBehaviorCatalog catalog = {0}, copy = {0}, moved = {0};
+    const size_t counts[] = {1300, BONGO_CAT_BEHAVIOR_LIMIT,
+        BONGO_CAT_BEHAVIOR_LIMIT + 1, 3, 0};
+    for (size_t run = 0; run < sizeof(counts) / sizeof(counts[0]); ++run) {
+        FILE *file = bongo_cat_file_open(path, "wb");
+        CHECK(file != NULL);
+        if (!file) break;
+        fputs("{\"FileReferences\":{\"Expressions\":[", file);
+        for (size_t i = 0; i < counts[run]; ++i)
+            fprintf(file, "%s{\"Name\":\"Expression %zu\"}", i ? "," : "", i);
+        fputs("]}}", file);
+        CHECK(fclose(file) == 0);
+        BongoCatError error = {0};
+        BongoCatBehaviorEntry *previous = catalog.entries;
+        size_t previous_count = catalog.count;
+        BongoCatResult result = bongo_cat_behaviors_load(&catalog, &model, &error);
+        if (counts[run] > BONGO_CAT_BEHAVIOR_LIMIT) {
+            CHECK(result == BONGO_CAT_ERROR_FORMAT);
+            CHECK(catalog.entries == previous && catalog.count == previous_count);
+            continue;
+        }
+        CHECK(result == BONGO_CAT_OK && catalog.count == counts[run]);
+        CHECK(catalog.capacity >= catalog.count && catalog.capacity <= BONGO_CAT_BEHAVIOR_LIMIT);
+        if (result != BONGO_CAT_OK || !catalog.count) continue;
+        CHECK(catalog.entries[catalog.count - 1].index == (int)catalog.count - 1);
+        catalog.entries[0].shortcut_active = true;
+        catalog.entries[0].audio_playing = true;
+        bool copied = bongo_cat_behaviors_copy(&copy, &catalog, &error);
+        CHECK(copied);
+        if (!copied) break;
+        CHECK(copy.entries != catalog.entries && copy.count == catalog.count);
+        CHECK(!copy.entries[0].shortcut_active && !copy.entries[0].audio_playing);
+        copy.entries[0].label[0] = 'X';
+        CHECK(catalog.entries[0].label[0] == 'E');
+        BongoCatBehaviorEntry *allocation = copy.entries;
+        bongo_cat_behaviors_move(&moved, &copy);
+        CHECK(moved.entries == allocation && moved.count == catalog.count);
+        CHECK(!copy.entries && !copy.count && !copy.capacity);
+    }
+    CHECK(!catalog.entries && !catalog.count && !catalog.capacity);
+    bongo_cat_behaviors_clear(&catalog);
+    bongo_cat_behaviors_clear(&catalog);
+    bongo_cat_behaviors_clear(&copy);
+    bongo_cat_behaviors_clear(&moved);
 }
 
 void test_mver_manifest(void) {
@@ -168,7 +189,7 @@ void test_mver_manifest(void) {
         snprintf(entry->setting_file, sizeof(entry->setting_file), "cat.model3.json");
         CHECK(bongo_cat_behaviors_load(behaviors, entry, &error) == BONGO_CAT_OK);
     }
-    free(behaviors);
+    bongo_cat_behaviors_clear(behaviors); free(behaviors);
     free(entry);
     CHECK(bongo_cat_import_install(package, models, &duplicate, &error) == BONGO_CAT_OK);
     CHECK(duplicate.count == 1 && duplicate.installed_count == 0 &&

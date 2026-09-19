@@ -141,6 +141,7 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
         "pages.preference.cat.labels.mirrorMode", "Mirror Mode"), "",
         &model->mirror)) {
         app->model_pointer_anchor_ready = false;
+        app->pointer_known = false;
         app->dirty = true;
     }
     bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_MOUSE_MIRROR);

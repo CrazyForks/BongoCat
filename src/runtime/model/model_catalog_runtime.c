@@ -109,10 +109,12 @@ void bongo_cat_model_catalog_finish(BongoCatApp *app) {
     if (!app) return;
     /* Absence from a partial scan does not mean the user deleted a model. */
     bool selection_changed = bongo_cat_model_catalog_reconcile(app);
+    if (app->preferences && (selection_changed || app->model_shortcuts))
+        bongo_cat_preferences_models_changed(app->preferences);
+    else if (!app->preferences) bongo_cat_app_model_shortcuts_prune(app);
     for (size_t i = 0; i < app->models.count; ++i)
         bongo_cat_import_apply_metadata(app, app->models.entries[i].id,
             app->models.entries[i].adapter_directory);
-    if (selection_changed && app->preferences) bongo_cat_preferences_models_changed(app->preferences);
 }
 
 BongoCatResult bongo_cat_model_catalog_scan(BongoCatApp *app, bool cleanup,

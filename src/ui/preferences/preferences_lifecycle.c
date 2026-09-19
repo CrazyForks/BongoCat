@@ -97,7 +97,7 @@ void bongo_cat_preferences_close(BongoCatPreferences *value) {
         bongo_cat_preferences_behavior_dialog_close(value);
     bongo_cat_preferences_model_rename_finish(value, true);
     bongo_cat_preferences_shortcut_cancel(value);
-    free(value->behavior_catalog);
+    bongo_cat_behaviors_clear(value->behavior_catalog); free(value->behavior_catalog);
     value->behavior_catalog = NULL;
     value->behavior_dialog = false;
     value->behavior_dialog_input_armed = false;

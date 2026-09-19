@@ -64,6 +64,7 @@ static void validate_shortcuts(BongoCatSettings *config) {
                 memset(global[i], 0, BONGO_CAT_SHORTCUT_CAP);
     }
     for (size_t i = 0; i < config->behavior_shortcut_count; ++i) {
+        if (config->behavior_shortcuts[i].shortcut_external) continue;
         char *shortcut = config->behavior_shortcuts[i].shortcut;
         bool duplicate = false;
         for (size_t j = 0; j < sizeof(global) / sizeof(global[0]); ++j)
@@ -89,6 +90,7 @@ static void compact_behavior_overrides(BongoCatSettings *config) {
         if (!entry.id[0] || (!entry.shortcut[0] && !entry.label[0] && !entry.shortcut_disabled)) continue;
         BongoCatBehaviorShortcut canonical = {0};
         canonical.shortcut_disabled = entry.shortcut_disabled;
+        canonical.shortcut_external = entry.shortcut_external;
         snprintf(canonical.id, sizeof(canonical.id), "%s", entry.id);
         snprintf(canonical.shortcut, sizeof(canonical.shortcut), "%s",
             entry.shortcut);
@@ -100,6 +102,7 @@ static void compact_behavior_overrides(BongoCatSettings *config) {
                 break;
             }
         if (existing < output_count) {
+            config->behavior_shortcuts[existing].shortcut_external = canonical.shortcut_external;
             if (canonical.shortcut[0] || canonical.shortcut_disabled) {
                 config->behavior_shortcuts[existing].shortcut_disabled = canonical.shortcut_disabled;
                 memset(config->behavior_shortcuts[existing].shortcut, 0,

@@ -71,8 +71,7 @@ bool bongo_cat_app_initialize(BongoCatApp *app, int argc, char **argv,
         /* The control file reveals the child on its first update. Starting
            hidden prevents a stale child session from flashing on screen. */
         app->session.window.visible = false;
-    } else if (!app->settings.model.multiple_pets)
-        bongo_cat_session_clear_additional_models(&app->session);
+    }
     if (app->smoke_language >= 0)
         app->settings.app.language = (BongoCatLanguage)app->smoke_language;
     if (app->smoke_theme >= 0) app->settings.app.theme = (BongoCatTheme)app->smoke_theme;

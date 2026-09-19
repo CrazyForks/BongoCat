@@ -68,11 +68,12 @@ typedef struct BongoCatBehaviorEntry {
     bool momentary;
     bool sound_overlap;
     bool sound_clear;
+    bool shortcut_active, audio_playing; /* Runtime state owned by this entry. */
 } BongoCatBehaviorEntry;
 
 typedef struct BongoCatBehaviorCatalog {
-    BongoCatBehaviorEntry entries[BONGO_CAT_BEHAVIOR_CAP];
-    size_t count;
+    BongoCatBehaviorEntry *entries;
+    size_t count, capacity;
 } BongoCatBehaviorCatalog;
 
 #ifdef __cplusplus
@@ -89,6 +90,13 @@ bool bongo_cat_model_adapter_metadata_path(const char *directory,
 const char *bongo_cat_model_default_name(const BongoCatModelEntry *entry);
 const char *bongo_cat_model_name(const BongoCatSettings *settings,
     const BongoCatModelEntry *entry);
+/* Zero-initialize catalogs before first use. Copy/move preserve ownership. */
+bool bongo_cat_behaviors_reserve(BongoCatBehaviorCatalog *catalog, size_t capacity,
+    BongoCatError *error);
+void bongo_cat_behaviors_clear(BongoCatBehaviorCatalog *catalog);
+bool bongo_cat_behaviors_copy(BongoCatBehaviorCatalog *target,
+    const BongoCatBehaviorCatalog *source, BongoCatError *error);
+void bongo_cat_behaviors_move(BongoCatBehaviorCatalog *target, BongoCatBehaviorCatalog *source);
 BongoCatResult bongo_cat_behaviors_load(BongoCatBehaviorCatalog *catalog,
     const BongoCatModelEntry *model, BongoCatError *error);
 

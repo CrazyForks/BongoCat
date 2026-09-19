@@ -81,7 +81,7 @@ bool bongo_cat_app_set_model_active(BongoCatApp *app, const char *id,
 void bongo_cat_app_set_multiple_pets(BongoCatApp *app, bool enabled) {
     if (!app) return;
     app->settings.model.multiple_pets = enabled;
-    if (!enabled) bongo_cat_session_clear_additional_models(&app->session);
+    /* Keep the selection in session.json while the extra pets are disabled. */
     if (!app->secondary_pet)
         bongo_cat_multi_pet_primary_update(app, SDL_GetTicksNS());
 }

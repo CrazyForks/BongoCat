@@ -3,6 +3,8 @@
 #include "model_behavior_cache.h"
 #include "model_cover.h"
 #include "model_geometry.h"
+#include "mver/mver_render.h"
+#include "mver/mver_config.h"
 #include "bongo_cat/audio.h"
 #include "bongo_cat/overlay.h"
 #include "bongo_cat/preferences.h"
@@ -13,9 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 static void select_model_state(BongoCatApp *app, const BongoCatModelEntry *entry) {
-    if (app->settings.model.multiple_pets)
-        bongo_cat_session_remove_model(&app->session, entry->id);
-    else bongo_cat_session_clear_additional_models(&app->session);
+    bongo_cat_session_remove_model(&app->session, entry->id);
     snprintf(app->session.active_model_id, sizeof(app->session.active_model_id), "%s",
         entry->id);
     app->loaded_mode = entry->mode;
@@ -128,6 +128,8 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
     if (replacing_model)
         bongo_cat_model_cover_capture_before_switch(app);
     BongoCatError optional = {0};
+    if (!bongo_cat_mver_shortcuts_load(app, entry, &optional))
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", optional.message);
     BongoCatBehaviorCatalog *behaviors = calloc(1, sizeof(*behaviors));
     if (!behaviors) {
         bongo_cat_error_set(failure, BONGO_CAT_ERROR_MEMORY,
@@ -137,7 +139,10 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
     bool behavior_catalog_valid = bongo_cat_model_behavior_cache_matches(
         app, entry);
     if (behavior_catalog_valid) {
-        *behaviors = *app->behavior_cache;
+        if (!bongo_cat_behaviors_copy(behaviors, app->behavior_cache, failure)) {
+            free(behaviors);
+            return false;
+        }
     } else {
         behavior_catalog_valid = bongo_cat_behaviors_load(
             behaviors, entry, &optional) == BONGO_CAT_OK;
@@ -145,8 +150,21 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
             SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", optional.message);
     }
     BongoCatLive2DRenderOptions render_options = {0};
-    bool adapted_profile = bongo_cat_import_render_options(
-        entry->adapter_directory, &render_options);
+    bool mver = entry->source_format == BONGO_CAT_MODEL_SOURCE_MVER ||
+        entry->source_format == BONGO_CAT_MODEL_SOURCE_MVER_PATCH;
+    char config_path[BONGO_CAT_PATH_CAP] = {0};
+    /* Authored canvas/layout belongs to the package. User window preferences
+       remain global and are never loaded from or saved to this file. */
+    bool adapted_profile = mver
+        ? bongo_cat_mver_config_find(entry->directory, config_path, sizeof(config_path)) &&
+            bongo_cat_mver_render_read(config_path, &render_options)
+        : bongo_cat_import_render_options(entry->adapter_directory, &render_options);
+    if (mver && !adapted_profile) {
+        bongo_cat_behaviors_clear(behaviors); free(behaviors);
+        bongo_cat_error_set(failure, BONGO_CAT_ERROR_FORMAT,
+            "Cannot read Mver rendering configuration: %s", entry->directory);
+        return false;
+    }
     if (adapted_profile) SDL_Log("Imported runtime profile: projection=%.4f "
         "force_mouse=%d left_handed=%d pointer_bounds=%d",
         render_options.projection_scale, render_options.mouse_force_move,
@@ -163,7 +181,7 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
         bongo_cat_error_set(failure, BONGO_CAT_ERROR_PLATFORM,
             "Cannot activate the main OpenGL context: %s", SDL_GetError());
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", failure->message);
-        free(behaviors);
+        bongo_cat_behaviors_clear(behaviors); free(behaviors);
         return false;
     }
     char previous_model[BONGO_CAT_ID_CAP];
@@ -196,7 +214,7 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
             !SDL_GL_MakeCurrent(previous_window, previous_context))
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
                 "Cannot restore the previous OpenGL context: %s", SDL_GetError());
-        free(behaviors);
+        bongo_cat_behaviors_clear(behaviors); free(behaviors);
         if (!bongo_cat_live2d_ready(app->live2d)) app->loaded_model[0] = '\0';
         request_model_frame(app, false);
         app->loading_model[0] = '\0';
@@ -221,9 +239,9 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
     } else if (app->loaded_model[0]) {
         app->behavior_cache_valid = false;
     }
-    app->behaviors = *behaviors;
+    bongo_cat_behaviors_move(&app->behaviors, behaviors);
     app->behavior_catalog_valid = behavior_catalog_valid;
-    free(behaviors);
+    bongo_cat_behaviors_clear(behaviors); free(behaviors);
     optional = (BongoCatError){0};
     if (bongo_cat_overlay_load(app->overlay, entry->adapter_directory,
         model_pointer, &render_options, &optional) != BONGO_CAT_OK) {
@@ -250,7 +268,7 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
     bongo_cat_live2d_resize(app->live2d, pixel_width, pixel_height);
     bongo_cat_audio_reset(app->audio);
     memset(&app->sound_shortcut_state, 0, sizeof(app->sound_shortcut_state));
-    memset(app->sound_shortcut_active, 0, sizeof(app->sound_shortcut_active));
+    bongo_cat_app_reset_sound_bindings(app);
     commit_model(app, entry, true, replacing_model);
     bongo_cat_preferences_invalidate(app->preferences);
     bongo_cat_app_reapply_input(app);

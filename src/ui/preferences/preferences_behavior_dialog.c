@@ -1,4 +1,5 @@
 #include "preferences_state.h"
+#include "runtime.h"
 #include "preferences_overlay.h"
 #include "preferences_notice.h"
 #include "preferences_model_glyphs.h"
@@ -93,21 +94,34 @@ void bongo_cat_preferences_behavior_dialog_open(BongoCatPreferences *value) {
 void bongo_cat_preferences_behavior_dialog_open_model(
     BongoCatPreferences *value, const BongoCatModelEntry *model) {
     if (!value || !model) return;
+    bongo_cat_preferences_shortcut_cancel(value);
+    BongoCatError shortcut_error = {0};
+    if (!bongo_cat_mver_shortcuts_load(value->app, model, &shortcut_error)) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+            "Model shortcuts load failed: %s", shortcut_error.message);
+        bongo_cat_preferences_notice_show(value->app, tr(value,
+            "pages.preference.model.hints.shortcutLoadFailed",
+            "Unable to load model shortcuts. Check the model configuration files"), true);
+        return;
+    }
     BongoCatBehaviorCatalog *catalog = calloc(1, sizeof(*catalog));
     if (!catalog) return;
     BongoCatError error = {0};
     if (bongo_cat_behaviors_load(catalog, model, &error) != BONGO_CAT_OK) {
-        free(catalog);
-        bongo_cat_preferences_notice_show(value->app, error.message, true);
+        bongo_cat_behaviors_clear(catalog); free(catalog);
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+            "Model actions load failed: %s", error.message);
+        bongo_cat_preferences_notice_show(value->app, tr(value,
+            "pages.preference.model.hints.behaviorLoadFailed",
+            "Unable to load model actions. Check that the model files are complete and readable"), true);
         return;
     }
     bongo_cat_preferences_behavior_rename_finish(value, true);
     bongo_cat_preferences_shortcut_cancel(value);
-    free(value->behavior_catalog);
+    bongo_cat_behaviors_clear(value->behavior_catalog); free(value->behavior_catalog);
     value->behavior_catalog = catalog;
     snprintf(value->behavior_model_id, sizeof(value->behavior_model_id), "%s", model->id);
     memset(value->behavior_scroll, 0, sizeof(value->behavior_scroll));
-    memset(value->behavior_audio_playing, 0, sizeof(value->behavior_audio_playing));
     bongo_cat_preferences_scrollbar_reset(&value->behavior_scrollbar);
     value->behavior_tab_transition_ns = 0;
     SDL_Log("Preferences behavior dialog opened with %llu behaviors",
@@ -260,7 +274,7 @@ void bongo_cat_preferences_behavior_dialog_draw(
         region, width, height, value->behavior_dialog_opened_ns,
         value->behavior_dialog_closing_ns);
     if (frame.finished) {
-        free(value->behavior_catalog);
+        bongo_cat_behaviors_clear(value->behavior_catalog); free(value->behavior_catalog);
         value->behavior_catalog = NULL;
         value->behavior_dialog = false;
         value->behavior_dialog_opened_ns = value->behavior_dialog_closing_ns = 0;

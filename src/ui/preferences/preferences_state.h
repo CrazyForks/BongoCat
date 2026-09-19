@@ -106,7 +106,6 @@ struct BongoCatPreferences {
     uint64_t behavior_dialog_closing_ns;
     uint64_t behavior_tab_transition_ns;
     float behavior_scroll[3];
-    bool behavior_audio_playing[BONGO_CAT_BEHAVIOR_CAP];
     BongoCatPreferencesScrollbar behavior_scrollbar;
     BongoCatPreferencesTextSession behavior_rename;
     BongoCatPreferencesTextSession model_rename;
@@ -123,7 +122,7 @@ struct BongoCatPreferences {
     int drag_window_y;
     float drag_pointer_x;
     float drag_pointer_y;
-    char shortcut_id[BONGO_CAT_ID_CAP + 16];
+    char shortcut_id[BONGO_CAT_BEHAVIOR_ID_CAP + 16];
     char *shortcut_target;
     int shortcut_capacity;
     char shortcut_original[BONGO_CAT_SHORTCUT_CAP];

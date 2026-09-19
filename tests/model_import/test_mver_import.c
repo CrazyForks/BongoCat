@@ -60,6 +60,7 @@ static void labels_from_shortcut_rows(void) {
     CHECK(bongo_cat_mver_label(&labels, "l2d_expression", 1) == NULL);
     CHECK(strcmp(bongo_cat_mver_label(&labels, "l2d_motion_lockhand", 0),
         keyboard_hidden) == 0);
+    bongo_cat_mver_labels_clear(&labels);
     CHECK(bongo_cat_model_remove_tree(root, NULL));
     SDL_free(temporary);
 }
@@ -106,7 +107,7 @@ static void metadata_backfills_labels(void) {
             "model:expression:2") == 0);
         CHECK(strcmp(app->settings.behavior_shortcuts[2].label,
             "Expression label") == 0);
-        free(app);
+        bongo_cat_behaviors_clear(&app->behaviors); free(app);
     }
     CHECK(bongo_cat_model_remove_tree(root, NULL));
     SDL_free(temporary);
@@ -126,6 +127,8 @@ static void behavior_labels_add_font_glyphs(void) {
     BongoCatApp *app = calloc(1, sizeof(*app));
     CHECK(app != NULL);
     if (!app) return;
+    CHECK(bongo_cat_behaviors_reserve(&app->behaviors, 1, NULL));
+    if (!app->behaviors.entries) { free(app); return; }
     snprintf(app->behaviors.entries[0].label,
         sizeof(app->behaviors.entries[0].label),
         "\xE9\x94\xAE\xE7\x9B\x98\xE6\xB6\x88\xE5\xA4\xB1");
@@ -160,6 +163,7 @@ static void behavior_labels_add_font_glyphs(void) {
         preferences->font_reload_pending = false;
         bongo_cat_preferences_behavior_dialog_open(preferences);
         CHECK(!preferences->font_reload_pending);
+        CHECK(bongo_cat_behaviors_reserve(&app->behaviors, 600, NULL));
         app->behaviors.count = 600;
         for (size_t i = 0; i < app->behaviors.count; ++i) {
             char *label = app->behaviors.entries[i].label;
@@ -176,7 +180,7 @@ static void behavior_labels_add_font_glyphs(void) {
         CHECK(range_has(preferences->glyph_ranges, 0x4e02 + 599 * 4));
         free(preferences);
     }
-    free(app);
+    bongo_cat_behaviors_clear(&app->behaviors); free(app);
 }
 
 static void font_reload_defers_during_frame(void) {
@@ -236,6 +240,7 @@ static void model_visual_curve(void) {
 }
 
 int main(void) {
+    test_mver_config();
     test_mver_pointer_modes();
     test_mver_audio();
     failures += test_preferences_text();

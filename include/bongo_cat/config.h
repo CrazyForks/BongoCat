@@ -97,6 +97,8 @@ typedef struct BongoCatBehaviorShortcut {
     char shortcut[BONGO_CAT_SHORTCUT_CAP];
     char label[BONGO_CAT_ID_CAP];
     bool shortcut_disabled;
+    /* Runtime only: the shortcut is owned by the model's Mver config. */
+    bool shortcut_external;
 } BongoCatBehaviorShortcut;
 
 typedef struct BongoCatModelLabel {

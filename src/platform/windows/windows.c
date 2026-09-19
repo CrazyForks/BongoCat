@@ -10,6 +10,8 @@
 #include <SDL3/SDL_video.h>
 #include <string.h>
 #include <windows.h>
+#include <ole2.h>
+#include <shellapi.h>
 static HWND native_window(BongoCatPlatform *platform) {
     return (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(platform->window),
         SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
@@ -24,10 +26,58 @@ static bool SDLCALL windows_message_hook(void *userdata, MSG *message) {
         message->message, message->wParam);
 }
 
+static void configure_elevated_file_drop(HWND window) {
+    if (!window) return;
+    HANDLE token = NULL;
+    TOKEN_ELEVATION elevation = {0};
+    DWORD size = 0;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) {
+        SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO,
+            "Cannot query elevation for file drops: %lu", GetLastError());
+        return;
+    }
+    BOOL queried = GetTokenInformation(token, TokenElevation,
+        &elevation, sizeof(elevation), &size);
+    DWORD query_error = queried ? ERROR_SUCCESS : GetLastError();
+    CloseHandle(token);
+    if (!queried) {
+        SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO,
+            "Cannot read elevation for file drops: %lu", query_error);
+        return;
+    }
+    if (!elevation.TokenIsElevated) return;
+
+    /* Explorer cannot use OLE drag-and-drop across integrity levels. Allow
+       only the legacy shell file-drop messages on this import window.
+       0x0049 is WM_COPYGLOBALDATA, used by the shell to marshal the HDROP.
+       SDL already converts WM_DROPFILES to its normal UTF-8 drop events
+       and releases the HDROP with DragFinish. */
+    const UINT messages[] = {WM_DROPFILES, WM_COPYDATA, 0x0049};
+    for (size_t i = 0; i < sizeof(messages) / sizeof(messages[0]); ++i) {
+        if (!ChangeWindowMessageFilterEx(window, messages[i], MSGFLT_ALLOW, NULL)) {
+            SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO,
+                "Cannot allow file-drop message %u: %lu",
+                messages[i], GetLastError());
+            return;
+        }
+    }
+    /* Remove the OLE target so Explorer falls back to shell file drops.
+       SDL retains ownership of its target object until window teardown. */
+    HRESULT result = RevokeDragDrop(window);
+    if (FAILED(result) && result != DRAGDROP_E_NOTREGISTERED) {
+        SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO,
+            "Cannot switch elevated file drops to shell delivery: 0x%08lx",
+            (unsigned long)result);
+        return;
+    }
+    DragAcceptFiles(window, TRUE);
+}
+
 void bongo_cat_platform_configure_preferences_window(SDL_Window *window) {
     if (!window) return;
     HWND handle = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(window),
         SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+    configure_elevated_file_drop(handle);
     bool transparent = (SDL_GetWindowFlags(window) &
         SDL_WINDOW_TRANSPARENT) != 0;
     bongo_cat_windows_capture_mark_transparent(handle, transparent);

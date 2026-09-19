@@ -102,6 +102,10 @@ bool bongo_cat_preferences_behavior_glyphs_ready(
         if (*label && !bongo_cat_preferences_model_glyphs_ready(preferences, label))
             return false;
     }
+    for (BongoCatModelShortcutCache *cache = app->model_shortcuts; cache; cache = cache->next)
+        for (BongoCatModelShortcutNode *node = cache->bindings; node; node = node->next)
+            if (node->binding.label[0] &&
+                !bongo_cat_preferences_model_glyphs_ready(preferences, node->binding.label)) return false;
     return true;
 }
 
@@ -137,6 +141,9 @@ void bongo_cat_preferences_model_glyphs(const BongoCatApp *app,
         i < app->settings.behavior_shortcut_count; ++i)
         add_text(ranges, capacity, &used,
             app->settings.behavior_shortcuts[i].label);
+    for (BongoCatModelShortcutCache *cache = app->model_shortcuts; cache; cache = cache->next)
+        for (BongoCatModelShortcutNode *node = cache->bindings; node; node = node->next)
+            add_text(ranges, capacity, &used, node->binding.label);
     if (app->preferences) {
         const BongoCatPreferences *preferences = app->preferences;
         const BongoCatBehaviorCatalog *catalog =

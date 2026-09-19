@@ -123,6 +123,15 @@ set(BONGO_CAT_RUNTIME_IMPORT_SOURCES
   src/runtime/model/import/model_import_session.c
   src/runtime/model/import/model_import_source.c
 
+  # Shared Mver configuration: authored fields, comments and shortcut persistence.
+  src/runtime/model/mver/mver_config.c
+  src/runtime/model/mver/mver_config_keys.c
+  src/runtime/model/mver/mver_config_text.c
+  src/runtime/model/mver/mver_config_labels.c
+  src/runtime/model/mver/mver_config_write.c
+  src/runtime/model/mver/mver_shortcuts.c
+  src/runtime/model/mver/mver_render.c
+
   # Mver is the canonical package and runtime-adapter format.
   src/runtime/model/import/mver/model_import_mver_assets.c
   src/runtime/model/import/mver/model_import_mver_copy.c
@@ -130,13 +139,11 @@ set(BONGO_CAT_RUNTIME_IMPORT_SOURCES
   src/runtime/model/import/mver/model_import_mver_manifest.c
   src/runtime/model/import/mver/model_import_mver_effect.c
   src/runtime/model/import/mver/model_import_mver_image.c
-  src/runtime/model/import/mver/model_import_mver_labels.c
   src/runtime/model/import/mver/model_import_mver_metadata.c
   src/runtime/model/import/mver/model_import_mver_audio.c
   src/runtime/model/import/mver/model_import_mver_motion.c
   src/runtime/model/import/mver/model_import_mver_patch.c
   src/runtime/model/import/mver/model_import_mver_policy.c
-  src/runtime/model/import/mver/model_import_mver_shortcut.c
 
   # Tauri packages are converted to canonical Mver packages before loading.
   src/runtime/model/import/tauri/model_import_tauri_candidate.c

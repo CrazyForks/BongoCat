@@ -122,6 +122,9 @@ static BongoCatInputEvent input(BongoCatInputKind kind, const char *name, float 
 
 static void check_behavior_state(BongoCatApp *app) {
     snprintf(app->loaded_model, sizeof(app->loaded_model), "model-a");
+    BongoCatBehaviorEntry entries[3] = {0};
+    app->behaviors.entries = entries;
+    app->behaviors.capacity = 3;
     app->behaviors.count = 3;
     app->behaviors.entries[0] = (BongoCatBehaviorEntry){
         .kind = BONGO_CAT_BEHAVIOR_MOTION, .index = 1};
@@ -175,6 +178,7 @@ static void check_behavior_state(BongoCatApp *app) {
     CHECK(app->session.active_behavior_count == 1);
     CHECK(strcmp(app->session.active_behaviors[0].model_id,
         "model-b") == 0);
+    app->behaviors = (BongoCatBehaviorCatalog){0};
 }
 
 int main(void) {

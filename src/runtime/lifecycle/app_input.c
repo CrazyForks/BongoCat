@@ -33,7 +33,6 @@ static void log_input(BongoCatApp *app, uint64_t now) {
 }
 
 void bongo_cat_app_drain_input(BongoCatApp *app, bool allow_shortcuts) {
-    if (app && app->secondary_pet) allow_shortcuts = false;
     BongoCatInputEvent event;
     while (bongo_cat_input_pop(&app->input, &event)) {
         bool keyboard = event.kind == BONGO_CAT_INPUT_KEY_DOWN ||
@@ -59,7 +58,7 @@ void bongo_cat_app_drain_input(BongoCatApp *app, bool allow_shortcuts) {
             bongo_cat_shortcut_update(&app->shortcut_state, &event);
             if (app->sound_shortcut_state.count) {
                 app->sound_shortcut_state.count = 0;
-                memset(app->sound_shortcut_active, 0, sizeof(app->sound_shortcut_active));
+                bongo_cat_app_reset_sound_bindings(app);
             }
         }
         bongo_cat_app_apply_input(app, &event);

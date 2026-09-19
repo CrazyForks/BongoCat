@@ -2,6 +2,8 @@
 #include "bongo_cat/overlay.h"
 
 #include <math.h>
+#include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 
 static size_t active_input_index(const BongoCatApp *app,
@@ -117,9 +119,12 @@ void bongo_cat_app_reset_gamepad(BongoCatApp *app) {
             memcpy(app->sound_shortcut_state.held[i - 1],
                 app->sound_shortcut_state.held[app->sound_shortcut_state.count], BONGO_CAT_ID_CAP);
     }
-    for (size_t i = 0; i < app->settings.behavior_shortcut_count; ++i)
-        if (strstr(app->settings.behavior_shortcuts[i].shortcut, "Gamepad:"))
-            app->sound_shortcut_active[i] = false;
+    for (size_t i = 0; i < app->behaviors.count; ++i) {
+        const BongoCatBehaviorShortcut *binding = bongo_cat_app_behavior_binding(
+            app, app->behaviors.entries[i].id);
+        if (binding && strstr(binding->shortcut, "Gamepad:"))
+            app->behaviors.entries[i].shortcut_active = false;
+    }
     app->left_stick_x = app->left_stick_y = 0.0f;
     app->right_stick_x = app->right_stick_y = 0.0f;
     app->left_stick_pressed = app->right_stick_pressed = false;
@@ -216,4 +221,118 @@ void bongo_cat_app_reapply_input(BongoCatApp *app) {
     }
     update_hands(app);
     app->dirty = true;
+}
+
+const BongoCatBehaviorShortcut *bongo_cat_app_behavior_binding(
+    const BongoCatApp *app, const char *id) {
+    if (!app || !id) return NULL;
+    for (BongoCatModelShortcutCache *cache = app->model_shortcuts; cache; cache = cache->next) {
+        size_t length = strlen(cache->model_id);
+        if (strncmp(id, cache->model_id, length) || id[length] != ':') continue;
+        for (BongoCatModelShortcutNode *node = cache->bindings; node; node = node->next)
+            if (!strcmp(node->binding.id, id)) return &node->binding;
+        /* A loaded Mver model must never fall back to stale private bindings. */
+        return NULL;
+    }
+    for (size_t i = 0; i < app->models.count; ++i) {
+        const BongoCatModelEntry *model = &app->models.entries[i];
+        size_t length = strlen(model->id);
+        if ((model->source_format == BONGO_CAT_MODEL_SOURCE_MVER ||
+            model->source_format == BONGO_CAT_MODEL_SOURCE_MVER_PATCH) &&
+            !strncmp(id, model->id, length) && id[length] == ':') return NULL;
+    }
+    for (size_t i = 0; i < app->settings.behavior_shortcut_count; ++i)
+        if (!app->settings.behavior_shortcuts[i].shortcut_external &&
+            !strcmp(app->settings.behavior_shortcuts[i].id, id))
+            return &app->settings.behavior_shortcuts[i];
+    return NULL;
+}
+BongoCatBehaviorShortcut *bongo_cat_app_behavior_binding_mut(BongoCatApp *app, const char *id) {
+    return (BongoCatBehaviorShortcut *)bongo_cat_app_behavior_binding(app, id);
+}
+BongoCatBehaviorShortcut *bongo_cat_app_behavior_binding_target(BongoCatApp *app, const char *target) {
+    if (!app || !target) return NULL;
+    for (BongoCatModelShortcutCache *cache = app->model_shortcuts; cache; cache = cache->next)
+        for (BongoCatModelShortcutNode *node = cache->bindings; node; node = node->next)
+            if (node->binding.shortcut == target) return &node->binding;
+    for (size_t i = 0; i < app->settings.behavior_shortcut_count; ++i)
+        if (app->settings.behavior_shortcuts[i].shortcut == target)
+            return &app->settings.behavior_shortcuts[i];
+    return NULL;
+}
+const char *bongo_cat_app_behavior_label(const BongoCatApp *app, const char *id) {
+    if (!app || !id) return NULL;
+    for (size_t i = 0; i < app->settings.behavior_shortcut_count; ++i) {
+        const BongoCatBehaviorShortcut *value = &app->settings.behavior_shortcuts[i];
+        if (!strcmp(value->id, id) && value->label[0]) return value->label;
+    }
+    const BongoCatBehaviorShortcut *value = bongo_cat_app_behavior_binding(app, id);
+    return value && value->label[0] ? value->label : NULL;
+}
+static void free_shortcut_cache(BongoCatModelShortcutCache *cache) {
+    while (cache->bindings) {
+        BongoCatModelShortcutNode *node = cache->bindings;
+        cache->bindings = node->next;
+        free(node);
+    }
+    free(cache);
+}
+void bongo_cat_app_model_shortcuts_clear(BongoCatApp *app) {
+    if (!app) return;
+    while (app->model_shortcuts) {
+        BongoCatModelShortcutCache *cache = app->model_shortcuts;
+        app->model_shortcuts = cache->next;
+        free_shortcut_cache(cache);
+    }
+}
+/* Call after cancelling UI capture: removed models no longer own live pointers. */
+void bongo_cat_app_model_shortcuts_prune(BongoCatApp *app) {
+    if (!app) return;
+    BongoCatModelShortcutCache **link = &app->model_shortcuts;
+    while (*link) {
+        BongoCatModelShortcutCache *cache = *link;
+        bool present = !strcmp(cache->model_id, app->loaded_model);
+        for (size_t i = 0; i < app->models.count; ++i) {
+            const BongoCatModelEntry *model = &app->models.entries[i];
+            if (!strcmp(model->id, cache->model_id) &&
+                (model->source_format == BONGO_CAT_MODEL_SOURCE_MVER ||
+                 model->source_format == BONGO_CAT_MODEL_SOURCE_MVER_PATCH)) {
+                present = true; break;
+            }
+        }
+        if (present) link = &cache->next;
+        else { *link = cache->next; free_shortcut_cache(cache); }
+    }
+}
+
+static bool binding_equal(const char *left, const char *right) {
+    if (!left || !right || !*left || !*right) return false;
+    while (*left && *right)
+        if (tolower((unsigned char)*left++) != tolower((unsigned char)*right++)) return false;
+    return *left == *right;
+}
+bool bongo_cat_app_shortcut_conflicts(BongoCatApp *app,
+    const char *shortcut, const char *exclude) {
+    if (!app || !shortcut || !*shortcut) return false;
+    const BongoCatShortcutPreferences *global = &app->settings.shortcuts;
+    const char *keys[] = {global->toggle_pet_visibility, global->visible_preferences,
+        global->mirror, global->pass_through, global->always_on_top};
+    for (size_t i = 0; i < sizeof(keys) / sizeof(keys[0]); ++i)
+        if (keys[i] != exclude && binding_equal(keys[i], shortcut)) return true;
+    /* Model actions may intentionally share a key. */
+    if (bongo_cat_app_behavior_binding_target(app, exclude)) return false;
+    for (size_t i = 0; i < app->settings.behavior_shortcut_count; ++i) {
+        const BongoCatBehaviorShortcut *value = &app->settings.behavior_shortcuts[i];
+        if (!value->shortcut_external && !value->shortcut_disabled &&
+            binding_equal(value->shortcut, shortcut)) return true;
+    }
+    for (BongoCatModelShortcutCache *cache = app->model_shortcuts; cache; cache = cache->next)
+        for (BongoCatModelShortcutNode *node = cache->bindings; node; node = node->next)
+            if (!node->binding.shortcut_disabled && binding_equal(node->binding.shortcut, shortcut)) return true;
+    return false;
+}
+
+void bongo_cat_app_reset_sound_bindings(BongoCatApp *app) {
+    if (app) for (size_t i = 0; i < app->behaviors.count; ++i)
+        app->behaviors.entries[i].shortcut_active = false;
 }

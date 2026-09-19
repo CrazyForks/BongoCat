@@ -68,6 +68,14 @@ static bool behavior_id(char *id, size_t capacity, const char *model_id,
 
 void bongo_cat_import_apply_metadata(BongoCatApp *app, const char *model_id,
     const char *directory) {
+    const BongoCatModelEntry *model = bongo_cat_models_find(&app->models, model_id);
+    if (model && (model->source_format == BONGO_CAT_MODEL_SOURCE_MVER ||
+        model->source_format == BONGO_CAT_MODEL_SOURCE_MVER_PATCH)) {
+        BongoCatError error = {0};
+        if (!bongo_cat_mver_shortcuts_load(app, model, &error))
+            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", error.message);
+        return;
+    }
     char path[BONGO_CAT_PATH_CAP];
     if (!bongo_cat_model_adapter_metadata_path(directory, path,
         sizeof(path))) return;

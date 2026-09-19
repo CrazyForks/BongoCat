@@ -1,4 +1,16 @@
 if(BUILD_TESTING)
+  add_executable(bongo_cat_multi_pet_shortcut_tests
+    tests/core/test_multi_pet_shortcuts.c)
+  target_include_directories(bongo_cat_multi_pet_shortcut_tests PRIVATE
+    tests/support ${BONGO_CAT_RUNTIME_INTERNAL_INCLUDE_DIRS})
+  target_link_libraries(bongo_cat_multi_pet_shortcut_tests PRIVATE
+    bongo_cat_runtime bongo_cat_warnings)
+  if(MSVC)
+    target_compile_options(bongo_cat_multi_pet_shortcut_tests PRIVATE
+      /experimental:c11atomics)
+  endif()
+  add_test(NAME multi-pet-shortcuts COMMAND bongo_cat_multi_pet_shortcut_tests)
+
   add_executable(bongo_cat_input_concurrent_tests tests/core/test_input_concurrent.c)
   target_include_directories(bongo_cat_input_concurrent_tests PRIVATE tests/support)
   target_link_libraries(bongo_cat_input_concurrent_tests PRIVATE
@@ -135,6 +147,7 @@ if(BUILD_TESTING)
   add_test(NAME app-state COMMAND bongo_cat_app_state_tests)
 
   set(BONGO_CAT_MVER_IMPORT_TEST_SOURCES
+    tests/model_import/test_mver_config.c
     tests/model_import/test_mver_audio.c
     tests/model_import/test_mver_import.c
     tests/model_import/test_model_import_source.c

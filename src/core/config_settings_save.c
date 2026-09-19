@@ -86,12 +86,13 @@ static bool write_behaviors(yyjson_mut_doc *doc, yyjson_mut_val *root,
     for (size_t i = 0; i < settings->behavior_shortcut_count; ++i) {
         const BongoCatBehaviorShortcut *value =
             &settings->behavior_shortcuts[i];
+        if (value->shortcut_external && !value->label[0]) continue;
         yyjson_mut_val *item = yyjson_mut_obj(doc);
         if (!item || !yyjson_mut_obj_add_strcpy(
                 doc, item, "behaviorId", value->id) ||
-            (value->shortcut_disabled && !yyjson_mut_obj_add_bool(
+            (!value->shortcut_external && value->shortcut_disabled && !yyjson_mut_obj_add_bool(
                 doc, item, "shortcutDisabled", true)) ||
-            (value->shortcut[0] && !yyjson_mut_obj_add_strcpy(
+            (!value->shortcut_external && value->shortcut[0] && !yyjson_mut_obj_add_strcpy(
                 doc, item, "shortcut", value->shortcut)) ||
             (value->label[0] && !yyjson_mut_obj_add_strcpy(
                 doc, item, "displayName", value->label)) ||
