@@ -90,6 +90,15 @@ static bool mode_uses_live2d(yyjson_val *mode) {
 }
 
 static bool model_at(const char *directory, char *setting, size_t capacity) {
+    /* Mver explicitly loads cat.model3.json. Authored packages may also keep
+       the original Live2D export beside it; that is not an ambiguous entry. */
+    char path[BONGO_CAT_PATH_CAP];
+    if (bongo_cat_path_join(path, sizeof(path), directory, "cat.model3.json") &&
+        bongo_cat_path_is_file(path)) {
+        int written = snprintf(setting, capacity, "cat.model3.json");
+        return written >= 0 && (size_t)written < capacity &&
+            bongo_cat_import_mver_manifest_valid(directory, setting);
+    }
     return bongo_cat_path_find_unique_suffix(directory, ".model3.json",
         setting, capacity) == 1 &&
         bongo_cat_import_mver_manifest_valid(directory, setting);
