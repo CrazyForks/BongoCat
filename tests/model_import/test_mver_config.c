@@ -260,23 +260,32 @@ void test_mver_config(void) {
         CHECK(bongo_cat_behaviors_load(&app->behaviors, &app->models.entries[0],
             NULL) == BONGO_CAT_OK);
         CHECK(app->behaviors.count > 0);
-        if (app->behaviors.count > 0) {
+        BongoCatBehaviorEntry *expression_behavior = NULL;
+        for (size_t i = 0; i < app->behaviors.count; ++i) {
+            BongoCatBehaviorEntry *entry = &app->behaviors.entries[i];
+            if (!strcmp(entry->id, "shared-0:expression:0")) {
+                expression_behavior = entry;
+                break;
+            }
+        }
+        CHECK(expression_behavior != NULL);
+        if (expression_behavior) {
             BongoCatInputEvent key = {.kind = BONGO_CAT_INPUT_KEY_DOWN};
             snprintf(key.name, sizeof(key.name), "F13");
             bongo_cat_app_shortcuts(app, &key);
-            CHECK(!app->behaviors.entries[0].shortcut_active);
+            CHECK(!expression_behavior->shortcut_active);
             snprintf(key.name, sizeof(key.name), "BracketLeft");
             bongo_cat_app_shortcuts(app, &key);
-            CHECK(app->behaviors.entries[0].shortcut_active);
+            CHECK(expression_behavior->shortcut_active);
             bongo_cat_app_shortcuts(app, &key); /* Key repeat keeps the chord held. */
-            CHECK(app->behaviors.entries[0].shortcut_active);
+            CHECK(expression_behavior->shortcut_active);
             key.kind = BONGO_CAT_INPUT_KEY_UP;
             snprintf(key.name, sizeof(key.name), "F13");
             bongo_cat_app_shortcuts(app, &key);
-            CHECK(!app->behaviors.entries[0].shortcut_active);
+            CHECK(!expression_behavior->shortcut_active);
             key.kind = BONGO_CAT_INPUT_KEY_DOWN;
             bongo_cat_app_shortcuts(app, &key); /* Reverse press order. */
-            CHECK(app->behaviors.entries[0].shortcut_active);
+            CHECK(expression_behavior->shortcut_active);
             key.kind = BONGO_CAT_INPUT_KEY_UP;
             bongo_cat_app_shortcuts(app, &key);
             snprintf(key.name, sizeof(key.name), "BracketLeft");

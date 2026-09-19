@@ -251,9 +251,11 @@ int main(void) {
     CHECK(chord("[24]", false, "24"));
     CHECK(chord("[16,65]", false, "Shift+A"));
     CHECK(chord("[17,18,90]", false, "Control+Alt+Z"));
-    CHECK(chord("[0]", false, NULL));
-    CHECK(chord("[16]", false, NULL));
-    CHECK(chord("[17,65,66]", true, NULL));
+    CHECK(chord("[0]", false, ""));
+    CHECK(chord("[16]", false, "Shift"));
+    CHECK(chord("[17,65,66]", true, "Control+A+B"));
+    CHECK(chord("[-1]", false, NULL));
+    CHECK(chord("[17,255]", true, NULL));
     BongoCatMverKeyNames modifier = bongo_cat_mver_device_names(16, 1, 2);
     CHECK(modifier.count == 1 && strcmp(modifier.items[0], "ShiftRight") == 0);
     BongoCatMverKeyNames dpad = bongo_cat_mver_gamepad_names(12);
