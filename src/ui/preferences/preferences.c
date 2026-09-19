@@ -77,8 +77,10 @@ bool bongo_cat_preferences_needs_frame(BongoCatPreferences *value) {
     if (value->about.qr_open && SDL_GetTicks() >= value->about.qr_hide_at)
         value->render_dirty = true;
     if (value->behavior_dialog && value->app) {
-        for (size_t i = 0; i < value->app->behaviors.count; ++i) {
-            const BongoCatBehaviorEntry *entry = &value->app->behaviors.entries[i];
+        const BongoCatBehaviorCatalog *catalog =
+            bongo_cat_preferences_behavior_catalog(value);
+        for (size_t i = 0; i < catalog->count; ++i) {
+            const BongoCatBehaviorEntry *entry = &catalog->entries[i];
             bool playing = entry->kind == BONGO_CAT_BEHAVIOR_SOUND &&
                 (entry->sound_clear ? bongo_cat_audio_any_playing(value->app->audio) :
                 bongo_cat_audio_is_playing(value->app->audio, entry->sound));

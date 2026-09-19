@@ -97,6 +97,8 @@ void bongo_cat_preferences_close(BongoCatPreferences *value) {
         bongo_cat_preferences_behavior_dialog_close(value);
     bongo_cat_preferences_model_rename_finish(value, true);
     bongo_cat_preferences_shortcut_cancel(value);
+    free(value->behavior_catalog);
+    value->behavior_catalog = NULL;
     value->behavior_dialog = false;
     value->behavior_dialog_input_armed = false;
     value->behavior_dialog_opened_ns = 0;
@@ -124,6 +126,8 @@ void bongo_cat_preferences_release_idle_window(BongoCatPreferences *value) {
     /* A folder dialog still needs its owner; import completion can queue a
        catalog refresh. Keep the window until both have finished. */
     if (bongo_cat_preferences_import_is_open(value->import_dialog) ||
+        bongo_cat_preferences_import_status(value->import_dialog,
+            NULL, NULL, NULL) ||
         bongo_cat_app_model_refresh_busy(value->app) || value->model_loading ||
         value->model_selection_pending) return;
     release_window(value);

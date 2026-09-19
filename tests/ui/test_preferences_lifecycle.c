@@ -283,6 +283,36 @@ static void close_over_scrolled_models(BongoCatPreferences *value) {
     }
 }
 
+static void inactive_model_behaviors(BongoCatPreferences *value) {
+    BongoCatApp *app = value->app;
+    char active[BONGO_CAT_ID_CAP], loaded[BONGO_CAT_ID_CAP];
+    snprintf(active, sizeof(active), "%s", app->session.active_model_id);
+    snprintf(loaded, sizeof(loaded), "%s", app->loaded_model);
+    BongoCatLive2D *live2d = app->live2d;
+    const BongoCatModelEntry *model = NULL;
+    for (size_t i = 0; i < app->models.count; ++i)
+        if (strcmp(app->models.entries[i].id, loaded)) {
+            model = &app->models.entries[i];
+            break;
+        }
+    CHECK(model != NULL);
+    if (!model) return;
+    bongo_cat_preferences_behavior_dialog_open_model(value, model);
+    CHECK(value->behavior_dialog);
+    CHECK(!strcmp(value->behavior_model_id, model->id));
+    CHECK(!bongo_cat_preferences_behavior_model_loaded(value));
+    CHECK(!value->model_selection_pending);
+    CHECK(!strcmp(active, app->session.active_model_id));
+    CHECK(!strcmp(loaded, app->loaded_model));
+    CHECK(live2d == app->live2d);
+    const BongoCatBehaviorCatalog *catalog =
+        bongo_cat_preferences_behavior_catalog(value);
+    CHECK(catalog->count > 0);
+    for (size_t i = 0; i < catalog->count; ++i)
+        CHECK(!strncmp(catalog->entries[i].id, model->id, strlen(model->id)));
+    bongo_cat_preferences_behavior_dialog_close(value);
+}
+
 int main(int argc, char **argv) {
     BongoCatApp *app = calloc(1, sizeof(*app));
     BongoCatError error = {0};
@@ -304,7 +334,9 @@ int main(int argc, char **argv) {
             CHECK(value->window && value->gl_context && value->ui_initialized);
             if (!cycle) about_render_cost_regressions(value);
             about_session_cache(value);
+            if (!cycle) inactive_model_behaviors(value);
             bongo_cat_preferences_close(value);
+            CHECK(!value->behavior_catalog);
             CHECK(!value->about.contributors && !value->about.qr_pixels);
             CHECK(!value->about.contributors_attempted && !value->about.qr_attempted);
             CHECK(!value->about.contributors_request ||

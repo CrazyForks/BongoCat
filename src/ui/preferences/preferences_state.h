@@ -97,6 +97,8 @@ struct BongoCatPreferences {
     int last_page;
     uint64_t page_transition_ns;
     BongoCatPreferenceNotice notices[4];
+    BongoCatBehaviorCatalog *behavior_catalog;
+    char behavior_model_id[BONGO_CAT_ID_CAP];
     bool behavior_dialog;
     bool behavior_dialog_input_armed;
     int behavior_tab;

@@ -32,10 +32,12 @@ void bongo_cat_preferences_behavior_rename_finish(
     bool label_changed = false;
     if (save) {
         bongo_cat_text_edit_trim(session->text);
-        BongoCatBehaviorEntry *entry = NULL;
-        for (size_t i = 0; i < value->app->behaviors.count; ++i)
-            if (!strcmp(value->app->behaviors.entries[i].id, session->id)) {
-                entry = &value->app->behaviors.entries[i];
+        const BongoCatBehaviorEntry *entry = NULL;
+        const BongoCatBehaviorCatalog *catalog =
+            bongo_cat_preferences_behavior_catalog(value);
+        for (size_t i = 0; i < catalog->count; ++i)
+            if (!strcmp(catalog->entries[i].id, session->id)) {
+                entry = &catalog->entries[i];
                 break;
             }
         BongoCatBehaviorShortcut *binding = binding_for(&value->app->settings,

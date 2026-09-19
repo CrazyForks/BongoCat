@@ -70,7 +70,7 @@ int SDLCALL bongo_cat_preferences_import_worker(void *userdata) {
     bool notify = job->dialog->active;
     if (notify) {
         event.type = job->dialog->event_type;
-        event.user.windowID = job->dialog->window_id;
+        event.user.windowID = job->window_id;
         event.user.code = BONGO_CAT_IMPORT_COMPLETE_CODE;
         event.user.data1 = job;
         event.user.data2 = job->dialog;

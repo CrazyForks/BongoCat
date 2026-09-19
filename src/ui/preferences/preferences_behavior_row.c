@@ -101,7 +101,7 @@ static bool shortcut_editor(BongoCatPreferences *value,
 
 static void draw_name(BongoCatPreferences *value, struct nk_context *context,
     struct nk_command_buffer *canvas, struct nk_rect bounds,
-    BongoCatBehaviorEntry *entry, BongoCatBehaviorShortcut *binding,
+    const BongoCatBehaviorEntry *entry, BongoCatBehaviorShortcut *binding,
     BongoCatUIPalette p, float opacity, bool enabled) {
     const char *label = display_label(value, entry, binding);
     BongoCatPreferencesTextSession *session = &value->behavior_rename;
@@ -142,7 +142,7 @@ static void draw_name(BongoCatPreferences *value, struct nk_context *context,
 
 void bongo_cat_preferences_behavior_row_draw(BongoCatPreferences *value,
     struct nk_context *context, struct nk_command_buffer *canvas,
-    struct nk_rect row, BongoCatBehaviorEntry *entry, BongoCatUIPalette p,
+    struct nk_rect row, const BongoCatBehaviorEntry *entry, BongoCatUIPalette p,
     float opacity, bool enabled) {
     struct nk_rect play = nk_rect(row.x + row.w - 52, row.y + 10, 36, 36);
     struct nk_rect shortcut_bounds = nk_rect(play.x - 188, row.y + 10, 180, 36);
@@ -151,7 +151,8 @@ void bongo_cat_preferences_behavior_row_draw(BongoCatPreferences *value,
     BongoCatBehaviorShortcut *binding = binding_for(&value->app->settings,
         entry->id);
     draw_name(value, context, canvas, name, entry, binding, p, opacity, enabled);
-    bool play_enabled = enabled;
+    bool play_enabled = enabled && (entry->kind == BONGO_CAT_BEHAVIOR_SOUND ||
+        bongo_cat_preferences_behavior_model_loaded(value));
     bool play_hover = play_enabled && nk_input_is_mouse_hovering_rect(
         &context->input, play);
     nk_fill_rect(canvas, play, 10, alpha(play_hover ? p.hover : p.field, opacity));
