@@ -9,6 +9,18 @@ void bongo_cat_about_ensure_event(BongoCatPreferences *value) {
         value->about.event_type = SDL_RegisterEvents(1);
 }
 
+static bool same_contributors(const BongoCatAboutFeed *a, const BongoCatAboutFeed *b) {
+    if (!a || !b || a->count != b->count) return false;
+    for (int i = 0; i < a->count; i++) {
+        const BongoCatAboutContributor *left = &a->people[i], *right = &b->people[i];
+        if (strcmp(left->name, right->name) || strcmp(left->profile, right->profile) ||
+            (!left->pixels != !right->pixels) ||
+            (left->pixels && memcmp(left->pixels, right->pixels,
+                BONGO_ABOUT_AVATAR_SIZE * BONGO_ABOUT_AVATAR_SIZE * 4))) return false;
+    }
+    return true;
+}
+
 /* Collect CPU results even on other settings pages; GL uploads remain lazy.
    Cancelled jobs keep their slot until completion, bounding rapid reopen work. */
 void bongo_cat_about_refresh(BongoCatPreferences *value) {
@@ -23,15 +35,19 @@ void bongo_cat_about_refresh(BongoCatPreferences *value) {
         if (value->visible && job->status == 200 && !SDL_GetAtomicInt(&job->cancel)) {
             if (value->page == 3) value->render_dirty = true;
             if (job->kind == BONGO_ABOUT_WECHAT) {
-                free(s->qr_pixels);
-                s->qr_pixels = job->qr_pixels;
-                job->qr_pixels = NULL;
-                s->qr_texture_dirty = true;
-            } else {
+                if (!s->qr_pixels || !job->qr_pixels ||
+                    memcmp(s->qr_pixels, job->qr_pixels, 240 * 240 * 4)) {
+                    free(s->qr_pixels);
+                    s->qr_pixels = job->qr_pixels;
+                    job->qr_pixels = NULL;
+                    s->qr_texture_dirty = true;
+                }
+            } else if (!same_contributors(s->contributors, job->feed)) {
                 bongo_cat_about_feed_free(s->contributors);
                 s->contributors = job->feed;
                 job->feed = NULL;
                 s->portraits_loaded = false;
+                s->portraits_next = 0;
             }
         }
         bongo_cat_about_request_free(job);
@@ -78,6 +94,7 @@ void bongo_cat_about_assets_clear(BongoCatPreferences *value, bool gl_ready) {
     s->wechat_icon_attempted = false;
     memset(s->portraits, 0, sizeof(s->portraits));
     s->portraits_loaded = false;
+    s->portraits_next = 0;
 }
 
 void bongo_cat_about_clear(BongoCatPreferences *value, bool gl_ready) {

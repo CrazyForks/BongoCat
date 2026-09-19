@@ -120,6 +120,10 @@ static Uint32 event_window(const SDL_Event *event) {
 
 static void enter_model_drop(BongoCatPreferences *value) {
     value->page = 1;
+    /* Reveal the import card and cancel any pending scroll animation. */
+    value->scroll_current[1] = 0.0f;
+    value->scroll_target[1] = 0.0f;
+    value->scroll_ready[1] = true;
     value->import_drop_active = true;
     value->render_dirty = true;
 }
@@ -260,6 +264,7 @@ bool bongo_cat_preferences_event(BongoCatPreferences *value, const SDL_Event *ev
         return true;
     }
     if (event->type == SDL_EVENT_DROP_FILE) {
+        enter_model_drop(value);
         value->import_drop_active = false;
         bongo_cat_preferences_import_path(value->app, value->window, event->drop.data);
         return true;

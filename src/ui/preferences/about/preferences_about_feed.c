@@ -48,7 +48,8 @@ static unsigned char *decode_uri(const char *uri, int *length) {
     return bytes;
 }
 
-static unsigned char *portrait(const char *uri) {
+static unsigned char *portrait(const char *uri, SDL_AtomicInt *cancel) {
+    if (SDL_GetAtomicInt(cancel)) return NULL;
     int length = 0, width = 0, height = 0, channels = 0;
     unsigned char *data = decode_uri(uri, &length);
     if (!data) return NULL;
@@ -57,20 +58,51 @@ static unsigned char *portrait(const char *uri) {
         stbi_info_from_memory(data, length, &width, &height, &channels) != 0;
     if (!known || width <= 0 || height <= 0 || width > 4096 || height > 4096 ||
         (size_t)width * (size_t)height > 4u * 1024u * 1024u) { free(data); return NULL; }
-    unsigned char *source = webp ? WebPDecodeRGBA(data, (size_t)length, &width, &height) :
-        stbi_load_from_memory(data, length, &width, &height, &channels, 4);
+    const int size = BONGO_ABOUT_AVATAR_SIZE;
+    if (SDL_GetAtomicInt(cancel)) { free(data); return NULL; }
+    /* Decode WebP directly at display resolution instead of allocating the
+       full source image and then discarding almost all of its pixels. */
+    WebPDecoderConfig config;
+    unsigned char *source = NULL;
+    if (webp) {
+        if (!WebPInitDecoderConfig(&config)) { free(data); return NULL; }
+        source = malloc((size_t)size * (size_t)size * 4);
+        if (!source) { free(data); return NULL; }
+        config.output.colorspace = MODE_RGBA;
+        config.output.is_external_memory = 1;
+        config.output.u.RGBA.rgba = source;
+        config.output.u.RGBA.stride = size * 4;
+        config.output.u.RGBA.size = (size_t)size * (size_t)size * 4;
+        config.options.use_scaling = 1;
+        config.options.scaled_width = size;
+        config.options.scaled_height = size;
+        if (WebPDecode(data, (size_t)length, &config) == VP8_STATUS_OK) {
+            source = config.output.u.RGBA.rgba;
+            width = height = size;
+        } else {
+            WebPFreeDecBuffer(&config.output);
+            free(source);
+            source = NULL;
+        }
+    } else {
+        source = stbi_load_from_memory(data, length, &width, &height, &channels, 4);
+    }
     free(data);
     if (!source) return NULL;
-    const int size = BONGO_ABOUT_AVATAR_SIZE;
-    unsigned char *pixels = malloc((size_t)size * (size_t)size * 4);
+    if (SDL_GetAtomicInt(cancel)) {
+        if (webp) { WebPFreeDecBuffer(&config.output); free(source); }
+        else stbi_image_free(source);
+        return NULL;
+    }
+    unsigned char *pixels = webp ? source : malloc((size_t)size * (size_t)size * 4);
     if (pixels) for (int y = 0; y < size; y++) for (int x = 0; x < size; x++) {
         unsigned char *out = pixels + (y * size + x) * 4;
         int sx = x * width / size, sy = y * height / size;
-        memcpy(out, source + ((size_t)sy * (size_t)width + (size_t)sx) * 4, 4);
+        if (!webp) memcpy(out, source + ((size_t)sy * (size_t)width + (size_t)sx) * 4, 4);
         int dx = 2 * x + 1 - size, dy = 2 * y + 1 - size;
         if (dx * dx + dy * dy > size * size) out[3] = 0;
     }
-    if (webp) WebPFree(source); else stbi_image_free(source);
+    if (webp) WebPFreeDecBuffer(&config.output); else stbi_image_free(source);
     return pixels;
 }
 
@@ -110,7 +142,7 @@ static void start(void *user, const char *element, const char **attrs) {
              p->feed->count < BONGO_ABOUT_CONTRIBUTOR_CAP) {
         const char *href = attribute(attrs, "href");
         if (!*href) href = attribute(attrs, "xlink:href");
-        p->person.pixels = portrait(href);
+        p->person.pixels = portrait(href, p->cancel);
     }
 }
 

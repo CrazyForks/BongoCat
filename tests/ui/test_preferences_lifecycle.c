@@ -5,6 +5,9 @@
 #include "runtime.h"
 #include "bongo_cat/file.h"
 #include "bongo_cat/path.h"
+#include "preferences_about_internal.h"
+#include "ui_paint_cache.h"
+#include "ui_paint.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,14 +39,18 @@ static void about_disk_cache(BongoCatApp *app) {
     CHECK(bongo_cat_path_join(directory, sizeof(directory), root, "about"));
     CHECK(bongo_cat_path_create_directory(directory));
     CHECK(bongo_cat_path_join(path, sizeof(path), directory, "wechat-v1.svg"));
-    const char svg[] = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"240\" height=\"240\">"
-        "<rect width=\"240\" height=\"240\" fill=\"white\"/></svg>";
+    /* Larger than the network's initial buffer, but well below the QR limit. */
+    char svg[9000];
+    snprintf(svg, sizeof(svg),
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"240\" height=\"240\">"
+        "<!--%08000d--><rect width=\"240\" height=\"240\" fill=\"white\"/></svg>", 0);
+    size_t svg_size = strlen(svg);
     Uint32 event_type = SDL_RegisterEvents(1);
     for (int stale = 0; stale < 2; stale++) {
         FILE *file = bongo_cat_file_open(path, "wb");
         CHECK(file != NULL);
         if (!file) return;
-        CHECK(fwrite(svg, 1, sizeof(svg) - 1, file) == sizeof(svg) - 1);
+        CHECK(fwrite(svg, 1, svg_size, file) == svg_size);
         CHECK(fflush(file) == 0);
         if (stale) {
             time_t old = time(NULL) - 2 * 86400;
@@ -67,7 +74,7 @@ static void about_disk_cache(BongoCatApp *app) {
         CHECK(SDL_GetAtomicInt(&job->done));
         CHECK(job->status == 200 && job->qr_pixels);
         CHECK(job->refresh_needed == (stale != 0));
-        CHECK(!job->response);
+        CHECK(!job->response && !job->capacity);
         bongo_cat_about_request_free(job);
         CHECK(SDL_GetPathInfo(path, &after));
         CHECK(before.modify_time == after.modify_time);
@@ -75,7 +82,7 @@ static void about_disk_cache(BongoCatApp *app) {
         CHECK(file != NULL);
         if (file) {
             char bytes[sizeof(svg)] = {0};
-            CHECK(fread(bytes, 1, sizeof(svg) - 1, file) == sizeof(svg) - 1);
+            CHECK(fread(bytes, 1, svg_size, file) == svg_size);
             CHECK(strcmp(bytes, svg) == 0);
             CHECK(fclose(file) == 0);
         }
@@ -123,6 +130,48 @@ static void about_refresh_failure(BongoCatApp *app) {
     free(value);
 }
 
+static void about_unchanged_contributors(BongoCatApp *app) {
+    BongoCatPreferences *value = calloc(1, sizeof(*value));
+    CHECK(value != NULL);
+    if (!value) return;
+    value->app = app;
+    value->visible = true;
+    value->about.event_type = SDL_RegisterEvents(1);
+    value->about.qr_attempted = value->about.contributors_attempted = true;
+    for (int update = 0; update < 4; update++) {
+        BongoCatAboutRequest *job = calloc(1, sizeof(*job));
+        CHECK(job != NULL);
+        if (!job) break;
+        job->feed = calloc(1, sizeof(*job->feed));
+        CHECK(job->feed != NULL);
+        if (!job->feed) { free(job); break; }
+        job->feed->count = 1;
+        job->feed->people[0].pixels = calloc(BONGO_ABOUT_AVATAR_SIZE * BONGO_ABOUT_AVATAR_SIZE, 4);
+        CHECK(job->feed->people[0].pixels != NULL);
+        if (!job->feed->people[0].pixels) { bongo_cat_about_request_free(job); break; }
+        if (update >= 2) job->feed->people[0].pixels[0] = 255;
+        if (update == 3) strcpy(job->feed->people[0].name, "Renamed contributor");
+        job->kind = BONGO_ABOUT_CONTRIBUTORS;
+        job->status = 200;
+        SDL_SetAtomicInt(&job->done, 1);
+        BongoCatAboutFeed *previous = value->about.contributors;
+        value->about.contributors_request = job;
+        value->about.portraits_loaded = true;
+        value->about.portraits_next = 1;
+        bongo_cat_about_refresh(value);
+        CHECK(!value->about.contributors_request);
+        if (update == 1) {
+            CHECK(value->about.contributors == previous);
+            CHECK(value->about.portraits_loaded && value->about.portraits_next == 1);
+        } else {
+            CHECK(value->about.contributors != previous);
+            CHECK(!value->about.portraits_loaded && value->about.portraits_next == 0);
+        }
+    }
+    bongo_cat_about_clear(value, false);
+    free(value);
+}
+
 static void about_session_cache(BongoCatPreferences *value) {
     BongoCatAboutState *s = &value->about;
     CHECK(s->contributors_attempted || (s->contributors_request &&
@@ -151,6 +200,58 @@ static void about_session_cache(BongoCatPreferences *value) {
     bongo_cat_about_assets_clear(value, true);
     CHECK(s->qr_attempted == qr_attempted);
     CHECK(s->contributors == feed && s->qr_pixels == pixels);
+    SDL_GL_MakeCurrent(value->app->window, value->app->gl_context);
+}
+
+static float original_paragraph_height(const char *text,
+    const struct nk_user_font *font, float width, float leading) {
+    float height = 0;
+    while (*text) {
+        int length = 0, remaining = (int)strlen(text);
+        while (length < remaining) {
+            nk_rune rune;
+            int bytes = nk_utf_decode(text + length, &rune, remaining - length);
+            if (bytes <= 0) break;
+            float next = font->width(font->userdata, font->height, text, length + bytes);
+            if (length && next > width) break;
+            length += bytes;
+            if (rune == '\n') break;
+        }
+        if (!length) break;
+        height += leading;
+        text += length;
+        while (*text == ' ' || *text == '\n') text++;
+    }
+    return height;
+}
+
+static void about_render_cost_regressions(BongoCatPreferences *value) {
+    const char *texts[] = {"Open source & community contributions",
+        "Every step of BongoCat comes from open source. Thank you to all our contributors.",
+        "\xe6\x84\x9f\xe8\xb0\xa2\xe6\x89\x80\xe6\x9c\x89\xe8\xb4\xa1\xe7\x8c\xae\xe8\x80\x85 BongoCat",
+        "First line\n  Second line", "", "A"};
+    const struct nk_user_font *font = value->ui.caption_font;
+    for (size_t i = 0; i < sizeof(texts) / sizeof(texts[0]); i++)
+        for (int width = 1; width <= 400; width += 3) {
+            float actual = bongo_cat_about_paragraph(NULL, nk_rect(0, 0, (float)width, 0),
+                texts[i], font, nk_rgb(0, 0, 0), false, 24);
+            CHECK(actual == original_paragraph_height(texts[i], font, (float)width, 24));
+        }
+    SDL_GL_MakeCurrent(value->window, value->gl_context);
+    BongoCatUIPaintKey key = {BONGO_CAT_UI_PAINT_SHADOW, 8, 8, 4, 2, 0, 0, 0};
+    unsigned char pixels[64] = {0};
+    bongo_cat_ui_paint_cache_begin_frame(&value->ui);
+    BongoCatUIPaintTexture *item = bongo_cat_ui_paint_cache_get(&value->ui, &key);
+    CHECK(item && bongo_cat_ui_paint_cache_upload(item, pixels, true));
+    /* One unused frame and idle trimming must not discard a small hover effect. */
+    bongo_cat_ui_paint_cache_begin_frame(&value->ui);
+    bongo_cat_ui_paint_cache_begin_frame(&value->ui);
+    bongo_cat_ui_trim_idle(&value->ui);
+    item = bongo_cat_ui_paint_cache_get(&value->ui, &key);
+    CHECK(bongo_cat_ui_paint_cache_ready(item));
+    CHECK(bongo_cat_ui_paint_cache_usage(&value->ui, NULL) <= 4u * 1024u * 1024u);
+    bongo_cat_ui_paint_destroy(&value->ui);
+    CHECK(bongo_cat_ui_paint_cache_usage(&value->ui, NULL) == 0);
     SDL_GL_MakeCurrent(value->app->window, value->app->gl_context);
 }
 
@@ -195,11 +296,13 @@ int main(int argc, char **argv) {
     BongoCatPreferences *value = app->preferences;
     about_disk_cache(app);
     about_refresh_failure(app);
+    about_unchanged_contributors(app);
     CHECK(value != NULL);
     if (value) {
         for (int cycle = 0; cycle < 3; ++cycle) {
             bongo_cat_preferences_show(value);
             CHECK(value->window && value->gl_context && value->ui_initialized);
+            if (!cycle) about_render_cost_regressions(value);
             about_session_cache(value);
             bongo_cat_preferences_close(value);
             CHECK(!value->about.contributors && !value->about.qr_pixels);

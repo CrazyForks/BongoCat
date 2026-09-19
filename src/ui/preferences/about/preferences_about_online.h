@@ -19,7 +19,7 @@ typedef struct BongoCatAboutRequest {
     BongoCatAboutFeed *feed;
     unsigned char *qr_pixels;
     char *response;
-    size_t length;
+    size_t length, capacity;
     int status;
     char cache_directory[BONGO_CAT_PATH_CAP];
     bool network_only, refresh_needed;

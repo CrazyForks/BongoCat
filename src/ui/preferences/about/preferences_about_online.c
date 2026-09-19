@@ -15,21 +15,35 @@
 #define RESPONSE_LIMIT (4u * 1024u * 1024u)
 #define CACHE_TTL_NS (SDL_NS_PER_SECOND * 86400LL)
 
+/* Capacity excludes the terminator. Network growth is geometric and bounded;
+   disk reads reserve their exact known size without touching a 4 MiB buffer. */
+static bool reserve_response(BongoCatAboutRequest *job, size_t capacity) {
+    if (capacity > job->limit) return false;
+    if (job->response && capacity <= job->capacity) return true;
+    char *response = realloc(job->response, capacity + 1);
+    if (!response) return false;
+    job->response = response;
+    job->capacity = capacity;
+    job->response[job->length] = 0;
+    return true;
+}
+
 static bool cache_path(BongoCatAboutRequest *job, char *path, size_t capacity) {
     return job->cache_directory[0] && bongo_cat_path_join(path, capacity,
         job->cache_directory, job->kind == BONGO_ABOUT_CONTRIBUTORS
             ? "contributors-v1.svg" : "wechat-v1.svg");
 }
 
-/* SVG parsers modify their input. Keep the original bytes for the disk cache. */
-static bool decode_response(BongoCatAboutRequest *job) {
+/* SVG parsers modify their input. Only network results need a preserved copy
+   for cache writes; disk reads can be parsed in place. */
+static bool decode_response(BongoCatAboutRequest *job, bool preserve_response) {
     if (SDL_GetAtomicInt(&job->cancel) || !job->length ||
         memchr(job->response, 0, job->length) || !strstr(job->response, "<svg") ||
         strstr(job->response, "<!DOCTYPE") || strstr(job->response, "<!ENTITY"))
         return false;
-    char *copy = malloc(job->length + 1);
+    char *copy = preserve_response ? malloc(job->length + 1) : job->response;
     if (!copy) return false;
-    memcpy(copy, job->response, job->length + 1);
+    if (preserve_response) memcpy(copy, job->response, job->length + 1);
     bool valid;
     if (job->kind == BONGO_ABOUT_CONTRIBUTORS) {
         job->feed = bongo_cat_about_feed_parse(copy, &job->cancel);
@@ -42,7 +56,7 @@ static bool decode_response(BongoCatAboutRequest *job) {
         job->qr_pixels = bongo_cat_about_qr_pixels(copy);
         valid = job->qr_pixels != NULL;
     }
-    free(copy);
+    if (preserve_response) free(copy);
     return valid;
 }
 
@@ -52,6 +66,7 @@ static bool cache_read(BongoCatAboutRequest *job) {
     SDL_PathInfo info;
     if (!SDL_GetPathInfo(path, &info) || info.type != SDL_PATHTYPE_FILE ||
         !info.size || info.size > job->limit) return false;
+    if (!reserve_response(job, (size_t)info.size)) return false;
     FILE *file = bongo_cat_file_open(path, "rb");
     if (!file) return false;
     size_t size = (size_t)info.size;
@@ -59,7 +74,7 @@ static bool cache_read(BongoCatAboutRequest *job) {
     if (fclose(file) != 0) ok = false;
     job->length = size;
     job->response[size] = 0;
-    if (!ok || !decode_response(job)) {
+    if (!ok || !decode_response(job, false)) {
         job->length = 0;
         job->response[0] = 0;
         return false;
@@ -99,6 +114,7 @@ static int complete(BongoCatAboutRequest *job) {
     free(job->response);
     job->response = NULL;
     job->length = 0;
+    job->capacity = 0;
     SDL_SetAtomicInt(&job->done, 1);
     SDL_Event event;
     memset(&event, 0, sizeof(event));
@@ -111,6 +127,13 @@ static int complete(BongoCatAboutRequest *job) {
 static bool append(BongoCatAboutRequest *job, const void *data, size_t size) {
     if (SDL_GetAtomicInt(&job->cancel) || size > job->limit - job->length)
         return false;
+    size_t needed = job->length + size;
+    if (!job->response || needed > job->capacity) {
+        size_t capacity = job->capacity ? job->capacity : 4096;
+        while (capacity < needed)
+            capacity = capacity > job->limit / 2 ? job->limit : capacity * 2;
+        if (!reserve_response(job, capacity)) return false;
+    }
     memcpy(job->response + job->length, data, size);
     job->length += size;
     job->response[job->length] = 0;
@@ -134,8 +157,8 @@ static int progress(void *user, curl_off_t a, curl_off_t b, curl_off_t c, curl_o
 
 static int SDLCALL request_worker(void *user) {
     BongoCatAboutRequest *job = user;
-    job->response = calloc(job->limit + 1, 1);
-    if (!job->response) return complete(job);
+    /* Best effort: background assets should yield CPU time to interaction. */
+    SDL_SetCurrentThreadPriority(SDL_THREAD_PRIORITY_LOW);
     /* Publish stale data before starting the separate background refresh. */
     if (!job->network_only && cache_read(job)) return complete(job);
     if (SDL_GetAtomicInt(&job->cancel)) return complete(job);
@@ -167,6 +190,8 @@ static int SDLCALL request_worker(void *user) {
             ok = WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
                                      NULL, &status, &bytes, NULL) != FALSE;
         job->status = (int)status;
+        /* Error bodies cannot produce usable images; do not download them. */
+        if (status != 200) ok = false;
         Uint64 deadline = SDL_GetTicks() + 15000;
         while (ok && !SDL_GetAtomicInt(&job->cancel)) {
             char buffer[4096];
@@ -195,6 +220,7 @@ static int SDLCALL request_worker(void *user) {
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, 3000L);
         curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, 15000L);
         curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
+        curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, receive);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, job);
         curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
@@ -211,7 +237,7 @@ static int SDLCALL request_worker(void *user) {
     if (!ok || SDL_GetAtomicInt(&job->cancel))
         job->status = 0;
     if (job->status == 200) {
-        if (decode_response(job)) cache_write(job);
+        if (decode_response(job, true)) cache_write(job);
         else job->status = 0;
     }
     return complete(job);

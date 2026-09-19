@@ -15,14 +15,17 @@ float bongo_cat_about_paragraph(struct nk_context *context, struct nk_rect bound
     const char *text, const struct nk_user_font *font, struct nk_color color,
     bool center, float leading) {
     float y = bounds.y;
+    int remaining = (int)strlen(text);
     while (*text && (!context || y + font->height <= bounds.y + bounds.h + 1)) {
-        int length = 0, remaining = (int)strlen(text);
+        int length = 0;
         float width = 0;
         while (length < remaining) {
             nk_rune rune;
             int bytes = nk_utf_decode(text + length, &rune, remaining - length);
             if (bytes <= 0) break;
-            float next = font->width(font->userdata, font->height, text, length + bytes);
+            /* Nuklear's atlas width is the sum of glyph advances (no kerning).
+               Measure each UTF-8 glyph once instead of every growing prefix. */
+            float next = width + font->width(font->userdata, font->height, text + length, bytes);
             if (length && next > bounds.w) break;
             length += bytes;
             width = next;
@@ -34,7 +37,8 @@ float bongo_cat_about_paragraph(struct nk_context *context, struct nk_rect bound
             text, length, font, nk_rgba(0, 0, 0, 0), color);
         y += leading;
         text += length;
-        while (*text == ' ' || *text == '\n') text++;
+        remaining -= length;
+        while (*text == ' ' || *text == '\n') { text++; remaining--; }
     }
     return y - bounds.y;
 }

@@ -271,7 +271,7 @@ bool bongo_cat_ui_render(BongoCatUIBackend *ui) {
 
 void bongo_cat_ui_trim_idle(BongoCatUIBackend *ui) {
     if (!ui) return;
-    bongo_cat_ui_paint_destroy(ui);
+    bongo_cat_ui_paint_cache_trim_idle(ui);
     trim_commands(ui);
 }
 

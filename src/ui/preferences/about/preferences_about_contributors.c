@@ -13,10 +13,13 @@ static void contributors_load(BongoCatPreferences *value) {
     BongoCatAboutState *s = &value->about;
     bongo_cat_about_refresh(value);
     if (s->contributors && !s->portraits_loaded) {
-        glDeleteTextures(BONGO_ABOUT_CONTRIBUTOR_CAP, s->portraits);
-        memset(s->portraits, 0, sizeof(s->portraits));
-        s->portraits_loaded = true;
-        for (int i = 0; i < s->contributors->count; i++) {
+        if (!s->portraits_next) {
+            glDeleteTextures(BONGO_ABOUT_CONTRIBUTOR_CAP, s->portraits);
+            memset(s->portraits, 0, sizeof(s->portraits));
+        }
+        /* Bound GL work per frame, including the maximum-size contributor list. */
+        int end = NK_MIN(s->portraits_next + 4, s->contributors->count);
+        for (int i = s->portraits_next; i < end; i++) {
             unsigned char *pixels = s->contributors->people[i].pixels;
             if (!pixels) continue;
             glGenTextures(1, &s->portraits[i]);
@@ -28,6 +31,9 @@ static void contributors_load(BongoCatPreferences *value) {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, BONGO_ABOUT_AVATAR_SIZE,
                 BONGO_ABOUT_AVATAR_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
         }
+        s->portraits_next = end;
+        s->portraits_loaded = end == s->contributors->count;
+        if (!s->portraits_loaded) value->render_dirty = true;
     }
 }
 
@@ -123,12 +129,12 @@ void bongo_cat_about_contributors(BongoCatPreferences *value, struct nk_context 
         title_width = bounds.w - 32;
     }
     float title_x = bounds.x + (bounds.w - title_width) * .5f;
+    float prefix = 0;
     for (int i = 0; i < title_length;) {
         nk_rune rune;
         int bytes = nk_utf_decode(title + i, &rune, title_length - i);
         if (bytes <= 0)
             break;
-        float prefix = title_font->width(title_font->userdata, title_font->height, title, i);
         float glyph = title_font->width(title_font->userdata, title_font->height, title + i, bytes);
         struct nk_color color =
             bongo_cat_ui_color_mix(p.accent, p.pink, title_width ? prefix / title_width : 0);
@@ -136,6 +142,7 @@ void bongo_cat_about_contributors(BongoCatPreferences *value, struct nk_context 
                      nk_rect(title_x + prefix, bounds.y + 44, glyph + 2, title_font->height),
                      title + i, bytes, title_font, nk_rgba(0, 0, 0, 0), color);
         i += bytes;
+        prefix += glyph;
     }
     bongo_cat_about_paragraph(context, nk_rect(bounds.x + inset, bounds.y + desc_y, inner, grid_y - desc_y),
         description, body_font, p.muted, true, 28.8f);

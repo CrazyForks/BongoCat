@@ -20,6 +20,7 @@ typedef struct BongoCatAboutState {
     BongoCatAboutFeed *contributors;
     bool contributors_attempted;
     bool portraits_loaded;
+    int portraits_next;
     Uint32 event_type;
     Uint64 qr_hide_at;
     struct nk_rect qr_anchor;
