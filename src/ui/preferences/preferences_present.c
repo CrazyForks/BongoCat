@@ -1,6 +1,7 @@
 #include "preferences_state.h"
 #include "preferences_render_internal.h"
 #include "preferences_controls.h"
+#include "preferences_model_glyphs.h"
 #include "ui_animation.h"
 #include "ui_paint.h"
 #include "bongo_cat/memory_policy.h"
@@ -38,7 +39,13 @@ void bongo_cat_preferences_render(BongoCatPreferences *value) {
         bongo_cat_preferences_refresh_raster(value);
         bongo_cat_preferences_reload_language(value);
     }
-    if (value->font_reload_pending && !importing && !refreshing_models) {
+    bool notice_font_reload = false;
+    for (size_t i = 0; i < sizeof(value->notices) / sizeof(value->notices[0]); ++i)
+        if (value->notices[i].message[0] && value->notices[i].until_ns > now &&
+            !bongo_cat_preferences_model_glyphs_ready(value, value->notices[i].message))
+            notice_font_reload = true;
+    if (value->font_reload_pending &&
+        (notice_font_reload || (!importing && !refreshing_models))) {
         if (value->font_reload_defer_once) {
             value->font_reload_defer_once = false;
             value->render_dirty = true;

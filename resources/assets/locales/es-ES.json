@@ -94,7 +94,7 @@
           "deleteFailed": "No se pudo eliminar este modelo",
           "importSuccess": "Importado correctamente",
           "importExists": "El modelo ya existe",
-          "importBatchResult": "Importación correcta: %zu; fallida: %zu. Modelos fallidos: %s%s. Primer error: %s",
+          "importBatchResult": "Importación correcta: %zu; fallida: %zu.\nModelos fallidos: %s%s.\nPrimer error: %s",
           "importMoreFailures": " y %zu más",
           "importUnknownSource": "fuente desconocida",
           "importInvalidSource": "La fuente seleccionada ya no existe o no se puede utilizar",

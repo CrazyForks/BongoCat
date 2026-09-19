@@ -16,9 +16,12 @@
 #include "modal_frame.h"
 
 typedef struct BongoCatPreferenceNotice {
-    char message[384];
+    char message[1024];
     uint64_t started_ns;
     uint64_t until_ns;
+    uint64_t timer_updated_ns;
+    struct nk_rect bounds;
+    bool hovered;
     bool error;
 } BongoCatPreferenceNotice;
 

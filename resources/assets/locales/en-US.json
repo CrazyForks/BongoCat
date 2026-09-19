@@ -94,7 +94,7 @@
           "deleteFailed": "Unable to delete this model",
           "importSuccess": "Imported Successfully",
           "importExists": "Model already exists",
-          "importBatchResult": "Import succeeded: %zu; failed: %zu. Failed models: %s%s. First failure: %s",
+          "importBatchResult": "Import succeeded: %zu; failed: %zu.\nFailed models: %s%s.\nFirst failure: %s",
           "importMoreFailures": " and %zu more",
           "importUnknownSource": "unknown source",
           "importInvalidSource": "The selected source no longer exists or cannot be used",

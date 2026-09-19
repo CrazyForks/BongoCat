@@ -94,7 +94,7 @@
           "deleteFailed": "无法删除此模型",
           "importSuccess": "导入成功",
           "importExists": "模型已存在，无需重复导入",
-          "importBatchResult": "导入成功 %zu 个，导入失败 %zu 个。失败模型：%s%s。首个失败原因：%s",
+          "importBatchResult": "导入成功 %zu 个，导入失败 %zu 个。\n失败模型：%s%s。\n首个失败原因：%s",
           "importMoreFailures": "等其余 %zu 个",
           "importUnknownSource": "未知来源",
           "importInvalidSource": "所选来源已不存在或无法使用",

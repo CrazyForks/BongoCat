@@ -94,7 +94,7 @@
           "deleteFailed": "Impossible de supprimer ce modèle",
           "importSuccess": "Importation réussie",
           "importExists": "Le modèle existe déjà",
-          "importBatchResult": "Importations réussies : %zu ; échecs : %zu. Modèles en échec : %s%s. Premier échec : %s",
+          "importBatchResult": "Importations réussies : %zu ; échecs : %zu.\nModèles en échec : %s%s.\nPremier échec : %s",
           "importMoreFailures": " et %zu autre(s)",
           "importUnknownSource": "source inconnue",
           "importInvalidSource": "La source sélectionnée n'existe plus ou ne peut pas être utilisée",

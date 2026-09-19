@@ -94,7 +94,7 @@
           "deleteFailed": "このモデルを削除できません",
           "importSuccess": "インポートしました",
           "importExists": "モデルは既に存在します",
-          "importBatchResult": "インポート成功: %zu件、失敗: %zu件。失敗したモデル: %s%s。最初の失敗理由: %s",
+          "importBatchResult": "インポート成功: %zu件、失敗: %zu件。\n失敗したモデル: %s%s。\n最初の失敗理由: %s",
           "importMoreFailures": "、他%zu件",
           "importUnknownSource": "不明なソース",
           "importInvalidSource": "選択したインポート元は存在しないか、使用できません",

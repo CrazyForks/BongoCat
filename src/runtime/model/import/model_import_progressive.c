@@ -92,8 +92,8 @@ static void record_failure_name(BongoCatImportBatchStats *stats,
         BONGO_CAT_IMPORT_FAILURE_NAME_CAP) return;
     const char *name = bongo_cat_path_name(source);
     if (!name || !name[0]) return;
-    snprintf(stats->failure_names[stats->failure_name_count++],
-        BONGO_CAT_ID_CAP, "%s", name);
+    SDL_utf8strlcpy(stats->failure_names[stats->failure_name_count++], name,
+        BONGO_CAT_ID_CAP);
 }
 
 static BongoCatResult install_one(BongoCatImportSession *session,
