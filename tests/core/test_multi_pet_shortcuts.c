@@ -48,7 +48,8 @@ int main(void) {
             entry->index = (int)i;
             snprintf(entry->id, sizeof(entry->id), "pet%u:behavior%u", p, i);
             BongoCatBehaviorShortcut *binding = &app->settings.behavior_shortcuts[i];
-            snprintf(binding->id, sizeof(binding->id), "%s", entry->id);
+            snprintf(binding->id, sizeof(binding->id), "%.*s",
+                (int)sizeof(binding->id) - 1, entry->id);
             snprintf(binding->shortcut, sizeof(binding->shortcut), "Control+J");
         }
         chord(app, true);
