@@ -13,8 +13,20 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  version-check:
+    name: quality / tag-version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+
+      - name: Validate tag matches project version
+        shell: pwsh
+        run: ./.github/scripts/check-tag-version.ps1 -Tag $env:GITHUB_REF_NAME
+
   build:
     name: build / ${{ matrix.platform }}
+    needs: version-check
     if: github.repository == 'vladelaina/BongoCat'
     runs-on: ${{ matrix.os }}
     strategy:
@@ -231,6 +243,7 @@ jobs:
 
   virus-total:
     name: security / virustotal
+    needs: version-check
     if: github.repository == 'vladelaina/BongoCat'
     runs-on: ubuntu-latest
     timeout-minutes: 310
