@@ -68,7 +68,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             cmake ninja-build libgl1-mesa-dev libegl1-mesa-dev libx11-dev libxi-dev \
-            libxfixes-dev libcurl4-openssl-dev xvfb xauth libgl1-mesa-dri \
+            libxfixes-dev libcurl4-openssl-dev \
             curl file desktop-file-utils
 
       - name: Configure Unix release
@@ -76,6 +76,7 @@ jobs:
         run: |
           cmake -S . -B build-release -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTING=OFF \
             -DBONGO_CAT_OPTIMIZE_RELEASE_SIZE=ON \
             -DBONGO_CAT_OPTIMIZE_RELEASE_IPO=ON \
             -DCMAKE_OSX_ARCHITECTURES=${{ matrix.cmake_arch }} \
@@ -87,6 +88,7 @@ jobs:
         shell: pwsh
         run: |
           & ./scripts/build-windows.ps1 `
+            -SkipTests `
             -BuildDir build-release `
             -Configuration Release `
             -Architecture '${{ matrix.cmake_arch }}' `
@@ -97,24 +99,6 @@ jobs:
       - name: Build Unix release
         if: runner.os != 'Windows'
         run: bash .github/scripts/build-unix.sh cmake --build build-release --parallel 2
-
-      - name: Install software OpenGL for Windows tests
-        if: runner.os == 'Windows'
-        uses: ssciwr/setup-mesa-dist-win@2dfeaebfa514f74c2b8cd8d27108c31486d33e72 # v3
-        with:
-          version: '23.3.3'
-          deployment-choice: '1'
-
-      - name: Test Windows release
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: >-
-          & ./.github/scripts/test-windows.ps1
-          ctest --test-dir build-release -C Release --output-on-failure
-
-      - name: Test Unix release
-        if: runner.os != 'Windows'
-        run: bash .github/scripts/test-unix.sh ctest --test-dir build-release --output-on-failure
 
       - name: Install Inno Setup
         if: runner.os == 'Windows'

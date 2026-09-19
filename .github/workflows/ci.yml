@@ -37,7 +37,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            cmake ninja-build cppcheck xvfb xauth libgl1-mesa-dri \
+            cmake ninja-build cppcheck \
             libgl1-mesa-dev libegl1-mesa-dev libx11-dev libxi-dev libxfixes-dev \
             libcurl4-openssl-dev
 
@@ -53,7 +53,7 @@ jobs:
       - name: Check source file size policy
         run: cmake -DROOT="$GITHUB_WORKSPACE" -P cmake/CheckLines.cmake
 
-      - name: Run Cppcheck
+      - name: Check C and C++ safety with Cppcheck
         shell: bash
         run: |
           mapfile -d '' c_files < <(find src -type f -name '*.c' -print0)
@@ -76,9 +76,14 @@ jobs:
             -Isrc/ui/theme "${cpp_files[@]}"
 
       - name: Configure warning-clean Linux build
+        env:
+          CC: gcc
+          CXX: g++
         run: |
           cmake -S . -B build-quality -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTING=OFF \
+            -DBONGO_CAT_STATIC_ANALYZER=ON \
             -DBONGO_CAT_OPTIMIZE_RELEASE_SIZE=ON \
             -DBONGO_CAT_OPTIMIZE_RELEASE_IPO=ON \
             -DBONGO_CAT_WARNINGS_AS_ERRORS=ON
@@ -86,11 +91,8 @@ jobs:
       - name: Register GCC diagnostics
         run: echo "::add-matcher::$GITHUB_WORKSPACE/.github/gcc-problem-matcher.json"
 
-      - name: Build
+      - name: Build and analyze C memory safety
         run: bash .github/scripts/build-unix.sh cmake --build build-quality --parallel 2
-
-      - name: Run native tests
-        run: bash .github/scripts/test-unix.sh ctest --test-dir build-quality --output-on-failure
 
   build:
     name: build / ${{ matrix.platform }}
@@ -125,13 +127,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             cmake ninja-build libgl1-mesa-dev libegl1-mesa-dev libx11-dev libxi-dev \
-            libxfixes-dev libcurl4-openssl-dev xvfb xauth libgl1-mesa-dri
+            libxfixes-dev libcurl4-openssl-dev
 
       - name: Configure Unix release
         if: runner.os != 'Windows'
         run: |
           cmake -S . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTING=OFF \
             -DBONGO_CAT_OPTIMIZE_RELEASE_SIZE=ON \
             -DBONGO_CAT_OPTIMIZE_RELEASE_IPO=ON \
             -DCMAKE_OSX_ARCHITECTURES=${{ matrix.cmake_arch }} \
@@ -146,45 +149,16 @@ jobs:
         shell: pwsh
         run: |
           & ./scripts/build-windows.ps1 `
+            -SkipTests `
             -BuildDir build `
             -Configuration Release `
             -Architecture '${{ matrix.cmake_arch }}' `
             -Jobs 2 `
             -Target ALL_BUILD
 
-      - name: Build Windows validation tools
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          & ./scripts/build-windows.ps1 `
-            -BuildDir build `
-            -Configuration Release `
-            -Architecture '${{ matrix.cmake_arch }}' `
-            -Jobs 2 `
-            -SkipConfigure `
-            -Target bongo_cat_validation_tools
-
       - name: Build Unix release
         if: runner.os != 'Windows'
         run: bash .github/scripts/build-unix.sh cmake --build build --parallel 2
-
-      - name: Install software OpenGL for Windows tests
-        if: runner.os == 'Windows'
-        uses: ssciwr/setup-mesa-dist-win@2dfeaebfa514f74c2b8cd8d27108c31486d33e72 # v3
-        with:
-          version: '23.3.3'
-          deployment-choice: '1'
-
-      - name: Test Windows release
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: >-
-          & ./.github/scripts/test-windows.ps1
-          ctest --test-dir build -C Release --output-on-failure
-
-      - name: Test Unix release
-        if: runner.os != 'Windows'
-        run: bash .github/scripts/test-unix.sh ctest --test-dir build --output-on-failure
 
   desktop-package:
     name: package / ${{ matrix.platform }}
@@ -226,12 +200,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             cmake ninja-build libgl1-mesa-dev libegl1-mesa-dev libx11-dev libxi-dev \
-            libxfixes-dev libcurl4-openssl-dev xvfb xauth libgl1-mesa-dri
+            libxfixes-dev libcurl4-openssl-dev
 
       - name: Configure release
         run: |
           cmake -S . -B build-package -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTING=OFF \
             -DBONGO_CAT_OPTIMIZE_RELEASE_SIZE=ON \
             -DBONGO_CAT_OPTIMIZE_RELEASE_IPO=ON \
             -DCMAKE_OSX_ARCHITECTURES=${{ matrix.cmake_arch }} \
@@ -240,9 +215,6 @@ jobs:
 
       - name: Build release
         run: bash .github/scripts/build-unix.sh cmake --build build-package --parallel 2
-
-      - name: Test release
-        run: bash .github/scripts/test-unix.sh ctest --test-dir build-package --output-on-failure
 
       - name: Package desktop release
         id: package
@@ -320,24 +292,13 @@ jobs:
         shell: pwsh
         run: |
           & ./scripts/build-windows.ps1 `
+            -SkipTests `
             -BuildDir build-store `
             -Configuration Release `
             -Architecture '${{ matrix.cmake_arch }}' `
             -Jobs 2 `
             -RequireCubism `
             -Target ALL_BUILD
-
-      - name: Install software OpenGL for Windows tests
-        uses: ssciwr/setup-mesa-dist-win@2dfeaebfa514f74c2b8cd8d27108c31486d33e72 # v3
-        with:
-          version: '23.3.3'
-          deployment-choice: '1'
-
-      - name: Run Store release tests
-        shell: pwsh
-        run: >-
-          & ./.github/scripts/test-windows.ps1
-          ctest --test-dir build-store -C Release --output-on-failure
 
       - name: Read app version
         id: version

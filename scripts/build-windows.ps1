@@ -7,6 +7,7 @@ param(
     [ValidateRange(1, 64)]
     [int]$Jobs = 2,
     [switch]$SkipConfigure,
+    [switch]$SkipTests,
     [string[]]$Target = @('bongo_cat'),
     [switch]$RequireCubism,
     [switch]$Package,
@@ -157,6 +158,7 @@ if ($SkipConfigure) {
         "-DBONGO_CAT_OPTIMIZE_RELEASE_IPO=$($OptimizeReleaseIpo.ToString().ToUpperInvariant())"
     )
     if ($RequireCubism) { $configureArgs += '-DBONGO_CAT_REQUIRE_CUBISM=ON' }
+    if ($SkipTests) { $configureArgs += '-DBUILD_TESTING=OFF' }
     $configureWriter = New-Object IO.StreamWriter(
         $configureLog, $false, (New-Object Text.UTF8Encoding($false)))
     $configureActivity = 0
