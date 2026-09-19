@@ -5,7 +5,7 @@
 #include "runtime.h"
 #include "bongo_cat/file.h"
 #include "bongo_cat/path.h"
-#include "preferences_about_internal.h"
+#include "about/preferences_about_internal.h"
 #include "ui_paint_cache.h"
 #include "ui_paint.h"
 
