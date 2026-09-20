@@ -27,6 +27,11 @@ static float parameter(const char *id) {
 
 bool bongo_cat_live2d_set_parameter(BongoCatLive2D *live2d, const char *id, float value) {
     (void)live2d;
+    for (size_t i = 0; i < parameter_count; ++i)
+        if (!strcmp(parameters[i].id, id)) {
+            parameters[i].value = value;
+            return true;
+        }
     if (parameter_count >= sizeof(parameters) / sizeof(parameters[0])) return false;
     snprintf(parameters[parameter_count].id,
         sizeof(parameters[parameter_count].id), "%s", id);
@@ -339,7 +344,72 @@ static void check_stick_deadzone(void) {
     parameter_count = overlay_key_calls = 0;
 }
 
+static void check_four_hands(void) {
+    static BongoCatApp app;
+    app.live2d = (BongoCatLive2D *)(uintptr_t)1;
+    app.loaded_mode = BONGO_CAT_MODE_GAMEPAD;
+    bongo_cat_app_refresh_hands(&app);
+    CHECK(parameter("CatParamStickShowLeftHand") == 0.0f);
+    app.settings.model.gamepad_four_hands = true;
+    bongo_cat_app_refresh_hands(&app);
+    CHECK(parameter("CatParamStickShowLeftHand") == 1.0f);
+    CHECK(parameter("CatParamStickShowRightHand") == 1.0f);
+    CHECK(parameter("CatParamLeftHandDown") == 0.0f &&
+        parameter("CatParamRightHandDown") == 0.0f && app.active_input_count == 0);
+    CHECK(app.dirty && app.input_diagnostics.pending);
+    CHECK(overlay_key_calls == 0 && app.input_diagnostics.replays == 0);
+    BongoCatInputEvent event = input(BONGO_CAT_INPUT_GAMEPAD_AXIS, "LeftStickX", .019f);
+    bongo_cat_app_apply_input(&app, &event);
+    CHECK(app.left_stick_x == 0.0f && app.active_input_count == 0);
+    CHECK(parameter("CatParamStickShowLeftHand") == 1.0f);
+    event = input(BONGO_CAT_INPUT_KEY_DOWN, "KeyA", 1.0f);
+    bongo_cat_app_apply_input(&app, &event);
+    CHECK(!left_hand); /* feature does not enable keyboard overlays */
+    event.kind = BONGO_CAT_INPUT_KEY_UP;
+    bongo_cat_app_apply_input(&app, &event);
+    bongo_cat_app_reset_gamepad(&app); /* visible even without a controller */
+    CHECK(parameter("CatParamStickShowRightHand") == 1.0f);
+    CHECK(parameter("CatParamLeftHandDown") == 0.0f);
+    CHECK(parameter("CatParamRightHandDown") == 0.0f);
+    event = input(BONGO_CAT_INPUT_GAMEPAD_BUTTON, "South", 1.0f);
+    bongo_cat_app_apply_input(&app, &event);
+    CHECK(right_hand && parameter("CatParamRightHandDown") == 1.0f);
+    CHECK(parameter("CatParamStickShowRightHand") == 1.0f);
+    size_t calls = overlay_key_calls;
+    bongo_cat_app_refresh_hands(&app);
+    CHECK(overlay_key_calls == calls && right_hand && app.active_input_count == 1);
+    event.value = 0.0f;
+    bongo_cat_app_apply_input(&app, &event);
+    CHECK(!right_hand && parameter("CatParamRightHandDown") == 0.0f);
+    CHECK(parameter("CatParamStickShowRightHand") == 1.0f);
+    app.settings.model.gamepad_four_hands = false;
+    bongo_cat_app_refresh_hands(&app);
+    CHECK(parameter("CatParamLeftHandDown") == 0.0f);
+    CHECK(parameter("CatParamRightHandDown") == 0.0f);
+    event = input(BONGO_CAT_INPUT_GAMEPAD_AXIS, "LeftStickX", .5f);
+    bongo_cat_app_apply_input(&app, &event);
+    app.settings.model.gamepad_four_hands = true;
+    bongo_cat_app_refresh_hands(&app);
+    app.settings.model.gamepad_four_hands = false;
+    bongo_cat_app_refresh_hands(&app);
+    CHECK(app.left_stick_x == .5f); /* switching off preserves real input */
+    CHECK(parameter("CatParamStickShowLeftHand") == 1.0f);
+    CHECK(parameter("CatParamStickShowRightHand") == 0.0f);
+    bongo_cat_app_reset_gamepad(&app);
+    app.settings.model.gamepad_four_hands = true;
+    app.left_stick_x = .5f; /* stale controller state cannot leak to other modes */
+    const BongoCatModelMode modes[] = {BONGO_CAT_MODE_STANDARD, BONGO_CAT_MODE_KEYBOARD};
+    for (size_t i = 0; i < sizeof(modes) / sizeof(modes[0]); ++i) {
+        app.loaded_mode = modes[i];
+        bongo_cat_app_refresh_hands(&app);
+        CHECK(parameter("CatParamStickShowLeftHand") == 0.0f);
+        CHECK(parameter("CatParamStickShowRightHand") == 0.0f);
+    }
+    parameter_count = overlay_key_calls = 0;
+}
+
 int main(void) {
+    check_four_hands();
     check_stick_deadzone();
     check_input_modes();
     /* BongoCatApp contains the input queue and model catalogs and is too

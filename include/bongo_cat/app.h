@@ -229,6 +229,8 @@ typedef struct BongoCatApp {
 int bongo_cat_app_run(int argc, char **argv);
 void bongo_cat_app_apply_input(BongoCatApp *app, const BongoCatInputEvent *event);
 void bongo_cat_app_reapply_input(BongoCatApp *app);
+/* Refresh visual hand policy without replaying held inputs or shortcuts. */
+void bongo_cat_app_refresh_hands(BongoCatApp *app);
 void bongo_cat_app_reset_gamepad(BongoCatApp *app);
 void bongo_cat_gamepad_event(BongoCatApp *app, const void *sdl_event);
 void bongo_cat_app_shortcuts(BongoCatApp *app, const BongoCatInputEvent *event);

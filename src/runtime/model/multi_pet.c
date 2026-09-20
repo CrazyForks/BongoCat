@@ -160,9 +160,12 @@ static void reload_secondary_settings(BongoCatApp *app) {
         settings.window.pass_through = app->secondary_control_pass_through;
     bool model_changed = memcmp(&settings.model, &app->settings.model,
         sizeof(settings.model)) != 0;
+    bool hands_changed = settings.model.gamepad_four_hands !=
+        app->settings.model.gamepad_four_hands;
     bool window_changed = memcmp(&settings.window, &app->settings.window,
         sizeof(settings.window)) != 0;
     app->settings = settings;
+    if (hands_changed) bongo_cat_app_refresh_hands(app);
     const BongoCatModelEntry *active = bongo_cat_models_find(&app->models, app->loaded_model);
     if (active && !bongo_cat_mver_shortcuts_load(app, active, &error))
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", error.message);

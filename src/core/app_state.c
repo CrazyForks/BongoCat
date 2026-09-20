@@ -60,12 +60,21 @@ static bool stick_active(float x, float y, bool pressed) {
 }
 
 static void update_hands(BongoCatApp *app) {
-    bool left_stick = stick_active(app->left_stick_x,
-        app->left_stick_y, app->left_stick_pressed);
-    bool right_stick = stick_active(app->right_stick_x,
-        app->right_stick_y, app->right_stick_pressed);
-    bool left = left_stick || bongo_cat_overlay_hand_active(app->overlay, false);
-    bool right = right_stick || bongo_cat_overlay_hand_active(app->overlay, true);
+    /* A visual preference, independent of physical input and its deadzone. */
+    bool gamepad = app->loaded_mode == BONGO_CAT_MODE_GAMEPAD;
+    bool four_hands = gamepad &&
+        app->settings.model.gamepad_four_hands;
+    bool left_stick = gamepad && (four_hands || stick_active(app->left_stick_x,
+        app->left_stick_y, app->left_stick_pressed));
+    bool right_stick = gamepad && (four_hands || stick_active(app->right_stick_x,
+        app->right_stick_y, app->right_stick_pressed));
+    /* HandDown hides the resting paw so its input overlay can replace it.
+       Four-hands mode keeps those resting paws alongside the stick hands;
+       only a real button overlay should hide a resting paw in this mode. */
+    bool left = (!four_hands && left_stick) ||
+        bongo_cat_overlay_hand_active(app->overlay, false);
+    bool right = (!four_hands && right_stick) ||
+        bongo_cat_overlay_hand_active(app->overlay, true);
     app->input_diagnostics.hands_seen |= (left ? 1u : 0u) | (right ? 2u : 0u);
     bongo_cat_live2d_set_parameter(app->live2d, "CatParamStickShowLeftHand", left_stick);
     bongo_cat_live2d_set_parameter(app->live2d, "CatParamStickShowRightHand", right_stick);
@@ -73,6 +82,13 @@ static void update_hands(BongoCatApp *app) {
         left ? 1.0f : 0.0f);
     bongo_cat_live2d_set_parameter(app->live2d, "CatParamRightHandDown",
         right ? 1.0f : 0.0f);
+}
+
+void bongo_cat_app_refresh_hands(BongoCatApp *app) {
+    if (!app || !app->live2d) return;
+    update_hands(app);
+    app->input_diagnostics.pending = true;
+    app->dirty = true;
 }
 
 static bool apply_key(BongoCatApp *app, const char *name, bool pressed) {

@@ -12,6 +12,7 @@
         "title": "偏好",
         "labels": {
           "modelSettings": "模型",
+          "gamepadFourHands": "手柄四手模式",
           "mirrorMode": "镜像模式",
           "mouseMirror": "鼠标镜像",
           "mouseCentered": "鼠标以桌宠为中心",
@@ -33,6 +34,7 @@
         },
         "hints": {
           "hoverUnavailable": "当前桌面环境暂不支持鼠标移入隐藏。",
+          "gamepadFourHands": "在手柄模式下常驻显示额外两只手，四手一起玩！具体效果取决于模型。",
           "gameInput": "游戏中桌宠没反应？",
           "gameInputHelp": "试试以管理员身份启动 BongoCat，并将游戏设为窗口模式。",
           "passThrough": "右键托盘图标也可关闭此功能",

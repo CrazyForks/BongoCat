@@ -56,6 +56,7 @@ static bool read_model(yyjson_val *object, BongoCatModelPreferences *value,
         read_bool(object, "centerPointerTracking", &value->mouse_centered,
             error) &&
         read_bool(object, "ignorePointerInput", &value->ignore_mouse, error) &&
+        read_bool(object, "gamepadFourHands", &value->gamepad_four_hands, error) &&
         read_int(object, "maximumFps", &value->max_fps, error);
 }
 

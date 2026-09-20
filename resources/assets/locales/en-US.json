@@ -12,6 +12,7 @@
         "title": "Preferences",
         "labels": {
           "modelSettings": "Model",
+          "gamepadFourHands": "Gamepad Four-Hand Mode",
           "mirrorMode": "Mirror Mode",
           "mouseMirror": "Mouse Mirror",
           "mouseCentered": "Mouse Centered on Desktop Pet",
@@ -33,6 +34,7 @@
         },
         "hints": {
           "hoverUnavailable": "Hover hiding is unavailable in the current desktop environment.",
+          "gamepadFourHands": "Keep two extra hands visible in gamepad mode. Appearance depends on the model.",
           "gameInput": "Pet not responding in games?",
           "gameInputHelp": "Try running BongoCat as administrator and setting the game to windowed mode.",
           "passThrough": "You can also turn this off by right-clicking the tray icon",

@@ -12,6 +12,7 @@
         "title": "환경 설정",
         "labels": {
           "modelSettings": "모델",
+          "gamepadFourHands": "게임패드 네 손 모드",
           "mirrorMode": "미러 모드",
           "mouseMirror": "마우스 반전",
           "mouseCentered": "마우스를 데스크톱 펫 중심으로",
@@ -33,6 +34,7 @@
         },
         "hints": {
           "hoverUnavailable": "현재 데스크톱 환경에서는 마우스를 올려 숨기기 기능을 사용할 수 없습니다.",
+          "gamepadFourHands": "게임패드 모드에서 손 두 개를 추가로 항상 표시합니다. 모습은 모델에 따라 달라집니다.",
           "gameInput": "게임 중 데스크톱 펫이 반응하지 않나요?",
           "gameInputHelp": "BongoCat을 관리자 권한으로 실행하고 게임을 창 모드로 설정해 보세요.",
           "passThrough": "트레이 아이콘을 우클릭해서도 끌 수 있습니다",

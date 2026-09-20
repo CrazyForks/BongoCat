@@ -16,6 +16,7 @@ static void check_defaults_and_validation(void) {
         !settings.model.multiple_pets);
     CHECK(settings.window.always_on_top && !settings.window.keep_in_screen);
     CHECK(!settings.window.obs_background);
+    CHECK(!settings.model.gamepad_four_hands);
     CHECK(!settings.window.random_motion &&
         settings.window.random_motion_interval_seconds ==
         BONGO_CAT_DEFAULT_RANDOM_MOTION_SECONDS);

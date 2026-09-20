@@ -12,6 +12,7 @@
         "title": "Préférences",
         "labels": {
           "modelSettings": "Modèle",
+          "gamepadFourHands": "Mode quatre mains à la manette",
           "mirrorMode": "Mode miroir",
           "mouseMirror": "Miroir de la souris",
           "mouseCentered": "Souris centrée sur le compagnon",
@@ -33,6 +34,7 @@
         },
         "hints": {
           "hoverUnavailable": "Le masquage au survol est indisponible dans cet environnement de bureau.",
+          "gamepadFourHands": "Affiche en permanence deux mains supplémentaires en mode manette. Le rendu dépend du modèle.",
           "gameInput": "La mascotte ne réagit pas en jeu ?",
           "gameInputHelp": "Essayez de lancer BongoCat en tant qu’administrateur et de passer le jeu en mode fenêtré.",
           "passThrough": "Désactivation possible aussi par clic droit sur l’icône de la zone de notification",

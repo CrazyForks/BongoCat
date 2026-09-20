@@ -12,6 +12,7 @@
         "title": "Preferencias",
         "labels": {
           "modelSettings": "Modelo",
+          "gamepadFourHands": "Modo de cuatro manos con mando",
           "mirrorMode": "Modo espejo",
           "mouseMirror": "Invertir ratón",
           "mouseCentered": "Ratón centrado en la mascota",
@@ -33,6 +34,7 @@
         },
         "hints": {
           "hoverUnavailable": "Ocultar al pasar el cursor no está disponible en el entorno de escritorio actual.",
+          "gamepadFourHands": "Muestra siempre dos manos adicionales en el modo mando. El aspecto depende del modelo.",
           "gameInput": "¿La mascota no responde al jugar?",
           "gameInputHelp": "Prueba a ejecutar BongoCat como administrador y a poner el juego en modo ventana.",
           "passThrough": "También puedes desactivarlo con un clic derecho en el icono de la bandeja",

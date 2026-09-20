@@ -199,6 +199,15 @@ static void hide_fade(struct nk_command_buffer *c, struct nk_rect b,
     line(c, b, 18, 7, 18, 11, trail);
 }
 
+static void gamepad_four_hands(struct nk_command_buffer *c, struct nk_rect b,
+    struct nk_color color) {
+    nk_stroke_rect(c, nk_rect(b.x + 2, b.y + 5, 14, 9), 3, 1.5f, color);
+    line(c, b, 4, 9, 8, 9, color); line(c, b, 6, 7, 6, 11, color);
+    dot(c, b, 12, 8, 2, color); dot(c, b, 14, 11, 2, color);
+    dot(c, b, 3, 2, 3, color); dot(c, b, 15, 2, 3, color);
+    dot(c, b, 3, 17, 3, color); dot(c, b, 15, 17, 3, color);
+}
+
 bool bongo_cat_pref_row_icon_draw(struct nk_command_buffer *canvas,
     struct nk_rect bounds, BongoCatPrefIcon icon, struct nk_color color) {
     typedef void (*Draw)(struct nk_command_buffer *, struct nk_rect,
@@ -208,7 +217,7 @@ bool bongo_cat_pref_row_icon_draw(struct nk_command_buffer *canvas,
         random_expression, random_motion, mirror, mouse_mirror, mouse_centered,
         ignore_mouse,
         max_fps, autostart, administrator, language, theme, shortcut_visibility,
-        shortcut_preferences, shortcut_menu, hide_fade};
+        shortcut_preferences, shortcut_menu, hide_fade, gamepad_four_hands};
     int index = icon - BONGO_CAT_PREF_ICON_MULTIPLE_MODELS;
     int count = (int)(sizeof(draws) / sizeof(draws[0]));
     if (index < 0 || index >= count) return false;

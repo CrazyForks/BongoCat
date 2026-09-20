@@ -69,12 +69,13 @@ void bongo_cat_app_log_input(BongoCatApp *app, bool flush) {
         (model && model->mode == BONGO_CAT_MODE_GAMEPAD)) {
         BongoCatOverlayInputDiagnostics overlay = bongo_cat_overlay_input_diagnostics(app->overlay);
         SDL_LogInfo(BONGO_CAT_LOG_INPUT,
-            "[input] hand-state model=%s stick_deadzone=%.3f hands_seen=%u overlay_hands=%u "
+            "[input] hand-state model=%s four_hands=%d stick_deadzone=%.3f hands_seen=%u overlay_hands=%u "
             "model_hands=%.3f,%.3f stick_hands=%.3f,%.3f "
             "sticks=%.3f,%.3f,%.3f,%.3f active_gamepad=%u last_gamepad=%s:%.3f "
             "held_inputs=%zu last_visual_action=%s expression=%d "
             "overlay_directory=%s adapter_match=%d last_overlay=%s effect=%s texture_failures=%llu",
-            app->loaded_model, BONGO_CAT_GAMEPAD_STICK_DEADZONE,
+            app->loaded_model, app->settings.model.gamepad_four_hands,
+            BONGO_CAT_GAMEPAD_STICK_DEADZONE,
             app->input_diagnostics.hands_seen, overlay.active_hands,
             input_parameter(app, "CatParamLeftHandDown"),
             input_parameter(app, "CatParamRightHandDown"),
