@@ -34,7 +34,7 @@
         },
         "hints": {
           "hoverUnavailable": "目前桌面環境暫不支援滑鼠移入隱藏。",
-          "gamepadFourHands": "在手把模式下常駐顯示額外兩隻手，四手一起玩！實際效果依模型而定。",
+          "gamepadFourHands": "在手把模式下常駐顯示額外兩隻手，四手一起玩！實際效果依模型而定",
           "gameInput": "遊戲中桌寵沒反應？",
           "gameInputHelp": "試試以系統管理員身分啟動 BongoCat，並將遊戲設為視窗模式。",
           "passThrough": "右鍵點擊系統匣圖示也可關閉此功能",

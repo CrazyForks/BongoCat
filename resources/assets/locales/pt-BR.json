@@ -34,7 +34,7 @@
         },
         "hints": {
           "hoverUnavailable": "Ocultar ao passar o mouse não está disponível no ambiente de desktop atual.",
-          "gamepadFourHands": "Mantém duas mãos extras visíveis no modo controle. A aparência depende do modelo.",
+          "gamepadFourHands": "Mantém duas mãos extras visíveis no modo controle. A aparência depende do modelo",
           "gameInput": "O mascote não responde ao jogar?",
           "gameInputHelp": "Tente executar o BongoCat como administrador e colocar o jogo em modo janela.",
           "passThrough": "Também é possível desativar pelo clique direito no ícone da bandeja",
