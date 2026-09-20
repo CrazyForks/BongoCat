@@ -64,7 +64,9 @@ static bool render(BongoCatApp *app, bool present) {
         bongo_cat_live2d_prepare_cover_capture(app->live2d);
     glViewport(0, 0, width, height);
     bongo_cat_live2d_set_mirror(app->live2d, app->settings.model.mirror);
+    bongo_cat_diagnostics_phase("model-draw");
     bongo_cat_live2d_draw(app->live2d);
+    bongo_cat_diagnostics_phase("overlay-draw");
     if (content_viewport)
         glViewport(content_x, content_y, content_width, content_height);
     bongo_cat_overlay_draw_pointer_before_keys(app->overlay);
@@ -94,6 +96,7 @@ static bool render(BongoCatApp *app, bool present) {
     bool reveal_startup = app->startup_visibility_pending &&
         app->session.window.visible;
     bongo_cat_window_mask_corners(app, width, height);
+    bongo_cat_diagnostics_phase("frame-readback-and-hit-test");
     bongo_cat_frame_audit(app, width, height);
     bongo_cat_window_capture_pointer_hit(app);
     /* Keep the native window hidden while diagnostics/readback finish. The
@@ -181,17 +184,22 @@ static bool take_update_shutdown(BongoCatApp *app) {
 
 void bongo_cat_app_loop(BongoCatApp *app) {
     while (app->running) {
+        bongo_cat_diagnostics_phase("loop-prepare");
         int wait_ms = bongo_cat_window_wait_timeout(app, SDL_GetTicksNS());
         if (app->secondary_pet && wait_ms > 100) wait_ms = 100;
         bongo_cat_preferences_input_begin(app->preferences);
         SDL_Event event;
+        /* An unbounded idle wait is normal; a bounded frame wait should return. */
+        bongo_cat_diagnostics_phase(wait_ms >= 0 && wait_ms < 5000 ? "event-wait" : NULL);
         if (bongo_cat_wait_event(&event, wait_ms)) {
+            bongo_cat_diagnostics_phase("event-dispatch");
             handle_event(app, &event);
             unsigned queued = 0;
             while (queued++ < 256 && SDL_PollEvent(&event))
                 handle_event(app, &event);
         }
         bongo_cat_preferences_input_end(app->preferences);
+        bongo_cat_diagnostics_phase("model-watch-and-refresh");
         uint64_t now = SDL_GetTicksNS();
         bongo_cat_preferences_model_watch(app->preferences, now);
         bongo_cat_model_refresh_update(app);
@@ -199,33 +207,49 @@ void bongo_cat_app_loop(BongoCatApp *app) {
         if (take_update_shutdown(app)) continue;
         now = SDL_GetTicksNS();
         bongo_cat_window_update_wheel_animation(app, now);
+        bongo_cat_diagnostics_phase("snapshot-and-multi-pet");
         bongo_cat_window_snapshot_update(app, now);
         bongo_cat_multi_pet_update(app, now);
-        bongo_cat_random_expression_update(app, now);
+        bongo_cat_diagnostics_phase("random-behavior");
+        bongo_cat_random_behavior_update(app, now);
+        bongo_cat_diagnostics_phase("audio-and-display-recovery");
         bongo_cat_audio_update(app->audio);
         bongo_cat_window_update_display_recovery(app, now);
         bongo_cat_runtime_flow_update(app, now);
         bongo_cat_window_apply_pending_resize(app);
         bongo_cat_app_drain_input(app, true);
+        if (app->context_menu_requested) {
+            app->context_menu_requested = false;
+            bongo_cat_diagnostics_phase(NULL); /* Modal menu owns its own loop. */
+            bongo_cat_window_show_context_menu(app);
+        }
+        bongo_cat_diagnostics_phase("hover-and-pointer-hit-test");
         now = SDL_GetTicksNS();
         bongo_cat_app_update_hover(app, now);
         bongo_cat_app_update_hover_fade(app, now);
+        bongo_cat_diagnostics_phase("model-update");
         if (bongo_cat_model_frame_due(app, now)) update_model(app, now);
         else if (!app->session.window.visible || app->window_minimized) {
             app->last_frame_ns = now;
             bongo_cat_memory_policy_idle();
         }
+        bongo_cat_diagnostics_phase("model-cover-capture");
         bongo_cat_app_capture_pending_model_cover(app);
+        bongo_cat_diagnostics_phase("pet-render");
         if (app->session.window.visible && !app->window_minimized && app->dirty)
             render(app, true);
+        bongo_cat_diagnostics_phase("preferences-render");
         bongo_cat_preferences_render(app->preferences);
+        bongo_cat_diagnostics_phase("model-selection");
         bongo_cat_preferences_process_model_selection(app->preferences);
         if (app->session.window.visible && !app->window_minimized && app->dirty)
             render(app, true);
+        bongo_cat_diagnostics_phase("tray-and-config-save");
         bongo_cat_tray_sync(app->tray);
         bongo_cat_window_raise_when_due(app, now);
         bongo_cat_config_store_update(app, now);
         if (app->smoke_deadline_ns && now >= app->smoke_deadline_ns)
             app->running = false;
     }
+    bongo_cat_diagnostics_phase("loop-exit");
 }

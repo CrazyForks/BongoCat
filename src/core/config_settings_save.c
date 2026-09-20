@@ -34,6 +34,8 @@ static bool write_window(yyjson_mut_doc *doc, yyjson_mut_val *object,
             value->obs_background) &&
         yyjson_mut_obj_add_bool(doc, object, "randomExpression",
             value->random_expression) &&
+        yyjson_mut_obj_add_bool(doc, object, "randomMotion",
+            value->random_motion) &&
         yyjson_mut_obj_add_bool(doc, object, "roundedCorners",
             value->rounded_corners) &&
         yyjson_mut_obj_add_real(doc, object, "cornerRadiusPercent",
@@ -47,7 +49,9 @@ static bool write_window(yyjson_mut_doc *doc, yyjson_mut_val *object,
             value->hide_fade_seconds) &&
         yyjson_mut_obj_add_real(doc, object,
             "randomExpressionIntervalSeconds",
-            value->random_expression_interval_seconds);
+            value->random_expression_interval_seconds) &&
+        yyjson_mut_obj_add_real(doc, object, "randomMotionIntervalSeconds",
+            value->random_motion_interval_seconds);
 }
 
 static bool write_app(yyjson_mut_doc *doc, yyjson_mut_val *object,
@@ -55,6 +59,8 @@ static bool write_app(yyjson_mut_doc *doc, yyjson_mut_val *object,
     return object &&
         yyjson_mut_obj_add_bool(doc, object, "launchAtLogin",
             value->autostart) &&
+        yyjson_mut_obj_add_bool(doc, object, "launchAtLoginAsAdmin",
+            value->autostart_admin) &&
         yyjson_mut_obj_add_bool(doc, object, "showTrayIcon",
             value->tray_visible) &&
         yyjson_mut_obj_add_strcpy(doc, object, "theme",
@@ -70,6 +76,8 @@ static bool write_shortcuts(yyjson_mut_doc *doc, yyjson_mut_val *object,
             value->toggle_pet_visibility) &&
         yyjson_mut_obj_add_strcpy(doc, object, "openSettings",
             value->visible_preferences) &&
+        yyjson_mut_obj_add_strcpy(doc, object, "openMenu",
+            value->open_menu) &&
         yyjson_mut_obj_add_strcpy(doc, object, "toggleModelMirror",
             value->mirror) &&
         yyjson_mut_obj_add_strcpy(doc, object, "toggleClickThrough",

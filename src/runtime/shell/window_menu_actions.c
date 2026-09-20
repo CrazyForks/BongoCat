@@ -28,7 +28,9 @@ static bool select_model(BongoCatApp *app, const char *id) {
 }
 
 void bongo_cat_window_show_context_menu(BongoCatApp *app) {
-    if (!app) return;
+    if (!app || app->context_menu_active) return;
+    app->context_menu_requested = false;
+    app->context_menu_close_requested = false;
     size_t capacity = app->behaviors.count ? app->behaviors.count : 1;
     char (*names)[BONGO_CAT_MENU_LABEL_CAP] = calloc(capacity * 3, sizeof(*names));
     bool *checked = calloc(capacity * 2, sizeof(*checked));
@@ -80,15 +82,18 @@ void bongo_cat_window_show_context_menu(BongoCatApp *app) {
         tr(app, "native.removeDesktopPet", "Close this desktop pet"),
         app->secondary_pet || (app->settings.model.multiple_pets &&
             app->session.additional_model_count > 0), NULL, NULL, NULL, 0,
-        model_cover_directories};
+        model_cover_directories, &app->context_menu_close_requested};
     char (*audio_names)[BONGO_CAT_MENU_LABEL_CAP] = names + capacity * 2;
     bool *audio_checked = checked + capacity;
     labels.audio = tr(app, "pages.preference.model.behaviorModal.labels.audio", "Audio");
     labels.audio_names = audio_names;
     labels.audio_checked = audio_checked;
     bongo_cat_window_audio_labels(app, audio_names, audio_checked, &labels.audio_count);
+    app->context_menu_active = true;
     BongoCatMenuAction action = bongo_cat_platform_context_menu(
         &app->platform, &labels);
+    app->context_menu_active = false;
+    app->context_menu_close_requested = false;
     free(checked);
     free(names);
     if (bongo_cat_window_menu_preview_applied(&preview, action))

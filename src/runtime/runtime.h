@@ -2,6 +2,7 @@
 #define BONGO_CAT_RUNTIME_INTERNAL_H
 
 #include "bongo_cat/app.h"
+#include "bongo_cat/runtime_diagnostics.h"
 #include "bongo_cat/memory_policy.h"
 #include "update_service.h"
 #include "window_snapshot.h"
@@ -96,6 +97,7 @@ void bongo_cat_app_reset_gamepad(BongoCatApp *app);
 void bongo_cat_app_apply_mouse(BongoCatApp *app);
 void bongo_cat_app_reset_pointer_tracking(BongoCatApp *app);
 void bongo_cat_app_drain_input(BongoCatApp *app, bool allow_shortcuts);
+void bongo_cat_app_log_input(BongoCatApp *app, bool flush);
 void bongo_cat_app_apply_mouse_position(BongoCatApp *app, double x, double y,
     float elapsed_seconds);
 bool bongo_cat_app_audit_screen_pointer(BongoCatApp *app);
@@ -124,8 +126,8 @@ void bongo_cat_window_destroy_corner_mask(void);
 void bongo_cat_app_render_now(BongoCatApp *app);
 bool bongo_cat_app_capture_pending_model_cover(BongoCatApp *app);
 void bongo_cat_runtime_flow_update(BongoCatApp *app, uint64_t now);
-void bongo_cat_random_expression_update(BongoCatApp *app, uint64_t now);
-void bongo_cat_random_expression_reset(BongoCatApp *app);
+void bongo_cat_random_behavior_update(BongoCatApp *app, uint64_t now);
+void bongo_cat_random_behavior_reset(BongoCatApp *app);
 bool bongo_cat_system_language(BongoCatLanguage *language);
 void bongo_cat_config_store_load(BongoCatApp *app);
 void bongo_cat_config_store_update(BongoCatApp *app, uint64_t now);

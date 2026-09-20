@@ -2,6 +2,7 @@
 
 #ifdef _WIN32
 #include "windows_snapshot.h"
+#include "windows_hdr.h"
 #endif
 
 #define SNAPSHOT_IDLE_NS 180000000ull
@@ -11,6 +12,9 @@ void bongo_cat_window_snapshot_begin(BongoCatApp *app) {
     app->snapshot_deadline_ns = SDL_GetTicksNS() + SNAPSHOT_IDLE_NS;
     if (app->window_snapshot || app->snapshot_blocked) return;
 #ifdef _WIN32
+    /* The old D3D snapshot also relies on DWM blur-behind. Stay on the live
+       layered presenter during HDR gestures instead of reintroducing it. */
+    if (bongo_cat_windows_hdr_enabled(app->window)) return;
     if (!app->window || !app->live2d || !app->session.window.visible ||
         app->startup_visibility_pending || app->window_minimized || app->hover_hidden ||
         app->hover_fade_active ||
@@ -80,6 +84,9 @@ void bongo_cat_window_snapshot_update(BongoCatApp *app, uint64_t now) {
 #endif
     bool finish = !app->session.window.visible || app->window_minimized ||
         app->settings.window.pass_through || app->hover_hidden;
+#ifdef _WIN32
+    finish = finish || bongo_cat_windows_hdr_enabled(app->window);
+#endif
     if (!app->window_drag_active) {
         float x, y;
         SDL_GetGlobalMouseState(&x, &y);

@@ -11,11 +11,13 @@
 
 void bongo_cat_app_shutdown(BongoCatApp *app, const char *stage,
     int exit_code) {
+    bongo_cat_diagnostics_phase("shutdown");
     bongo_cat_runtime_stage(app, stage);
     SDL_LogInfo(BONGO_CAT_LOG_LIFECYCLE,
         "[runtime] Shutdown started: stage=%s exit_code=%d",
         stage, exit_code);
     bongo_cat_app_capture_behavior_state(app);
+    bongo_cat_app_log_input(app, true);
     bongo_cat_window_snapshot_discard(app);
     bongo_cat_config_store_flush(app);
     bongo_cat_multi_pet_shutdown(app);
@@ -38,4 +40,5 @@ void bongo_cat_app_shutdown(BongoCatApp *app, const char *stage,
     bongo_cat_runtime_log_stop();
     bongo_cat_window_destroy(app);
     bongo_cat_runtime_clean_shutdown(app, exit_code);
+    bongo_cat_diagnostics_stop();
 }

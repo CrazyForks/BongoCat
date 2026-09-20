@@ -21,9 +21,11 @@
           "alwaysOnTop": "Immer im Vordergrund",
           "keepInScreen": "Auf dem Bildschirm halten",
           "windowSize": "Fenstergröße",
-          "windowCorners": "Fensterrundung (%)",
+          "windowCorners": "Fensterrundung",
           "opacity": "Deckkraft",
           "randomExpression": "Zufällige Ausdrücke",
+          "randomMotion": "Zufällige Bewegungen",
+          "secondsUnit": "s",
           "obsBackground": "Einfarbiger Hintergrund",
           "hideOnHover": "Beim Darüberfahren ausblenden",
           "hideFadeSeconds": "Ausblendedauer (s)",
@@ -47,6 +49,7 @@
         "labels": {
           "appSettings": "Anwendung",
           "launchOnStartup": "Beim Systemstart ausführen",
+          "launchAsAdministrator": "Als Administrator starten",
           "showTrayIcon": "Infobereichssymbol anzeigen",
           "appearanceSettings": "Erscheinungsbild",
           "themeMode": "Design",
@@ -259,6 +262,7 @@
     "shortcut": {
       "toggleCat": "Ein-/ausblenden",
       "preferences": "Einstellungen",
+      "openMenu": "Kreismenü ein-/ausblenden",
       "mirror": "Spiegeln",
       "passThrough": "Klicks durchlassen",
       "alwaysOnTop": "Immer im Vordergrund"

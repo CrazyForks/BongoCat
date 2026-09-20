@@ -35,6 +35,8 @@ struct BongoCatPreferences {
     bool ui_initialized;
     BongoCatUIBackend ui;
     unsigned int logo_texture;
+    unsigned int asset_retry_count;
+    uint64_t asset_retry_ns;
     unsigned int icon_texture;
     unsigned int icon_texture_hidpi;
     bool icon_hidpi_attempted;

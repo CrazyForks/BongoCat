@@ -104,6 +104,12 @@ void bongo_cat_app_shortcuts(BongoCatApp *app, const BongoCatInputEvent *event) 
         shortcuts->visible_preferences)) {
         bongo_cat_preferences_visible(app->preferences) ?
             bongo_cat_preferences_close(app->preferences) : bongo_cat_preferences_show(app->preferences);
+    } else if (bongo_cat_shortcut_matches(&app->shortcut_state, event,
+        shortcuts->open_menu)) {
+        /* Open after this input batch, so the modal loop cannot process a
+           key release before the triggering key-down reaches the model. */
+        if (app->context_menu_active) app->context_menu_close_requested = true;
+        else app->context_menu_requested = !app->context_menu_requested;
     } else if (bongo_cat_shortcut_matches(&app->shortcut_state, event, shortcuts->mirror)) {
         app->settings.model.mirror = !app->settings.model.mirror;
         app->model_pointer_anchor_ready = false;

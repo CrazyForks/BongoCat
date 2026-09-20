@@ -171,6 +171,7 @@ bool bongo_cat_window_event(BongoCatApp *app, const SDL_Event *event) {
         }
     }
     if (event->type == SDL_EVENT_WINDOW_EXPOSED ||
+        event->type == SDL_EVENT_WINDOW_HDR_STATE_CHANGED ||
         event->type == SDL_EVENT_WINDOW_SHOWN ||
         event->type == SDL_EVENT_WINDOW_RESTORED) {
         /* An expose can arrive without a restore on XWayland, but a queued

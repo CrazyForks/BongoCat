@@ -95,6 +95,7 @@ set(BONGO_CAT_RUNTIME_MODEL_SOURCES
   src/runtime/model/multi_pet_process.c
   src/runtime/model/multi_pet_settings.c
   src/runtime/model/model_storage.c
+  src/runtime/model/model_random_behavior.c
   src/runtime/model/model_update.c)
 
 set(BONGO_CAT_RUNTIME_IMPORT_SOURCES
@@ -210,6 +211,7 @@ set(BONGO_CAT_UI_RENDERING_SOURCES
   src/ui/rendering/ui_font_atlas_upload.c
   src/ui/rendering/ui_font_reload.c
   src/ui/rendering/ui_native_theme.c
+  src/ui/rendering/ui_present.c
   src/ui/rendering/ui_paint.c
   src/ui/rendering/ui_paint_border.c
   src/ui/rendering/ui_paint_cache.c

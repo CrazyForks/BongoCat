@@ -11,6 +11,7 @@
 #include "runtime.h"
 
 #include <SDL3/SDL.h>
+#include <stdio.h>
 #include <string.h>
 
 static const char *tr(BongoCatApp *app, const char *key, const char *fallback) {
@@ -104,7 +105,7 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
        original units (percent of the short edge) for existing settings. */
     float corner_roundness = window->corner_radius_percent * 2.0f;
     if (bongo_cat_pref_toggle_float(context, "window-corners", tr(app,
-        "pages.preference.cat.labels.windowCorners", "Window Corners (%)"),
+        "pages.preference.cat.labels.windowCorners", "Window Corners"), "%",
         &window->rounded_corners, 0.0f, &corner_roundness,
         100.0f, 1.0f, BONGO_CAT_DEFAULT_WINDOW_CORNER_PERCENT * 2.0f)) {
         window->corner_radius_percent = corner_roundness * 0.5f;
@@ -128,9 +129,17 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
     bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_RANDOM_EXPRESSION);
     bongo_cat_pref_toggle_float(context, "random-expression", tr(app,
         "pages.preference.cat.labels.randomExpression", "Random Expressions"),
+        tr(app, "pages.preference.cat.labels.secondsUnit", "s"),
         &window->random_expression, 1.0f,
         &window->random_expression_interval_seconds, 3600.0f, 1.0f,
         BONGO_CAT_DEFAULT_RANDOM_EXPRESSION_SECONDS);
+    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_RANDOM_MOTION);
+    bongo_cat_pref_toggle_float(context, "random-motion", tr(app,
+        "pages.preference.cat.labels.randomMotion", "Random Motions"),
+        tr(app, "pages.preference.cat.labels.secondsUnit", "s"),
+        &window->random_motion, 1.0f,
+        &window->random_motion_interval_seconds, 3600.0f, 1.0f,
+        BONGO_CAT_DEFAULT_RANDOM_MOTION_SECONDS);
 
     section_gap(context, 10);
     bongo_cat_pref_section_icon(context, tr(app,
@@ -169,14 +178,18 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
         "pages.preference.cat.labels.maxFPS", "Max Frame Rate"), model->max_fps);
 }
 
-static void update_autostart(BongoCatApp *app, bool old_value) {
+static void update_autostart(BongoCatApp *app, bool old_value, bool old_admin) {
     BongoCatError error = {0};
-    if (bongo_cat_platform_set_autostart(app->settings.app.autostart, &error) == BONGO_CAT_OK) return;
+    if (bongo_cat_platform_set_autostart(app->settings.app.autostart,
+        app->settings.app.autostart_admin, &error) == BONGO_CAT_OK) return;
     app->settings.app.autostart = old_value;
+    app->settings.app.autostart_admin = old_admin;
     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", error.message);
-    bongo_cat_preferences_notice_show(app, tr(app,
+    char message[1024];
+    snprintf(message, sizeof(message), "%s\n%s", tr(app,
         "pages.preference.general.hints.autostartFailed",
-        "Unable to update launch-on-startup settings"), true);
+        "Unable to update launch-on-startup settings"), error.message);
+    bongo_cat_preferences_notice_show(app, message, true);
 }
 
 #ifdef __APPLE__
@@ -260,10 +273,22 @@ static void page_general(BongoCatApp *app, struct nk_context *context) {
         "pages.preference.general.labels.appSettings", "Application"),
         BONGO_CAT_PREF_ICON_SECTION_APPLICATION);
     bool old_autostart = options->autostart;
+    bool old_admin = options->autostart_admin;
     bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_AUTOSTART);
     if (bongo_cat_pref_toggle(context, "autostart", tr(app,
         "pages.preference.general.labels.launchOnStartup", "Launch on Startup"), "",
-        &options->autostart)) update_autostart(app, old_autostart);
+        &options->autostart)) update_autostart(app, old_autostart, old_admin);
+#ifdef _WIN32
+    /* Use the same conditional rows as Hide on Hover above. */
+    if (options->autostart) {
+        bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_ADMINISTRATOR);
+        if (bongo_cat_pref_toggle(context, "autostart-admin", tr(app,
+            "pages.preference.general.labels.launchAsAdministrator",
+            "Run as Administrator"), "",
+            &options->autostart_admin))
+            update_autostart(app, options->autostart, old_admin);
+    }
+#endif
     section_gap(context, 7);
     bongo_cat_pref_section_icon(context, tr(app,
         "pages.preference.general.labels.appearanceSettings", "Appearance"),

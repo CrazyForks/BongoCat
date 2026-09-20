@@ -16,6 +16,9 @@ static void check_defaults_and_validation(void) {
         !settings.model.multiple_pets);
     CHECK(settings.window.always_on_top && !settings.window.keep_in_screen);
     CHECK(!settings.window.obs_background);
+    CHECK(!settings.window.random_motion &&
+        settings.window.random_motion_interval_seconds ==
+        BONGO_CAT_DEFAULT_RANDOM_MOTION_SECONDS);
     CHECK(!settings.window.random_expression &&
         settings.window.random_expression_interval_seconds ==
         BONGO_CAT_DEFAULT_RANDOM_EXPRESSION_SECONDS);
@@ -40,6 +43,7 @@ static void check_defaults_and_validation(void) {
     settings.window.obs_background_color = BONGO_CAT_OBS_BACKGROUND_COLOR_COUNT;
     settings.window.hide_delay_seconds = NAN;
     settings.window.random_expression_interval_seconds = NAN;
+    settings.window.random_motion_interval_seconds = NAN;
     session.window.scale_percent = -2.0f;
     session.window.opacity_percent = NAN;
     session.active_behavior_count = 3;
@@ -59,6 +63,14 @@ static void check_defaults_and_validation(void) {
         CHECK(settings.model.max_fps == new_fps[i]);
     }
     CHECK(settings.window.hide_delay_seconds == 0.0f);
+    CHECK(settings.window.random_motion_interval_seconds ==
+        BONGO_CAT_DEFAULT_RANDOM_MOTION_SECONDS);
+    settings.window.random_motion_interval_seconds = 0.0f;
+    bongo_cat_settings_validate(&settings);
+    CHECK(settings.window.random_motion_interval_seconds == 1.0f);
+    settings.window.random_motion_interval_seconds = 3601.0f;
+    bongo_cat_settings_validate(&settings);
+    CHECK(settings.window.random_motion_interval_seconds == 3600.0f);
     CHECK(settings.window.random_expression_interval_seconds ==
         BONGO_CAT_DEFAULT_RANDOM_EXPRESSION_SECONDS);
     CHECK(settings.window.obs_background_color ==

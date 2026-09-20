@@ -3,6 +3,7 @@
 #include "windows_capture.h"
 #include "windows_input.h"
 #include "windows_layered.h"
+#include "windows_hdr.h"
 #include "windows_startup.h"
 #ifdef _WIN32
 #include <SDL3/SDL.h>
@@ -82,8 +83,7 @@ void bongo_cat_platform_configure_preferences_window(SDL_Window *window) {
         SDL_WINDOW_TRANSPARENT) != 0;
     bongo_cat_windows_capture_mark_transparent(handle, transparent);
     if (transparent) {
-        bongo_cat_windows_capture_install_transparency_handler(handle);
-        bongo_cat_windows_capture_repair_transparency(handle);
+        bongo_cat_windows_prepare_transparent_ui(window);
     }
 }
 
@@ -133,9 +133,9 @@ BongoCatResult bongo_cat_platform_init(BongoCatPlatform *platform, SDL_Window *w
 void bongo_cat_platform_shutdown(BongoCatPlatform *platform) {
     if (!platform) return;
     HWND window = native_window(platform);
-    if (window) bongo_cat_windows_borderless_uninstall(window);
     bongo_cat_windows_input_stop(platform);
     bongo_cat_windows_layered_destroy(platform);
+    if (window) bongo_cat_windows_borderless_uninstall(window);
     SDL_SetWindowsMessageHook(NULL, NULL);
 }
 

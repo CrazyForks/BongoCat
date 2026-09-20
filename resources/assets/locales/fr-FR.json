@@ -21,9 +21,11 @@
           "alwaysOnTop": "Toujours au premier plan",
           "keepInScreen": "Maintenir à l'écran",
           "windowSize": "Taille de la fenêtre",
-          "windowCorners": "Coins arrondis (%)",
+          "windowCorners": "Coins arrondis",
           "opacity": "Opacité",
           "randomExpression": "Expressions aléatoires",
+          "randomMotion": "Mouvements aléatoires",
+          "secondsUnit": "s",
           "obsBackground": "Arrière-plan uni",
           "hideOnHover": "Masquer au survol",
           "hideFadeSeconds": "Durée du fondu (s)",
@@ -47,6 +49,7 @@
         "labels": {
           "appSettings": "Application",
           "launchOnStartup": "Lancer au démarrage",
+          "launchAsAdministrator": "Démarrer en tant qu’administrateur",
           "showTrayIcon": "Afficher l'icône dans la zone de notification",
           "appearanceSettings": "Apparence",
           "themeMode": "Thème",
@@ -259,6 +262,7 @@
     "shortcut": {
       "toggleCat": "Afficher/masquer",
       "preferences": "Préférences",
+      "openMenu": "Afficher/masquer le menu radial",
       "mirror": "Miroir",
       "passThrough": "Clics traversants",
       "alwaysOnTop": "Toujours au premier plan"

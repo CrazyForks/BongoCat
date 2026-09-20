@@ -1,10 +1,30 @@
 #include "mver_config.h"
 #include "model_import_path.h"
 #include "bongo_cat/path.h"
+#include "bongo_cat/json.h"
+#include <yyjson.h>
 
 #include <stdio.h>
+#include <limits.h>
 
 #include <string.h>
+
+int bongo_cat_mver_gamepad_input_mode(const char *model_directory) {
+    char path[BONGO_CAT_PATH_CAP];
+    if (!bongo_cat_mver_config_find(model_directory, path, sizeof(path))) return -1;
+    yyjson_doc *document = bongo_cat_json_read_file(path,
+        YYJSON_READ_JSON5 | YYJSON_READ_ALLOW_INVALID_UNICODE, NULL);
+    yyjson_val *root = document ? yyjson_doc_get_root(document) : NULL;
+    yyjson_val *input = yyjson_obj_get(yyjson_obj_get(root, "gamepad"), "input_mode");
+    int mode = yyjson_is_int(input) && yyjson_get_int(input) >= 0 &&
+        yyjson_get_int(input) <= INT_MAX ? (int)yyjson_get_int(input) : -1;
+    yyjson_doc_free(document);
+    return mode;
+}
+
+bool bongo_cat_mver_gamepad_keyboard(const char *model_directory) {
+    return bongo_cat_mver_gamepad_input_mode(model_directory) == 0;
+}
 
 /* Match Mver's Live2D configuration lookup, not the model asset directory.
    Lock-hand bindings always use standard; gamepad also uses standard for

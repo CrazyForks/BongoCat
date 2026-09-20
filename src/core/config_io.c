@@ -69,6 +69,7 @@ static bool read_window(yyjson_val *object, BongoCatWindowPreferences *value,
             error) ||
         !read_bool(object, "randomExpression", &value->random_expression,
             error) ||
+        !read_bool(object, "randomMotion", &value->random_motion, error) ||
         !read_bool(object, "roundedCorners", &value->rounded_corners, error) ||
         !read_float(object, "cornerRadiusPercent", &value->corner_radius_percent,
             error) ||
@@ -76,6 +77,8 @@ static bool read_window(yyjson_val *object, BongoCatWindowPreferences *value,
             error) ||
         !read_float(object, "hideFadeSeconds", &value->hide_fade_seconds,
             error) ||
+        !read_float(object, "randomMotionIntervalSeconds",
+            &value->random_motion_interval_seconds, error) ||
         !read_float(object, "randomExpressionIntervalSeconds",
             &value->random_expression_interval_seconds,
             error)) return false;
@@ -93,6 +96,7 @@ static bool read_window(yyjson_val *object, BongoCatWindowPreferences *value,
 static bool read_app(yyjson_val *object, BongoCatApplicationPreferences *value,
     BongoCatError *error) {
     if (!read_bool(object, "launchAtLogin", &value->autostart, error) ||
+        !read_bool(object, "launchAtLoginAsAdmin", &value->autostart_admin, error) ||
         !read_bool(object, "showTrayIcon", &value->tray_visible, error))
         return false;
     const char *text;
@@ -113,6 +117,8 @@ static bool read_shortcuts(yyjson_val *object,
             sizeof(value->toggle_pet_visibility), error) &&
         read_text(object, "openSettings", value->visible_preferences,
             sizeof(value->visible_preferences), error) &&
+        read_text(object, "openMenu", value->open_menu,
+            sizeof(value->open_menu), error) &&
         read_text(object, "toggleModelMirror", value->mirror,
             sizeof(value->mirror), error) &&
         read_text(object, "toggleClickThrough", value->pass_through,

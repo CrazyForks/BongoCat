@@ -146,6 +146,17 @@ if(BUILD_TESTING)
     "${BONGO_CAT_GENERATED_INCLUDE_DIR}" include tests/support)
   add_test(NAME app-state COMMAND bongo_cat_app_state_tests)
 
+  add_executable(bongo_cat_gamepad_tests
+    tests/core/test_gamepad.c src/runtime/input/gamepad.c
+    src/core/app_state.c src/core/sound_shortcut.c)
+  target_include_directories(bongo_cat_gamepad_tests PRIVATE
+    "${BONGO_CAT_GENERATED_INCLUDE_DIR}" include tests/support
+    ${BONGO_CAT_RUNTIME_INTERNAL_INCLUDE_DIRS})
+  target_link_libraries(bongo_cat_gamepad_tests PRIVATE
+    SDL3::SDL3-static bongo_cat_warnings)
+  add_test(NAME gamepad-state COMMAND bongo_cat_gamepad_tests)
+  set_tests_properties(gamepad-state PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30)
+
   set(BONGO_CAT_MVER_IMPORT_TEST_SOURCES
     tests/model_import/test_mver_config.c
     tests/model_import/test_mver_audio.c
@@ -249,6 +260,22 @@ if(BUILD_TESTING)
   endif()
 
   if(WIN32)
+    add_executable(bongo_cat_windows_presentation_tests
+      tests/platform/test_windows_presentation.c)
+    target_include_directories(bongo_cat_windows_presentation_tests PRIVATE
+      src/platform/windows src/ui/rendering tests/support)
+    target_link_libraries(bongo_cat_windows_presentation_tests PRIVATE
+      bongo_cat_runtime bongo_cat_warnings dwmapi user32 gdi32)
+    add_test(NAME windows-presentation COMMAND bongo_cat_windows_presentation_tests)
+    set_tests_properties(windows-presentation PROPERTIES
+      SKIP_RETURN_CODE 77 RUN_SERIAL TRUE TIMEOUT 60 LABELS "interactive;graphics")
+    add_executable(bongo_cat_windows_gl_readback_tests
+      tests/platform/test_windows_gl_readback.c)
+    target_include_directories(bongo_cat_windows_gl_readback_tests PRIVATE
+      src/platform/windows tests/support)
+    target_link_libraries(bongo_cat_windows_gl_readback_tests PRIVATE
+      SDL3::SDL3-static bongo_cat_warnings)
+    add_test(NAME windows-gl-readback COMMAND bongo_cat_windows_gl_readback_tests)
     add_executable(bongo_cat_windows_input_tests
       tests/platform/test_windows_input.c
       tests/platform/test_windows_relative.c
@@ -284,6 +311,7 @@ if(BUILD_TESTING)
   if(UNIX AND NOT APPLE)
     target_link_libraries(bongo_cat_ui_tests PRIVATE m)
     target_link_libraries(bongo_cat_app_state_tests PRIVATE m)
+    target_link_libraries(bongo_cat_gamepad_tests PRIVATE m)
   endif()
 
   if(APPLE)

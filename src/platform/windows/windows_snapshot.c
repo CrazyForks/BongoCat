@@ -1,5 +1,6 @@
 #include "windows_snapshot_internal.h"
 #include "windows_capture.h"
+#include "windows_layered.h"
 
 #include <SDL3/SDL_properties.h>
 
@@ -10,7 +11,7 @@ static HWND native_window(SDL_Window *window) {
 
 void bongo_cat_windows_snapshot_destroy(BongoCatWindowsSnapshot *s) {
     if (!s) return;
-    if (s->suppressed) {
+    if (s->suppressed && !bongo_cat_windows_layered_suppressed(s->source_handle)) {
         SDL_SetWindowOpacity(s->source, s->opacity);
         bongo_cat_windows_capture_restore_transparency(s->source_handle);
     }

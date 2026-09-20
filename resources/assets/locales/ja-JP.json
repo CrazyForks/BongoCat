@@ -21,9 +21,11 @@
           "alwaysOnTop": "常に手前に表示",
           "keepInScreen": "画面内に保持",
           "windowSize": "ウィンドウサイズ",
-          "windowCorners": "ウィンドウの角丸 (%)",
+          "windowCorners": "ウィンドウの角丸",
           "opacity": "不透明度",
           "randomExpression": "ランダム表情",
+          "randomMotion": "ランダムモーション",
+          "secondsUnit": "秒",
           "obsBackground": "単色背景",
           "hideOnHover": "ホバー時に非表示",
           "hideFadeSeconds": "フェード時間 (秒)",
@@ -47,6 +49,7 @@
         "labels": {
           "appSettings": "アプリ",
           "launchOnStartup": "起動時に実行",
+          "launchAsAdministrator": "管理者権限で起動",
           "showTrayIcon": "トレイアイコンを表示",
           "appearanceSettings": "外観",
           "themeMode": "テーマ",
@@ -259,6 +262,7 @@
     "shortcut": {
       "toggleCat": "表示/非表示",
       "preferences": "設定",
+      "openMenu": "円形メニューの表示/非表示",
       "mirror": "ミラー",
       "passThrough": "クリックを透過",
       "alwaysOnTop": "常に手前に表示"

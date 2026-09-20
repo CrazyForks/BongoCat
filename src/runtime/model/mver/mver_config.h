@@ -17,6 +17,9 @@ typedef struct BongoCatMverLabels {
 /* Locate an authored config; no cache or alternate shortcut store. */
 bool bongo_cat_import_mver_config_path(const char *root, char *path, size_t capacity);
 bool bongo_cat_mver_config_find(const char *model_directory, char *path, size_t capacity);
+bool bongo_cat_mver_gamepad_keyboard(const char *model_directory);
+/* -1 when absent, invalid, or unavailable. */
+int bongo_cat_mver_gamepad_input_mode(const char *model_directory);
 
 const char *bongo_cat_mver_binding_mode(const char *mode, const char *field);
 void bongo_cat_mver_labels_clear(BongoCatMverLabels *labels);

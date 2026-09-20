@@ -89,7 +89,9 @@ void dial_event(Dial *d, const SDL_Event *e) {
         if (d->shown && SDL_GetKeyboardFocus() != d->window) d->done = true;
         break;
     case SDL_EVENT_WINDOW_CLOSE_REQUESTED: d->done = true; break;
-    case SDL_EVENT_WINDOW_EXPOSED: d->dirty = true; break;
+    case SDL_EVENT_WINDOW_EXPOSED:
+    case SDL_EVENT_WINDOW_DISPLAY_CHANGED:
+    case SDL_EVENT_WINDOW_HDR_STATE_CHANGED: d->dirty = true; break;
     case SDL_EVENT_WINDOW_RESIZED: case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
     case SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED:
         if (!SDL_GetWindowSize(d->window,&d->width,&d->height) ||

@@ -195,7 +195,22 @@ void test_mver_config(void) {
     CHECK(child(path, sizeof(path), candidate.directory, "motion.json", false));
     CHECK(write_text(path, "{}"));
     CHECK(child(path, sizeof(path), root, "config.json", false));
+    static const struct { const char *json; bool keyboard; } input_modes[] = {
+        {"{gamepad:{input_mode:0}}", true},
+        {"{gamepad:{input_mode:1}}", false},
+        {"{gamepad:{input_mode:2}}", false},
+        {"{gamepad:{}}", false},
+        {"{gamepad:{input_mode:false}}", false},
+        {"{gamepad:{input_mode:\"0\"}}", false},
+        {"{broken", false}
+    };
+    for (size_t i = 0; i < sizeof(input_modes) / sizeof(input_modes[0]); ++i) {
+        CHECK(write_text(path, input_modes[i].json));
+        CHECK(bongo_cat_mver_gamepad_keyboard(candidate.directory) ==
+            input_modes[i].keyboard);
+    }
     CHECK(write_text(path, config));
+    CHECK(bongo_cat_mver_gamepad_input_mode(candidate.directory) == -1);
     yyjson_doc *document = yyjson_read(config, strlen(config), YYJSON_READ_JSON5);
     CHECK(document != NULL);
     const BongoCatModelMode modes[] = {

@@ -4,6 +4,7 @@
 #include "preferences_model_glyphs.h"
 #include "ui_animation.h"
 #include "ui_paint.h"
+#include "ui_present.h"
 #include "bongo_cat/memory_policy.h"
 
 #include <SDL3/SDL_opengl.h>
@@ -28,9 +29,17 @@ void bongo_cat_preferences_render(BongoCatPreferences *value) {
         value->render_retry_ns = now + 1000000000ull;
         SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO,
             "Preferences GL context could not be activated: %s", SDL_GetError());
+        SDL_GL_MakeCurrent(value->app->window, value->app->gl_context);
         return;
     }
     value->render_retry_ns = 0;
+    /* Retry transient image failures, retaining successfully loaded assets. */
+    if ((!value->logo_texture || !value->icon_texture) &&
+        value->asset_retry_count < 3 && now >= value->asset_retry_ns) {
+        value->asset_retry_count++;
+        value->asset_retry_ns = now + 1000000000ull;
+        bongo_cat_preferences_assets_load(value);
+    }
     bool importing = bongo_cat_preferences_import_status(
         value->import_dialog, NULL, NULL, NULL);
     value->import_render_active = importing;
@@ -82,13 +91,14 @@ void bongo_cat_preferences_render(BongoCatPreferences *value) {
         value->transparent_window ? 0.0f : palette.background.b / 255.0f,
         value->transparent_window ? 0.0f : 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    bool rendered = bongo_cat_ui_render(&value->ui);
+    bool rendered = bongo_cat_ui_render(&value->ui) &&
+        value->ui.last_draw_elements && value->ui.nonzero_alpha_vertices;
     bongo_cat_preferences_smoke_frame(value);
     if (!rendered) {
         /* Keep the last complete front buffer instead of presenting corruption. */
         value->render_dirty = true;
         value->render_retry_ns = now + 1000000000ull;
-    } else if (!SDL_GL_SwapWindow(value->window)) {
+    } else if (!bongo_cat_ui_present(value->window)) {
         value->render_dirty = true;
         value->render_retry_ns = now + 1000000000ull;
         SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO,
@@ -101,6 +111,11 @@ void bongo_cat_preferences_render(BongoCatPreferences *value) {
         value->render_dirty = true;
     else if (!value->chrome_dragging && !value->live_resize_active)
         bongo_cat_ui_trim_idle(&value->ui);
+    if ((!value->logo_texture || !value->icon_texture) &&
+        value->asset_retry_count < 3) {
+        value->render_dirty = true;
+        value->render_retry_ns = value->asset_retry_ns;
+    }
     SDL_GL_MakeCurrent(value->app->window, value->app->gl_context);
     bongo_cat_ui_cursor_apply(&value->ui);
     if (close_requested) {

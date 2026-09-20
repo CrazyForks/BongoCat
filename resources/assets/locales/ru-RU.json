@@ -21,9 +21,11 @@
           "alwaysOnTop": "Поверх всех окон",
           "keepInScreen": "Удерживать на экране",
           "windowSize": "Размер окна",
-          "windowCorners": "Скругление углов (%)",
+          "windowCorners": "Скругление углов",
           "opacity": "Непрозрачность",
           "randomExpression": "Случайные выражения",
+          "randomMotion": "Случайные движения",
+          "secondsUnit": "с",
           "obsBackground": "Однотонный фон",
           "hideOnHover": "Скрывать при наведении",
           "hideFadeSeconds": "Длительность затухания (с)",
@@ -47,6 +49,7 @@
         "labels": {
           "appSettings": "Приложение",
           "launchOnStartup": "Запускать при входе в систему",
+          "launchAsAdministrator": "Запуск от имени администратора",
           "showTrayIcon": "Показывать значок в трее",
           "appearanceSettings": "Оформление",
           "themeMode": "Тема",
@@ -259,6 +262,7 @@
     "shortcut": {
       "toggleCat": "Показать/скрыть",
       "preferences": "Настройки",
+      "openMenu": "Показать/скрыть круговое меню",
       "mirror": "Отразить",
       "passThrough": "Пропускать щелчки",
       "alwaysOnTop": "Поверх всех окон"

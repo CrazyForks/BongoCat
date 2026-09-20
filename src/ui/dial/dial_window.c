@@ -2,7 +2,11 @@
 #include "ui_backend.h"
 #include "bongo_cat/log.h"
 #include "bongo_cat/memory.h"
+#include "bongo_cat/runtime_diagnostics.h"
 #include <stdlib.h>
+#ifdef _WIN32
+#include "windows_hdr.h"
+#endif
 
 static bool SDLCALL collect_event(void *userdata, SDL_Event *event) {
     Dial *d = userdata;
@@ -95,6 +99,10 @@ static bool create(Dial *d) {
         }
     }
     if (!d->window) return false;
+    SDL_SyncWindow(d->window);
+#ifdef _WIN32
+    bongo_cat_windows_prepare_transparent_ui(d->window);
+#endif
     d->window_id = SDL_GetWindowID(d->window);
     int sharing = 0;
     SDL_GL_GetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT,&sharing);
@@ -113,6 +121,10 @@ static bool create(Dial *d) {
     d->opening = .85f;
     d->input_after_ns = SDL_GetTicksNS();
     if (!dial_paint_frame(d) || !SDL_ShowWindow(d->window)) return false;
+#ifdef _WIN32
+    /* Present the visible HDR proxy before running preview callbacks/events. */
+    if (!dial_paint_frame(d)) return false;
+#endif
     if (!d->popup) SDL_RaiseWindow(d->window);
     d->dirty = true;
     SDL_LogInfo(BONGO_CAT_LOG_LIFECYCLE,
@@ -141,6 +153,22 @@ BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
         if (!SDL_GetWindowFromID(d->window_id)) { d->done = true; break; }
         d->event_count = 0;
         SDL_FilterEvents(collect_event,d);
+        if (d->done) break;
+        /* Process the global toggle before menu keys, so a binding using
+           Enter or Space closes the menu without activating an item. */
+        if (labels->preview_tick) {
+            if (d->previous_window && d->previous_context)
+                SDL_GL_MakeCurrent(d->previous_window,d->previous_context);
+            labels->preview_tick(labels->preview_userdata);
+        }
+        if (labels->close_requested && *labels->close_requested) {
+            d->done = true;
+            break;
+        }
+        if (!SDL_GL_MakeCurrent(d->window,d->context)) {
+            SDL_LogError(SDL_LOG_CATEGORY_VIDEO,"Radial menu context activation failed: %s",SDL_GetError());
+            break;
+        }
         for (int i = 0; i < d->event_count && !d->done; ++i) {
             dial_event(d,&d->events[i]);
             if (d->done) SDL_LogInfo(BONGO_CAT_LOG_LIFECYCLE,
@@ -149,22 +177,32 @@ BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
                 (unsigned long long)(SDL_GetTicks()-d->opened_at));
         }
         if (d->done) break;
-        if (labels->preview_tick) {
-            if (d->previous_window && d->previous_context)
-                SDL_GL_MakeCurrent(d->previous_window,d->previous_context);
-            labels->preview_tick(labels->preview_userdata);
-        }
-        if (!SDL_GL_MakeCurrent(d->window,d->context)) {
-            SDL_LogError(SDL_LOG_CATEGORY_VIDEO,"Radial menu context activation failed: %s",SDL_GetError());
-            break;
-        }
         dial_covers_tick(d);
+#ifdef _WIN32
+        /* The native monitor query is cached briefly. Keep checking while
+           idle so a color-mode transition cannot leave a stale SDR frame. */
+        bool hdr = bongo_cat_windows_hdr_enabled(d->window);
+        if (hdr != d->hdr_presenting) {
+            d->hdr_presenting = hdr;
+            d->dirty = true;
+        }
+#endif
         animate(d,SDL_GetTicks());
-        if (d->dirty) {
+        if (d->dirty && SDL_GetTicks() >= d->render_retry_at) {
             d->dirty = false;
-            if (!dial_paint_frame(d)) {
+            const char *previous = bongo_cat_diagnostics_phase("radial-menu-render");
+            bool painted = dial_paint_frame(d);
+            bongo_cat_diagnostics_phase(previous);
+            if (!painted) {
                 SDL_LogError(SDL_LOG_CATEGORY_VIDEO,"Radial menu rendering failed: %s",SDL_GetError());
-                break;
+                /* Keep processing input during transient display failures,
+                   but close after persistent rendering failures. */
+                if (++d->render_failures >= 3) break;
+                d->dirty = true;
+                d->render_retry_at = SDL_GetTicks() + 250;
+            } else {
+                d->render_failures = 0;
+                d->render_retry_at = 0;
             }
         }
         uint64_t elapsed = SDL_GetTicks()-start;

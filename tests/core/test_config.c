@@ -51,6 +51,8 @@ void test_config(void) {
     settings.window.obs_background = true;
     settings.window.random_expression = true;
     settings.window.random_expression_interval_seconds = 12.0f;
+    settings.window.random_motion = true;
+    settings.window.random_motion_interval_seconds = 17.0f;
     settings.window.obs_background_color = BONGO_CAT_OBS_BACKGROUND_BLUE;
     settings.app.language = BONGO_CAT_LANG_ZH_CN;
     memcpy(settings.extensions_json, "{\"example\":{\"enabled\":true}}",
@@ -129,6 +131,8 @@ void test_config(void) {
         loaded_settings.window.obs_background &&
         loaded_settings.window.random_expression &&
         loaded_settings.window.random_expression_interval_seconds == 12.0f);
+    CHECK(loaded_settings.window.random_motion &&
+        loaded_settings.window.random_motion_interval_seconds == 17.0f);
     CHECK(loaded_settings.app.language == BONGO_CAT_LANG_ZH_CN);
     CHECK(strstr(loaded_settings.extensions_json,
         "\"enabled\":true") != NULL);

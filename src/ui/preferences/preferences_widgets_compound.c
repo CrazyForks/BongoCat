@@ -1,9 +1,10 @@
 #include "preferences_widgets.h"
 #include "preferences_widgets_internal.h"
 #include "preferences_controls.h"
+#include <stdio.h>
 
 bool bongo_cat_pref_toggle_float(struct nk_context *context, const char *id,
-    const char *title, bool *enabled, float minimum, float *value,
+    const char *title, const char *unit, bool *enabled, float minimum, float *value,
     float maximum, float step, float default_value) {
     FormStyle saved;
     if (!bongo_cat_pref_form_begin(context, id, 0, &saved)) return false;
@@ -15,6 +16,11 @@ bool bongo_cat_pref_toggle_float(struct nk_context *context, const char *id,
         available - input_width - 80.0f - spacing);
     nk_layout_row_begin(context, NK_STATIC, 36, columns);
     nk_layout_row_push(context, left);
+    char label[512];
+    if (unit && unit[0]) {
+        snprintf(label, sizeof(label), "%s (%s)", title, unit);
+        title = label;
+    }
     bongo_cat_pref_form_label(context, title);
     bool changed = false;
     if (*enabled) {

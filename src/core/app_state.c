@@ -6,6 +6,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+static bool gamepad_stick_axis(const char *name) {
+    return !strcmp(name, "LeftStickX") || !strcmp(name, "LeftStickY") ||
+        !strcmp(name, "RightStickX") || !strcmp(name, "RightStickY");
+}
+
 static size_t active_input_index(const BongoCatApp *app,
     BongoCatInputKind kind, const char *name) {
     if (!app || !name) return app ? app->active_input_count : 0;
@@ -59,12 +64,15 @@ static void update_hands(BongoCatApp *app) {
         app->left_stick_y, app->left_stick_pressed);
     bool right_stick = stick_active(app->right_stick_x,
         app->right_stick_y, app->right_stick_pressed);
+    bool left = left_stick || bongo_cat_overlay_hand_active(app->overlay, false);
+    bool right = right_stick || bongo_cat_overlay_hand_active(app->overlay, true);
+    app->input_diagnostics.hands_seen |= (left ? 1u : 0u) | (right ? 2u : 0u);
     bongo_cat_live2d_set_parameter(app->live2d, "CatParamStickShowLeftHand", left_stick);
     bongo_cat_live2d_set_parameter(app->live2d, "CatParamStickShowRightHand", right_stick);
     bongo_cat_live2d_set_parameter(app->live2d, "CatParamLeftHandDown",
-        (left_stick || bongo_cat_overlay_hand_active(app->overlay, false)) ? 1.0f : 0.0f);
+        left ? 1.0f : 0.0f);
     bongo_cat_live2d_set_parameter(app->live2d, "CatParamRightHandDown",
-        (right_stick || bongo_cat_overlay_hand_active(app->overlay, true)) ? 1.0f : 0.0f);
+        right ? 1.0f : 0.0f);
 }
 
 static bool apply_key(BongoCatApp *app, const char *name, bool pressed) {
@@ -75,6 +83,13 @@ static bool apply_key(BongoCatApp *app, const char *name, bool pressed) {
     return true;
 }
 
+static bool keyboard_hands_enabled(const BongoCatApp *app) {
+    /* Authored keyboard simulation is the only gamepad-mode exception.
+       Do not infer input support from leftover/shared overlay textures. */
+    return app->loaded_mode != BONGO_CAT_MODE_GAMEPAD ||
+        app->loaded_gamepad_keyboard;
+}
+
 static void set_axis(BongoCatApp *app, const char *id, float input) {
     BongoCatParameterRange range;
     if (!bongo_cat_live2d_parameter(app->live2d, id, &range)) return;
@@ -82,6 +97,11 @@ static void set_axis(BongoCatApp *app, const char *id, float input) {
     if (value < range.minimum) value = range.minimum;
     if (value > range.maximum) value = range.maximum;
     bongo_cat_live2d_set_parameter(app->live2d, id, value);
+}
+
+static void apply_gamepad_key(BongoCatApp *app, const char *name, bool pressed) {
+    if (apply_key(app, name, pressed) && pressed)
+        app->input_diagnostics.gamepad_overlays++;
 }
 
 static void apply_gamepad(BongoCatApp *app, const BongoCatInputEvent *event) {
@@ -96,15 +116,15 @@ static void apply_gamepad(BongoCatApp *app, const BongoCatInputEvent *event) {
         id = "CatParamStickRY"; app->right_stick_y = event->value;
     } else if (strcmp(event->name, "LeftThumb") == 0) {
         app->left_stick_pressed = event->value > 0.0f;
-        apply_key(app, event->name, app->left_stick_pressed);
+        apply_gamepad_key(app, event->name, app->left_stick_pressed);
         bongo_cat_live2d_set_parameter(app->live2d, "CatParamStickLeftDown",
             app->left_stick_pressed);
     } else if (strcmp(event->name, "RightThumb") == 0) {
         app->right_stick_pressed = event->value > 0.0f;
-        apply_key(app, event->name, app->right_stick_pressed);
+        apply_gamepad_key(app, event->name, app->right_stick_pressed);
         bongo_cat_live2d_set_parameter(app->live2d, "CatParamStickRightDown",
             app->right_stick_pressed);
-    } else apply_key(app, event->name, event->value > 0.05f);
+    } else apply_gamepad_key(app, event->name, event->value > 0.05f);
     if (id) set_axis(app, id, event->value);
     update_hands(app);
     app->dirty = true;
@@ -152,17 +172,52 @@ void bongo_cat_app_apply_input(BongoCatApp *app, const BongoCatInputEvent *event
     if (!app || !event) return;
     bool keyboard = event->kind == BONGO_CAT_INPUT_KEY_DOWN ||
         event->kind == BONGO_CAT_INPUT_KEY_UP;
+    if (keyboard) app->input_diagnostics.received_keys++;
+    else if (event->kind == BONGO_CAT_INPUT_MOUSE_DOWN ||
+        event->kind == BONGO_CAT_INPUT_MOUSE_UP) app->input_diagnostics.mouse_buttons++;
+    else if (event->kind == BONGO_CAT_INPUT_GAMEPAD_BUTTON)
+        app->input_diagnostics.gamepad_buttons++;
+    else if (event->kind == BONGO_CAT_INPUT_GAMEPAD_AXIS)
+        app->input_diagnostics.gamepad_axes++;
+    else return;
+    app->input_diagnostics.pending = true;
+    if (event->kind == BONGO_CAT_INPUT_GAMEPAD_BUTTON ||
+        event->kind == BONGO_CAT_INPUT_GAMEPAD_AXIS) {
+        /* Store only the last controller control, never a keyboard history. */
+        memcpy(app->input_diagnostics.last_gamepad, event->name, sizeof(event->name));
+        app->input_diagnostics.last_gamepad[sizeof(event->name) - 1] = '\0';
+        app->input_diagnostics.last_gamepad_value = event->value;
+    }
     if (!app->live2d) {
         if (keyboard) app->input_diagnostics.no_model_keys++;
         return;
+    }
+    BongoCatInputEvent filtered;
+    if (event->kind == BONGO_CAT_INPUT_GAMEPAD_AXIS &&
+        gamepad_stick_axis(event->name) &&
+        fabsf(event->value) <= BONGO_CAT_GAMEPAD_STICK_DEADZONE) {
+        /* Filter before tracking held inputs AND applying model parameters.
+           Returning to center must release the hand even if the hardware
+           never reports exactly zero. Keep triggers and stick clicks intact. */
+        filtered = *event;
+        filtered.value = 0.0f;
+        if (event->value != 0.0f) app->input_diagnostics.stick_deadzone_events++;
+        event = &filtered;
     }
     active_input_update(app, event);
     switch (event->kind) {
     case BONGO_CAT_INPUT_KEY_DOWN:
     case BONGO_CAT_INPUT_KEY_UP:
-        if (apply_key(app, event->name, event->kind == BONGO_CAT_INPUT_KEY_DOWN))
+        if (!keyboard_hands_enabled(app)) {
+            app->input_diagnostics.ignored_keys++;
+            app->input_diagnostics.mode_blocked_keys++;
+            break;
+        }
+        if (apply_key(app, event->name, event->kind == BONGO_CAT_INPUT_KEY_DOWN)) {
             app->input_diagnostics.mapped_keys++;
-        else app->input_diagnostics.unmapped_keys++;
+            if (event->kind == BONGO_CAT_INPUT_KEY_DOWN)
+                app->input_diagnostics.keyboard_overlays++;
+        } else app->input_diagnostics.unmapped_keys++;
         break;
     case BONGO_CAT_INPUT_MOUSE_DOWN:
     case BONGO_CAT_INPUT_MOUSE_UP: {
@@ -200,23 +255,30 @@ void bongo_cat_app_apply_input(BongoCatApp *app, const BongoCatInputEvent *event
         break;
     }
     case BONGO_CAT_INPUT_GAMEPAD_BUTTON:
-    case BONGO_CAT_INPUT_GAMEPAD_AXIS: apply_gamepad(app, event); break;
+    case BONGO_CAT_INPUT_GAMEPAD_AXIS:
+        if (app->loaded_mode == BONGO_CAT_MODE_GAMEPAD) apply_gamepad(app, event);
+        else app->input_diagnostics.ignored_gamepad++;
+        break;
     default: break;
     }
 }
 
 void bongo_cat_app_reapply_input(BongoCatApp *app) {
     if (!app || !app->live2d) return;
+    app->input_diagnostics.replays++;
+    app->input_diagnostics.pending = true;
     bongo_cat_live2d_set_parameter(app->live2d, "ParamMouseLeftDown",
         app->left_mouse_down ? 1.0f : 0.0f);
     bongo_cat_live2d_set_parameter(app->live2d, "ParamMouseRightDown",
         app->right_mouse_down ? 1.0f : 0.0f);
     for (size_t i = 0; i < app->active_input_count; ++i) {
         BongoCatInputEvent *event = &app->active_inputs[i];
-        if (event->kind == BONGO_CAT_INPUT_KEY_DOWN)
-            apply_key(app, event->name, true);
-        else if (event->kind == BONGO_CAT_INPUT_GAMEPAD_BUTTON ||
-            event->kind == BONGO_CAT_INPUT_GAMEPAD_AXIS)
+        if (event->kind == BONGO_CAT_INPUT_KEY_DOWN) {
+            if (!keyboard_hands_enabled(app)) app->input_diagnostics.replay_blocked_keys++;
+            else if (apply_key(app, event->name, true)) app->input_diagnostics.keyboard_overlays++;
+        } else if (app->loaded_mode == BONGO_CAT_MODE_GAMEPAD &&
+            (event->kind == BONGO_CAT_INPUT_GAMEPAD_BUTTON ||
+             event->kind == BONGO_CAT_INPUT_GAMEPAD_AXIS))
             apply_gamepad(app, event);
     }
     update_hands(app);
@@ -316,7 +378,8 @@ bool bongo_cat_app_shortcut_conflicts(BongoCatApp *app,
     if (!app || !shortcut || !*shortcut) return false;
     const BongoCatShortcutPreferences *global = &app->settings.shortcuts;
     const char *keys[] = {global->toggle_pet_visibility, global->visible_preferences,
-        global->mirror, global->pass_through, global->always_on_top};
+        global->mirror, global->pass_through, global->always_on_top,
+        global->open_menu};
     for (size_t i = 0; i < sizeof(keys) / sizeof(keys[0]); ++i)
         if (keys[i] != exclude && binding_equal(keys[i], shortcut)) return true;
     /* Model actions may intentionally share a key. */

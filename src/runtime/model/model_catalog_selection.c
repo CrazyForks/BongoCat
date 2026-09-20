@@ -50,6 +50,7 @@ static void clear_loaded_model(BongoCatApp *app) {
     app->loaded_model[0] = '\0';
     app->loading_model[0] = '\0';
     app->loaded_mode = BONGO_CAT_MODE_STANDARD;
+    app->loaded_gamepad_keyboard = false;
     bongo_cat_gamepads_set_enabled(app, false);
 }
 

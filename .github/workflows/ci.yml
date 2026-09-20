@@ -39,7 +39,7 @@ jobs:
         run: ./.github/scripts/check-publish-guards.ps1 -SelfTest
 
   quality:
-    name: quality / syntax-tests
+    name: quality / static-analysis
     needs: version-check
     runs-on: ubuntu-latest
     steps:
@@ -107,9 +107,47 @@ jobs:
       - name: Build and analyze C memory safety
         run: bash .github/scripts/build-unix.sh cmake --build build-quality --parallel 2
 
+  clang-tidy:
+    name: quality / clang-tidy
+    needs: version-check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+
+      - name: Install Clang analysis dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build clang-18 clang-tidy-18 \
+            libgl1-mesa-dev libegl1-mesa-dev libx11-dev libxi-dev libxfixes-dev \
+            libcurl4-openssl-dev
+
+      - name: Validate Clang-Tidy rules
+        run: clang-tidy-18 --verify-config
+
+      - name: Generate compilation database
+        env:
+          CC: clang-18
+          CXX: clang++-18
+        run: |
+          cmake -S . -B build-clang-tidy -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DBUILD_TESTING=OFF \
+            -DBONGO_CAT_OPTIMIZE_RELEASE_SIZE=OFF \
+            -DBONGO_CAT_OPTIMIZE_RELEASE_IPO=OFF
+
+      - name: Analyze project memory safety and common coding errors
+        run: |
+          run-clang-tidy-18 -p build-clang-tidy -j 2 \
+            -header-filter="^${GITHUB_WORKSPACE}/(include|src)/" \
+            "^${GITHUB_WORKSPACE}/src/"
+
   build:
     name: build / ${{ matrix.platform }}
-    needs: quality
+    needs: [quality, clang-tidy]
     strategy:
       fail-fast: false
       matrix:
@@ -179,7 +217,7 @@ jobs:
       github.repository == 'vladelaina/BongoCat' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       github.ref == 'refs/heads/main'
-    needs: [publishing-policy, quality]
+    needs: [publishing-policy, quality, clang-tidy]
     strategy:
       fail-fast: false
       matrix:
@@ -276,7 +314,7 @@ jobs:
       github.repository == 'vladelaina/BongoCat' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       github.ref == 'refs/heads/main'
-    needs: [publishing-policy, quality]
+    needs: [publishing-policy, quality, clang-tidy]
     strategy:
       fail-fast: false
       matrix:
@@ -447,7 +485,7 @@ jobs:
       github.repository == 'vladelaina/BongoCat' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       github.ref == 'refs/heads/main'
-    needs: [publishing-policy, quality]
+    needs: [publishing-policy, quality, clang-tidy]
     runs-on: ubuntu-latest
     timeout-minutes: 310
     # CI and releases share the same VirusTotal API quota.

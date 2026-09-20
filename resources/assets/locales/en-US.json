@@ -21,9 +21,11 @@
           "alwaysOnTop": "Always on Top",
           "keepInScreen": "Keep on Screen",
           "windowSize": "Window Size",
-          "windowCorners": "Window Corners (%)",
+          "windowCorners": "Window Corners",
           "opacity": "Opacity",
           "randomExpression": "Random Expressions",
+          "randomMotion": "Random Motions",
+          "secondsUnit": "s",
           "obsBackground": "Solid Background",
           "hideOnHover": "Hide on Hover",
           "hideFadeSeconds": "Fade Duration (s)",
@@ -47,6 +49,7 @@
         "labels": {
           "appSettings": "Application",
           "launchOnStartup": "Launch on Startup",
+          "launchAsAdministrator": "Run as Administrator",
           "showTrayIcon": "Show Tray Icon",
           "appearanceSettings": "Appearance",
           "themeMode": "Theme",
@@ -259,6 +262,7 @@
     "shortcut": {
       "toggleCat": "Show/Hide",
       "preferences": "Preferences",
+      "openMenu": "Show/Hide Radial Menu",
       "mirror": "Mirror",
       "passThrough": "Pass Through",
       "alwaysOnTop": "Always on Top"

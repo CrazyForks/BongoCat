@@ -18,6 +18,8 @@ void dial_covers_tick(Dial *d) {
             BongoCatError ignored = {0};
             int pixels = (int)fminf(160,ceilf(44*d->scale*d->raster_scale*1.25f));
             cover->texture = bongo_cat_image_texture_thumbnail(path,pixels,pixels,&width,&height,&ignored);
+            if (!cover->texture) SDL_LogWarn(SDL_LOG_CATEGORY_RENDER,
+                "Radial menu cover unavailable: %s (%s)", path, ignored.message);
             if (cover->texture && width > 0 && height > 0) {
                 float fit = fminf(44.0f/(float)width,40.0f/(float)height);
                 cover->width = (float)width*fit; cover->height = (float)height*fit;

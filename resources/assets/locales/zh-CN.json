@@ -21,9 +21,11 @@
           "alwaysOnTop": "窗口置顶",
           "keepInScreen": "保持在屏幕内",
           "windowSize": "窗口尺寸",
-          "windowCorners": "窗口圆角 (%)",
+          "windowCorners": "窗口圆角",
           "opacity": "不透明度",
           "randomExpression": "随机表情",
+          "randomMotion": "随机动作",
+          "secondsUnit": "秒",
           "obsBackground": "纯色背景",
           "hideOnHover": "鼠标移入隐藏",
           "hideFadeSeconds": "鼠标移入淡出时长（秒）",
@@ -47,6 +49,7 @@
         "labels": {
           "appSettings": "应用",
           "launchOnStartup": "开机自启动",
+          "launchAsAdministrator": "以管理员权限启动",
           "showTrayIcon": "显示托盘图标",
           "appearanceSettings": "外观",
           "themeMode": "主题",
@@ -259,6 +262,7 @@
     "shortcut": {
       "toggleCat": "显示/隐藏",
       "preferences": "设置",
+      "openMenu": "显示/隐藏圆盘",
       "mirror": "镜像",
       "passThrough": "鼠标穿透",
       "alwaysOnTop": "置顶"

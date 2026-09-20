@@ -8,6 +8,7 @@
 #include "bongo_cat/audio.h"
 #include "bongo_cat/overlay.h"
 #include "bongo_cat/preferences.h"
+#include "bongo_cat/log.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_opengl.h>
@@ -19,6 +20,10 @@ static void select_model_state(BongoCatApp *app, const BongoCatModelEntry *entry
     snprintf(app->session.active_model_id, sizeof(app->session.active_model_id), "%s",
         entry->id);
     app->loaded_mode = entry->mode;
+    app->loaded_gamepad_keyboard = entry->mode == BONGO_CAT_MODE_GAMEPAD &&
+        (entry->source_format == BONGO_CAT_MODEL_SOURCE_MVER ||
+         entry->source_format == BONGO_CAT_MODEL_SOURCE_MVER_PATCH) &&
+        bongo_cat_mver_gamepad_keyboard(entry->directory);
     bongo_cat_gamepads_set_enabled(app, entry->mode == BONGO_CAT_MODE_GAMEPAD);
 }
 static void request_model_frame(BongoCatApp *app, bool reveal) {
@@ -90,6 +95,7 @@ static void model_load_progress(void *userdata, float progress) {
         bongo_cat_app_step_live2d(app, elapsed);
     app->last_frame_ns = now;
     bongo_cat_app_render_now(app);
+    if (progress >= 1.0f) bongo_cat_app_log_input(app, true);
 }
 
 static void commit_model(BongoCatApp *app,
@@ -124,6 +130,7 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
         return true;
     }
     bongo_cat_app_capture_behavior_state(app);
+    bongo_cat_app_log_input(app, true);
     bool replacing_model = app->loaded_model[0] != '\0';
     if (replacing_model)
         bongo_cat_model_cover_capture_before_switch(app);
@@ -257,7 +264,7 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
         bongo_cat_app_selected_motion_count(app),
         bongo_cat_live2d_expression(app->live2d));
     bongo_cat_model_cover_schedule(app, entry);
-    bongo_cat_random_expression_reset(app);
+    bongo_cat_random_behavior_reset(app);
     app->pointer_known = false;
     bool geometry_changed = bongo_cat_model_apply_aspect(app, &render_options,
         &content_anchor, replacing_model);
@@ -279,6 +286,24 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
        switches both capture the restored state, never the initial state. */
     app->loading_model[0] = '\0';
     app->model_load_runtime_stage = 0;
+    app->input_diagnostics.last_gamepad[0] = '\0';
+    app->input_diagnostics.last_gamepad_value = 0.0f;
+    app->input_diagnostics.last_visual_action[0] = '\0';
+    SDL_LogInfo(BONGO_CAT_LOG_INPUT,
+        "[input] model-loaded diagnostic_version=3 model=%s mode=%s "
+        "source=%d preset=%d managed=%d keyboard_simulation=%d mver_input_mode=%d "
+        "adapter_schema=%d adapter_generator=%d active_gamepad=%u "
+        "saved_behaviors=%zu motions=%zu expression=%d "
+        "directory=%s setting=%s adapter=%s config=%s",
+        entry->id, bongo_cat_mode_name(app->loaded_mode), (int)entry->source_format,
+        entry->preset, entry->managed, app->loaded_gamepad_keyboard,
+        mver && entry->mode == BONGO_CAT_MODE_GAMEPAD
+            ? bongo_cat_mver_gamepad_input_mode(entry->directory) : -1,
+        entry->adapter_schema, entry->adapter_generator, (unsigned)app->active_gamepad,
+        saved_behaviors, bongo_cat_app_selected_motion_count(app),
+        bongo_cat_live2d_expression(app->live2d), entry->directory,
+        entry->setting_file, entry->adapter_directory, config_path[0] ? config_path : "none");
+    bongo_cat_app_log_input(app, true);
     bongo_cat_app_capture_pending_model_cover(app);
     /* Do not leave the previous frame cropped during the UI completion pass. */
     if (replacing_model) bongo_cat_app_render_now(app);

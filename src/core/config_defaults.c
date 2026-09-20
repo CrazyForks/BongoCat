@@ -36,7 +36,8 @@ bool bongo_cat_settings_shortcut_conflicts(const BongoCatSettings *config,
     if (!config || !shortcut || !shortcut[0]) return false;
     const char *global[] = {config->shortcuts.toggle_pet_visibility,
         config->shortcuts.visible_preferences, config->shortcuts.mirror,
-        config->shortcuts.pass_through, config->shortcuts.always_on_top};
+        config->shortcuts.pass_through, config->shortcuts.always_on_top,
+        config->shortcuts.open_menu};
     for (size_t i = 0; i < sizeof(global) / sizeof(global[0]); ++i)
         if (global[i] != exclude && shortcut_equal(global[i], shortcut))
             return true;
@@ -56,7 +57,8 @@ bool bongo_cat_settings_shortcut_conflicts(const BongoCatSettings *config,
 static void validate_shortcuts(BongoCatSettings *config) {
     char *global[] = {config->shortcuts.toggle_pet_visibility,
         config->shortcuts.visible_preferences, config->shortcuts.mirror,
-        config->shortcuts.pass_through, config->shortcuts.always_on_top};
+        config->shortcuts.pass_through, config->shortcuts.always_on_top,
+        config->shortcuts.open_menu};
     for (size_t i = 0; i < sizeof(global) / sizeof(global[0]); ++i) {
         normalize_text(global[i], BONGO_CAT_SHORTCUT_CAP);
         for (size_t j = 0; j < i; ++j)
@@ -204,6 +206,8 @@ void bongo_cat_settings_defaults(BongoCatSettings *config) {
     config->window.hide_fade_seconds = BONGO_CAT_DEFAULT_HIDE_FADE_SECONDS;
     config->window.random_expression_interval_seconds =
         BONGO_CAT_DEFAULT_RANDOM_EXPRESSION_SECONDS;
+    config->window.random_motion_interval_seconds =
+        BONGO_CAT_DEFAULT_RANDOM_MOTION_SECONDS;
     config->app.tray_visible = true;
     config->app.theme = BONGO_CAT_THEME_AUTO;
     config->app.language = BONGO_CAT_LANG_EN_US;
@@ -225,6 +229,9 @@ void bongo_cat_settings_validate(BongoCatSettings *config) {
     config->window.random_expression_interval_seconds = clampf_or(
         config->window.random_expression_interval_seconds, 1.0f, 3600.0f,
         BONGO_CAT_DEFAULT_RANDOM_EXPRESSION_SECONDS);
+    config->window.random_motion_interval_seconds = clampf_or(
+        config->window.random_motion_interval_seconds, 1.0f, 3600.0f,
+        BONGO_CAT_DEFAULT_RANDOM_MOTION_SECONDS);
     if ((unsigned)config->window.obs_background_color >=
         BONGO_CAT_OBS_BACKGROUND_COLOR_COUNT)
         config->window.obs_background_color = BONGO_CAT_OBS_BACKGROUND_GREEN;

@@ -21,9 +21,11 @@
           "alwaysOnTop": "視窗置頂",
           "keepInScreen": "保持在螢幕內",
           "windowSize": "視窗尺寸",
-          "windowCorners": "視窗圓角 (%)",
+          "windowCorners": "視窗圓角",
           "opacity": "不透明度",
           "randomExpression": "隨機表情",
+          "randomMotion": "隨機動作",
+          "secondsUnit": "秒",
           "obsBackground": "純色背景",
           "hideOnHover": "滑鼠游標移入隱藏",
           "hideFadeSeconds": "隱藏漸變時長 (秒)",
@@ -47,6 +49,7 @@
         "labels": {
           "appSettings": "應用程式",
           "launchOnStartup": "開機自動啟動",
+          "launchAsAdministrator": "以系統管理員權限啟動",
           "showTrayIcon": "顯示托盤圖示",
           "appearanceSettings": "外觀",
           "themeMode": "主題",
@@ -259,6 +262,7 @@
     "shortcut": {
       "toggleCat": "顯示/隱藏",
       "preferences": "設定",
+      "openMenu": "顯示/隱藏圓盤",
       "mirror": "鏡像",
       "passThrough": "滑鼠穿透",
       "alwaysOnTop": "置頂"

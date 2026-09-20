@@ -1,8 +1,16 @@
 #include "runtime.h"
 
 #include <stdlib.h>
+#ifdef _WIN32
+#include "windows_autostart.h"
+#endif
 
 int bongo_cat_app_run(int argc, char **argv) {
+#ifdef _WIN32
+    int autostart_exit = 0;
+    if (bongo_cat_windows_autostart_command(argc, argv, &autostart_exit))
+        return autostart_exit;
+#endif
     if (bongo_cat_platform_update_shutdown_argument(argc, argv)) return 0;
     bool secondary = bongo_cat_multi_pet_secondary_argument(argc, argv);
     if (!secondary && !bongo_cat_platform_single_instance_begin()) return 0;

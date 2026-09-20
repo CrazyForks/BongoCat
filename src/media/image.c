@@ -81,10 +81,27 @@ static unsigned int upload(const BongoCatImage *image, GLuint texture,
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     return texture;
 }
+/* A generated name is not proof that the GPU accepted the pixels. Keep
+   failed UI uploads out of the logo/cover caches and preserve a useful error. */
+static GLuint upload_ui(const BongoCatImage *image, BongoCatError *error) {
+    bongo_cat_gl_clear_errors();
+    GLuint texture = upload(image, 0, false);
+    GLenum status = glGetError();
+    if (texture && status == GL_NO_ERROR) return texture;
+    if (texture) glDeleteTextures(1, &texture);
+    bongo_cat_error_set(error, status == GL_OUT_OF_MEMORY
+        ? BONGO_CAT_ERROR_MEMORY : BONGO_CAT_ERROR_PLATFORM,
+        "UI image texture upload failed (%dx%d, 0x%x)",
+        image->width, image->height, (unsigned)status);
+    SDL_LogWarn(SDL_LOG_CATEGORY_RENDER,
+        "UI image texture upload failed (%dx%d, 0x%x)",
+        image->width, image->height, (unsigned)status);
+    return 0;
+}
 unsigned int bongo_cat_image_texture(const char *path, int *width, int *height, BongoCatError *error) {
     BongoCatImage image;
     if (bongo_cat_image_load(path, &image, error) != BONGO_CAT_OK) return 0;
-    GLuint texture = upload(&image, 0, false);
+    GLuint texture = upload_ui(&image, error);
     if (width) *width = image.width;
     if (height) *height = image.height;
     bongo_cat_image_free(&image);
@@ -98,7 +115,7 @@ unsigned int bongo_cat_image_texture_thumbnail(const char *path, int max_width,
     if (max_width > 0 && max_height > 0 &&
         bongo_cat_image_decode_wic_responsive(path, &image,
             max_width, max_height, NULL, NULL)) {
-        GLuint texture = upload(&image, 0, false);
+        GLuint texture = upload_ui(&image, error);
         if (width) *width = image.width;
         if (height) *height = image.height;
         bongo_cat_image_free(&image);
@@ -118,7 +135,7 @@ unsigned int bongo_cat_image_texture_thumbnail(const char *path, int max_width,
         if (scaled) {
             BongoCatImage thumbnail = {
                 .pixels = scaled->pixels, .width = scaled->w, .height = scaled->h};
-            GLuint texture = upload(&thumbnail, 0, false);
+            GLuint texture = upload_ui(&thumbnail, error);
             if (width) *width = thumbnail.width;
             if (height) *height = thumbnail.height;
             SDL_DestroySurface(scaled);
@@ -128,7 +145,7 @@ unsigned int bongo_cat_image_texture_thumbnail(const char *path, int max_width,
         target_width = image.width;
         target_height = image.height;
     }
-    GLuint texture = upload(&image, 0, false);
+    GLuint texture = upload_ui(&image, error);
     if (width) *width = target_width;
     if (height) *height = target_height;
     bongo_cat_image_free(&image);
