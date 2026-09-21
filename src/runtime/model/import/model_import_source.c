@@ -6,6 +6,9 @@
 #include <SDL3/SDL.h>
 #include <stdio.h>
 #include <string.h>
+#ifndef _WIN32
+#include <strings.h>
+#endif
 
 static bool image_package_root(const char *source, char *directory,
     size_t capacity) {

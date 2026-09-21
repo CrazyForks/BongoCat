@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _WIN32
+#include <strings.h>
+#endif
 
 int bongo_cat_tauri_key_code(const char *filename) {
     char name[BONGO_CAT_ID_CAP];

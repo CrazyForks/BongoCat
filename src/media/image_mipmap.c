@@ -7,10 +7,12 @@
 
 static unsigned char *next_level(const unsigned char *source,
     int source_width, int source_height, int *width, int *height) {
+    if (!source || source_width < 1 || source_height < 1) return NULL;
     *width = source_width > 1 ? source_width / 2 : 1;
     *height = source_height > 1 ? source_height / 2 : 1;
+    if ((size_t)*width > SIZE_MAX / 4 / (size_t)*height) return NULL;
     size_t count = (size_t)*width * (size_t)*height;
-    unsigned char *target = count <= SIZE_MAX / 4 ? malloc(count * 4) : NULL;
+    unsigned char *target = calloc(count, 4);
     if (!target) return NULL;
     for (int y = 0; y < *height; ++y) for (int x = 0; x < *width; ++x) {
         int sx = x * 2, sy = y * 2;

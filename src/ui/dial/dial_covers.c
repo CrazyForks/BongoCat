@@ -5,7 +5,7 @@
 void dial_covers_tick(Dial *d) {
     if (d->active != 9) return;
     for (int i = 0; i < dial_child_count(d); ++i) {
-        size_t index = (size_t)(d->page*DIAL_PAGE+i);
+        size_t index = (size_t)d->page * DIAL_PAGE + (size_t)i;
         if (index >= d->labels->model_count || index >= BONGO_CAT_MODEL_CAP) continue;
         DialCover *cover = &d->covers[index];
         if (cover->attempted) continue;
@@ -32,7 +32,7 @@ void dial_covers_tick(Dial *d) {
 
 bool dial_cover_draw(Dial *d, int child, float x, float y, float opacity) {
     if (d->active != 9 || child < 0) return false;
-    size_t index = (size_t)(d->page*DIAL_PAGE+child);
+    size_t index = (size_t)d->page * DIAL_PAGE + (size_t)child;
     if (index >= d->labels->model_count || index >= BONGO_CAT_MODEL_CAP) return false;
     DialCover *cover = &d->covers[index];
     uint32_t color = 0xffffff | ((uint32_t)(255*opacity)<<24);

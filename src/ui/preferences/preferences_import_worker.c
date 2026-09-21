@@ -27,14 +27,14 @@ int SDLCALL bongo_cat_preferences_import_worker(void *userdata) {
         BongoCatImportBatchStats stats = {0};
         BongoCatError error = {0};
         SDL_Log("[runtime] Model import source started: index=%llu/%llu path=%s",
-            (unsigned long long)(i + 1), (unsigned long long)job->count,
+            (unsigned long long)i + 1ULL, (unsigned long long)job->count,
             job->paths[i]);
         BongoCatResult result = bongo_cat_import_session_install_progressive(
             session, job->paths[i], bongo_cat_preferences_import_receive,
             &progress, &stats, &error);
         SDL_Log("[runtime] Model import source completed: index=%llu/%llu "
             "result=%d succeeded=%llu failed=%llu",
-            (unsigned long long)(i + 1), (unsigned long long)job->count,
+            (unsigned long long)i + 1ULL, (unsigned long long)job->count,
             (int)result, (unsigned long long)stats.succeeded_count,
             (unsigned long long)stats.failed_count);
         job->succeeded_count += stats.succeeded_count;

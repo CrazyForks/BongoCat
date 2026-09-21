@@ -89,7 +89,7 @@ BongoCatResult bongo_cat_window_create(BongoCatApp *app, BongoCatError *error) {
             return BONGO_CAT_OK;
         }
         SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO, "OpenGL attempt %llu failed: %s",
-            (unsigned long long)(i + 1), failure);
+            (unsigned long long)i + 1ULL, failure);
     }
     bongo_cat_error_set(error, BONGO_CAT_ERROR_PLATFORM,
         "Window and OpenGL initialization failed after compatibility retries: %s", failure);

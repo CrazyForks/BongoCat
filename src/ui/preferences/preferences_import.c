@@ -64,8 +64,9 @@ void bongo_cat_preferences_import_destroy(BongoCatImportDialog *dialog) {
     dialog->busy = false;
     dialog->started_ns = 0;
     dialog->completed = dialog->total = 0;
+    /* Drop the queued worker reference while the owner still holds dialog. */
+    if (release_worker) --dialog->references;
     SDL_UnlockMutex(dialog->mutex);
-    if (release_worker) bongo_cat_preferences_import_dialog_release(dialog);
     bongo_cat_preferences_import_dialog_release(dialog);
 }
 static BongoCatImportJob *copy_job(const char *const *files) {
