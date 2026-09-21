@@ -195,7 +195,7 @@ jobs:
             "$GITHUB_WORKSPACE/build-sanitizers/reports"
 
       - name: Upload sanitizer diagnostics
-        if: always()
+        if: always() && github.repository == 'vladelaina/BongoCat'
         uses: actions/upload-artifact@v7
         with:
           name: sanitizer-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}

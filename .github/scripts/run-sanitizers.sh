@@ -11,7 +11,16 @@ run_scenario() {
   shift
   local storage
   storage="$(mktemp -d "$reports/$name.XXXXXX")"
+  mkdir -p "$storage/config"
+  cat > "$storage/config/settings.json" <<'JSON'
+{
+  "format": "bongocat/settings",
+  "schemaVersion": 1,
+  "application": { "showTrayIcon": false }
+}
+JSON
   echo "Running sanitizer scenario: $name"
+  echo "System tray disabled for the headless sanitizer session."
   timeout --kill-after=10s 60s "$executable" \
     --ci-smoke --ci-ignore-global-input --ci-exit-ms=2500 \
     "--storage-root=$storage" "$@" 2>&1 | tee "$storage/console.log"
