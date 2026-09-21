@@ -11,6 +11,28 @@
 #include <SDL3/SDL_opengl.h>
 #include <stdlib.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#include <dwmapi.h>
+#endif
+
+static void hide_window_immediately(SDL_Window *window) {
+#ifdef _WIN32
+    HWND handle = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(window),
+        SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+    BOOL previous = FALSE, disabled = TRUE;
+    bool restore = handle && SUCCEEDED(DwmGetWindowAttribute(handle,
+        DWMWA_TRANSITIONS_FORCEDISABLED, &previous, sizeof(previous)));
+    if (handle) DwmSetWindowAttribute(handle, DWMWA_TRANSITIONS_FORCEDISABLED,
+        &disabled, sizeof(disabled));
+#endif
+    SDL_HideWindow(window);
+#ifdef _WIN32
+    if (restore) DwmSetWindowAttribute(handle, DWMWA_TRANSITIONS_FORCEDISABLED,
+        &previous, sizeof(previous));
+#endif
+}
+
 static void release_window(BongoCatPreferences *value) {
     if (!value || !value->window) return;
     bongo_cat_preferences_live_resize_uninstall(value);
@@ -93,6 +115,8 @@ void bongo_cat_preferences_show(BongoCatPreferences *value) {
 void bongo_cat_preferences_close(BongoCatPreferences *value) {
     if (!value || !value->window || !value->visible) return;
     bongo_cat_preferences_live_resize_uninstall(value);
+    value->visible = false;
+    hide_window_immediately(value->window);
     if (bongo_cat_preferences_behavior_dialog_active(value))
         bongo_cat_preferences_behavior_dialog_close(value);
     bongo_cat_preferences_model_rename_finish(value, true);
@@ -110,13 +134,11 @@ void bongo_cat_preferences_close(BongoCatPreferences *value) {
     SDL_StopTextInput(value->window);
     if (value->chrome_dragging) SDL_CaptureMouse(false);
     value->chrome_dragging = false;
-    value->visible = false;
     SDL_Window *previous_window = SDL_GL_GetCurrentWindow();
     SDL_GLContext previous_context = SDL_GL_GetCurrentContext();
     bool about_gl_ready = SDL_GL_MakeCurrent(value->window, value->gl_context);
     bongo_cat_about_clear(value, about_gl_ready);
     SDL_GL_MakeCurrent(previous_window, previous_context);
-    SDL_HideWindow(value->window);
     bongo_cat_preferences_release_idle_window(value);
     bongo_cat_config_store_flush(value->app);
 }

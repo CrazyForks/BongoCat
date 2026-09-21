@@ -81,6 +81,12 @@ void bongo_cat_preferences_render(BongoCatPreferences *value) {
     bool close_requested = bongo_cat_preferences_draw_frame(
         value, width, height, dark);
     value->ui.frame_building = false;
+    if (close_requested) {
+        nk_clear(&value->ui.context);
+        SDL_GL_MakeCurrent(value->app->window, value->app->gl_context);
+        bongo_cat_preferences_close(value);
+        return;
+    }
     bongo_cat_preferences_shortcut_smoke(value);
     BongoCatUIPalette palette = bongo_cat_ui_palette(dark);
     glDisable(GL_SCISSOR_TEST);
@@ -118,10 +124,6 @@ void bongo_cat_preferences_render(BongoCatPreferences *value) {
     }
     SDL_GL_MakeCurrent(value->app->window, value->app->gl_context);
     bongo_cat_ui_cursor_apply(&value->ui);
-    if (close_requested) {
-        bongo_cat_preferences_close(value);
-        return;
-    }
     if (value->import_requested && !bongo_cat_preferences_import_is_open(
         value->import_dialog)) {
         value->import_requested = false;

@@ -210,6 +210,10 @@ static void shortcut_row(BongoCatPreferences *value, struct nk_context *context,
 void bongo_cat_preferences_page_shortcuts(BongoCatPreferences *value,
     struct nk_context *context) {
     BongoCatShortcutPreferences *keys = &value->app->settings.shortcuts;
+    shortcut_row(value, context, "shortcut-menu", "native.shortcut.openMenu",
+        "Show/Hide Radial Menu",
+        keys->open_menu, sizeof(keys->open_menu),
+        BONGO_CAT_PREF_ICON_SHORTCUT_MENU);
     shortcut_row(value, context, "shortcut-cat", "native.shortcut.toggleCat",
         "Show/Hide",
         keys->toggle_pet_visibility, sizeof(keys->toggle_pet_visibility),
@@ -218,10 +222,6 @@ void bongo_cat_preferences_page_shortcuts(BongoCatPreferences *value,
         "Preferences",
         keys->visible_preferences, sizeof(keys->visible_preferences),
         BONGO_CAT_PREF_ICON_SHORTCUT_PREFERENCES);
-    shortcut_row(value, context, "shortcut-menu", "native.shortcut.openMenu",
-        "Show/Hide Radial Menu",
-        keys->open_menu, sizeof(keys->open_menu),
-        BONGO_CAT_PREF_ICON_SHORTCUT_MENU);
     shortcut_row(value, context, "shortcut-pass", "native.shortcut.passThrough",
         "Pass Through",
         keys->pass_through, sizeof(keys->pass_through),
