@@ -145,9 +145,69 @@ jobs:
             -header-filter="^${GITHUB_WORKSPACE}/(include|src)/" \
             "^${GITHUB_WORKSPACE}/src/"
 
+  sanitizers:
+    name: quality / ASan + UBSan
+    needs: version-check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+
+      - name: Install sanitizer and display dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build clang-18 llvm-18 libclang-rt-18-dev \
+            xvfb xauth libgl1-mesa-dri libglx-mesa0 \
+            libgl1-mesa-dev libegl1-mesa-dev libx11-dev libxi-dev libxfixes-dev \
+            libcurl4-openssl-dev
+
+      - name: Configure instrumented application
+        env:
+          CC: clang-18
+          CXX: clang++-18
+        run: |
+          cmake -S . -B build-sanitizers -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DBUILD_TESTING=OFF \
+            -DBONGO_CAT_OPTIMIZE_RELEASE_SIZE=OFF \
+            -DBONGO_CAT_OPTIMIZE_RELEASE_IPO=OFF \
+            -DCMAKE_C_FLAGS="-O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer" \
+            -DCMAKE_CXX_FLAGS="-O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+
+      - name: Build instrumented application
+        run: bash .github/scripts/build-unix.sh cmake --build build-sanitizers --target bongo_cat --parallel 2
+
+      - name: Check application memory and undefined behavior
+        timeout-minutes: 10
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+          ASAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer-18
+          UBSAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer-18
+          BONGO_CAT_DISABLE_NEARBY_MODEL_SCAN: '1'
+        run: |
+          bash .github/scripts/test-unix.sh \
+            bash .github/scripts/run-sanitizers.sh \
+            "$GITHUB_WORKSPACE/build-sanitizers/BongoCat" \
+            "$GITHUB_WORKSPACE/build-sanitizers/reports"
+
+      - name: Upload sanitizer diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sanitizer-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build-sanitizers/reports/
+            ${{ runner.temp }}/bongocat-native-build.log
+          if-no-files-found: ignore
+          retention-days: 14
+
   build:
     name: build / ${{ matrix.platform }}
-    needs: [quality, clang-tidy]
+    needs: [quality, clang-tidy, sanitizers]
     strategy:
       fail-fast: false
       matrix:
@@ -217,7 +277,7 @@ jobs:
       github.repository == 'vladelaina/BongoCat' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       github.ref == 'refs/heads/main'
-    needs: [publishing-policy, quality, clang-tidy]
+    needs: [publishing-policy, quality, clang-tidy, sanitizers]
     strategy:
       fail-fast: false
       matrix:
@@ -314,7 +374,7 @@ jobs:
       github.repository == 'vladelaina/BongoCat' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       github.ref == 'refs/heads/main'
-    needs: [publishing-policy, quality, clang-tidy]
+    needs: [publishing-policy, quality, clang-tidy, sanitizers]
     strategy:
       fail-fast: false
       matrix:
@@ -485,7 +545,7 @@ jobs:
       github.repository == 'vladelaina/BongoCat' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       github.ref == 'refs/heads/main'
-    needs: [publishing-policy, quality, clang-tidy]
+    needs: [publishing-policy, quality, clang-tidy, sanitizers]
     runs-on: ubuntu-latest
     timeout-minutes: 310
     # CI and releases share the same VirusTotal API quota.
