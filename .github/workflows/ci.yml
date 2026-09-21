@@ -444,31 +444,6 @@ jobs:
           if (-not (Test-Path -LiteralPath $setup)) {
             throw "Production desktop installer is missing: $setup"
           }
-          $portableHash = (Get-FileHash -LiteralPath $portable -Algorithm SHA256).Hash.ToLowerInvariant()
-          $setupHash = (Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()
-          $app = "build-store/Release/BongoCat.exe"
-          $appHash = (Get-FileHash -LiteralPath $app -Algorithm SHA256).Hash.ToLowerInvariant()
-          $cubismArch = if ('${{ matrix.cmake_arch }}' -eq 'Win32') { 'x86' } else { 'x86_64' }
-          $cubismCore = "vendor/CubismSdkForNative/Core/lib/windows/$cubismArch/143/Live2DCubismCore_MT.lib"
-          $cubismHash = (Get-FileHash -LiteralPath $cubismCore -Algorithm SHA256).Hash.ToLowerInvariant()
-          $cmakeVersion = (& cmake --version | Select-Object -First 1).Trim()
-          $innoInfo = & ./packaging/windows/find-inno.ps1 -PassThru
-          $innoVersion = $innoInfo.Version.ToString(3)
-          @"
-          ## Windows build provenance (${{ matrix.platform }})
-
-          | Input or artifact | Value |
-          | --- | --- |
-          | Commit | ``${{ github.sha }}`` |
-          | Runner image | ``$env:ImageOS $env:ImageVersion`` |
-          | CMake | ``$cmakeVersion`` |
-          | Inno Setup | ``$innoVersion`` at ``$($innoInfo.Path)`` |
-          | Cubism Core SHA-256 | ``$cubismHash`` |
-          | BongoCat.exe SHA-256 | ``$appHash`` |
-          | Portable SHA-256 | ``$portableHash`` |
-          | Installer SHA-256 | ``$setupHash`` |
-
-          "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
           "portable=$portable" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           "file=$setup" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
