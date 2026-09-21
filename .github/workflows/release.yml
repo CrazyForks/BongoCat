@@ -15,7 +15,7 @@ concurrency:
 jobs:
   version-check:
     name: quality / tag-version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout source
         uses: actions/checkout@v5
@@ -245,7 +245,7 @@ jobs:
     name: security / virustotal
     needs: version-check
     if: github.repository == 'vladelaina/BongoCat'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 310
     # CI and releases share the same VirusTotal API quota.
     concurrency:
@@ -292,7 +292,7 @@ jobs:
     name: publish / all platforms
     needs: build
     if: github.repository == 'vladelaina/BongoCat'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
 
