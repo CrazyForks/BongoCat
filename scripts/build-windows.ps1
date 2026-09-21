@@ -254,7 +254,7 @@ Write-Host "Logs: $buildLog"
 
 if ($Package) {
     Write-Host ''
-    Write-Host 'Building versioned portable and installer packages...'
+    Write-Host 'Building versioned portable, installer and MSIX packages...'
     $packageArgs = @('--build', $BuildDir, '--config', $Configuration,
         '--target', 'package-portable', 'package-installer', '--parallel', $Jobs)
     & cmake @packageArgs
@@ -283,5 +283,26 @@ if ($Package) {
     }
     Write-Host "Portable package: $portable"
     Write-Host "Installer package: $installer"
+
+    $msixNameFile = Join-Path $BuildDir 'bongocat-msix-name.txt'
+    Remove-Item -LiteralPath $msixNameFile -Force -ErrorAction SilentlyContinue
+    try {
+        $storeArchitecture = if ($Architecture -eq 'Win32') { 'x86' } else { 'x64' }
+        $projectVersion = & (Join-Path $root 'packaging/get-project-version.ps1')
+        $msixName = "bongocat_$($projectVersion.AppVersion)_$storeArchitecture.msix"
+        $msix = Join-Path $packageDist $msixName
+        & (Join-Path $root 'packaging/microsoft-store/build-store-package.ps1') `
+            -ExecutablePath (Join-Path $BuildDir "$Configuration/BongoCat.exe") `
+            -Architecture $storeArchitecture -OutputDirectory $packageDist
+        & (Join-Path $root 'packaging/microsoft-store/validate-store-package.ps1') `
+            -PackagePath $msix -ExpectedArchitecture $storeArchitecture
+        Set-Content -LiteralPath $msixNameFile -Value $msixName -Encoding ASCII `
+            -ErrorAction Stop
+    } catch {
+        Write-Host "MSIX generation or validation failed: $($_.Exception.Message)"
+        Write-Host 'MSIX packaging requires the Windows 10/11 SDK (makeappx.exe).'
+        exit 1
+    }
+    Write-Host "Unsigned Microsoft Store package: $msix"
 }
 exit 0

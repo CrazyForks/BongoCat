@@ -5,6 +5,7 @@
 #include "windows_layered.h"
 #include "windows_hdr.h"
 #include "windows_startup.h"
+#include "windows_package.h"
 #ifdef _WIN32
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_properties.h>
@@ -90,6 +91,7 @@ void bongo_cat_platform_configure_preferences_window(SDL_Window *window) {
 BongoCatResult bongo_cat_platform_init(BongoCatPlatform *platform, SDL_Window *window,
     BongoCatInputState *input, BongoCatError *error) {
     if (!platform || !window || !input) return BONGO_CAT_ERROR_ARGUMENT;
+    bongo_cat_windows_package_repair_shortcut();
     memset(platform, 0, sizeof(*platform));
     platform->window = window; platform->input = input;
     platform->window_opacity = 1.0f; platform->presenter = bongo_cat_windows_layered_create();
