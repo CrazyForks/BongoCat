@@ -13,9 +13,12 @@ void bongo_cat_image_make_alpha_mask_progress(const BongoCatImage *image,
     void *userdata);
 /* Input pixels must use premultiplied RGBA. */
 bool bongo_cat_image_upload_mipmaps(const BongoCatImage *image);
+/* Model uploads premultiply the decoded pixels in place, exactly once.
+   Existing textures are only supported for straight-alpha image updates. */
+unsigned int bongo_cat_image_upload_texture(BongoCatImage *image,
+    unsigned int existing, bool model, BongoCatError *error);
 
 #ifdef _WIN32
-bool bongo_cat_image_needs_wic_scaling(const char *path, int limit);
 bool bongo_cat_image_decode_wic_responsive(const char *path,
     BongoCatImage *image, int max_width, int max_height,
     BongoCatImageProgress progress, void *userdata);

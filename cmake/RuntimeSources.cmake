@@ -19,7 +19,9 @@ set(BONGO_CAT_MEDIA_SOURCES
   src/media/image.c
   src/media/image_decode.c
   src/media/image_info.c
+  src/media/image_model.c
   src/media/image_mipmap.c
+  src/media/image_upload.c
   src/media/image_resize.c
   src/media/image_alpha.c
   src/media/stb_image_impl.c)

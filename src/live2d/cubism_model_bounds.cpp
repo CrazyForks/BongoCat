@@ -132,7 +132,7 @@ void NativeModel::prepare_expression_frame() {
     for (int i = 0; i < parameter_count; ++i)
         base[(size_t)i] = _model->GetParameterValue(i);
 
-    _model->Update();
+    update_geometry();
     ModelBounds envelope = capture_visible_bounds();
     auto include = [&envelope](const ModelBounds &source) {
         if (!source.valid) return;
@@ -170,12 +170,12 @@ void NativeModel::prepare_expression_frame() {
                 break;
             }
         }
-        _model->Update();
+        update_geometry();
         include(capture_visible_bounds());
     }
     for (int parameter = 0; parameter < parameter_count; ++parameter)
         _model->SetParameterValue(parameter, base[(size_t)parameter]);
-    _model->Update();
+    update_geometry();
 
     int reference_width = 0, reference_height = 0;
     if (render_options_.mver_projection) {
