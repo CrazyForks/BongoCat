@@ -215,6 +215,18 @@ bool bongo_cat_pref_toggle(struct nk_context *context, const char *id,
     nk_layout_row_end(context); bongo_cat_pref_description(context, detail, lines);
     form_end(context, &saved); return changed;
 }
+bool bongo_cat_pref_toggle_help(struct nk_context *context, const char *id,
+    const char *title, const char *description, const char *help, bool *value) {
+    FormStyle saved;
+    int lines = bongo_cat_pref_detail_lines(context, description);
+    if (!form_begin(context, id, lines, &saved)) return false;
+    bongo_cat_pref_form_title_sized(context, title, 80.0f);
+    bool changed = bongo_cat_pref_control_toggle(context, id, value);
+    nk_layout_row_end(context);
+    bongo_cat_ui_question_tooltip(context, description, help);
+    form_end(context, &saved);
+    return changed;
+}
 bool bongo_cat_pref_obs_background(struct nk_context *context, const char *id,
     const char *title, const char *question, const char *reply, bool *enabled,
     BongoCatObsBackgroundColor *color) {

@@ -13,6 +13,8 @@ void bongo_cat_pref_row_icon(struct nk_context *context,
     BongoCatPrefIcon icon);
 bool bongo_cat_pref_toggle(struct nk_context *context, const char *id,
     const char *title, const char *description, bool *value);
+bool bongo_cat_pref_toggle_help(struct nk_context *context, const char *id,
+    const char *title, const char *description, const char *help, bool *value);
 bool bongo_cat_pref_toggle_float(struct nk_context *context, const char *id,
     const char *title, const char *unit, bool *enabled, float minimum, float *value,
     float maximum, float step, float default_value);

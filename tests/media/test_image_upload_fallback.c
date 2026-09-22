@@ -1,5 +1,9 @@
 #define bongo_cat_image_texture_model test_image_texture_model
 #define bongo_cat_image_upload_texture test_image_upload_texture
+#define bongo_cat_image_release_upload_buffer test_image_release_upload_buffer
+#define bongo_cat_image_begin_model_texture test_image_begin_model_texture
+#define bongo_cat_image_upload_model_rows test_image_upload_model_rows
+#define bongo_cat_image_finish_model_texture test_image_finish_model_texture
 #include "image_internal.h"
 #include "bongo_cat/gl_api.h"
 #include "test.h"
@@ -9,6 +13,24 @@
 
 int bongo_cat_test_failures;
 static unsigned failed_uploads;
+static unsigned failed_storage;
+static bool inject_storage_failure;
+
+static void APIENTRY fail_after_storage(GLenum target, GLsizei levels,
+    GLenum format, GLsizei width, GLsizei height) {
+    PFNGLTEXSTORAGE2DPROC storage =
+        (PFNGLTEXSTORAGE2DPROC)SDL_GL_GetProcAddress("glTexStorage2D");
+    storage(target, levels, format, width, height);
+    CHECK(glGetError() == GL_NO_ERROR);
+    ++failed_storage;
+    glBindTexture(0, 0); // Inject a GL error after immutable storage exists.
+}
+
+static SDL_FunctionPointer test_proc(const char *name) {
+    SDL_FunctionPointer result = SDL_GL_GetProcAddress(name);
+    return result && inject_storage_failure && !strcmp(name, "glTexStorage2D") ?
+        (SDL_FunctionPointer)fail_after_storage : result;
+}
 
 static bool fail_after_mip_allocation(const BongoCatImage *image) {
     CHECK(bongo_cat_image_upload_mipmaps(image));
@@ -16,9 +38,17 @@ static bool fail_after_mip_allocation(const BongoCatImage *image) {
     return false;
 }
 
+static bool fail_after_mip_generation(void) {
+    CHECK(bongo_cat_image_generate_mipmaps());
+    ++failed_uploads;
+    return false;
+}
+
 /* Exercise recovery after driver-side mip storage exists, without exhausting
    actual GPU memory. All decoding, texture allocation and readback are real. */
 #define bongo_cat_image_upload_mipmaps fail_after_mip_allocation
+#define bongo_cat_image_generate_mipmaps fail_after_mip_generation
+#define SDL_GL_GetProcAddress test_proc
 #include "../../src/media/image_upload.c"
 #include "../../src/media/image_model.c"
 
@@ -73,6 +103,11 @@ int main(void) {
             check_fallback(path, true);
             check_fallback(path, false);
             CHECK(failed_uploads == 2);
+            if (SDL_GL_ExtensionSupported("GL_ARB_texture_storage")) {
+                inject_storage_failure = true;
+                check_fallback(path, false);
+                CHECK(failed_storage == 1 && failed_uploads == 3);
+            }
             CHECK(SDL_RemovePath(path));
             SDL_free(path);
         }

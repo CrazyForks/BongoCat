@@ -41,8 +41,7 @@ NativeModel::ModelBounds NativeModel::capture_visible_bounds() const {
         int count = _model->GetDrawableVertexCount(i);
         if (!vertices || count <= 0) continue;
         int texture = _model->GetDrawableTextureIndex(i);
-        const BongoCatImageAlphaMask *mask = texture >= 0 &&
-            (size_t)texture < texture_alpha_.size() ? &texture_alpha_[(size_t)texture] : nullptr;
+        const BongoCatImageAlphaMask *mask = texture_alpha(texture);
         const auto *uvs = _model->GetDrawableVertexUvs(i);
         const auto *indices = _model->GetDrawableVertexIndices(i);
         int index_count = _model->GetDrawableVertexIndexCount(i);

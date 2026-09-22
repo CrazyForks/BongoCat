@@ -176,10 +176,33 @@ static void model_case(const char *path, int source_width, int source_height,
             CHECK(original.pixels[3] == (kind == 2 ? 64 : 255));
         }
         if (texture) check_base_pixels(texture, &original);
+        if (texture) {
+            BongoCatImageAlphaMask expected;
+            bongo_cat_image_make_alpha_mask(&original, &expected);
+            CHECK(memcmp(&alpha, &expected, sizeof(alpha)) == 0);
+        }
         bongo_cat_image_free(&original);
     }
     if (texture) glDeleteTextures(1, &texture);
 }
+
+#ifdef _WIN32
+static bool cancel_rows(void *userdata, BongoCatImage *rows, int height, int y) {
+    int *calls = userdata;
+    CHECK(SDL_GL_GetCurrentContext() != NULL);
+    CHECK(rows->width == 193 && height == 257 && y == *calls * 64);
+    CHECK(rows->height == 64);
+    ++*calls;
+    return *calls < 2;
+}
+
+static void stream_cancel_case(const char *path) {
+    fixture(path, 193, 257, 4);
+    int calls = 0;
+    CHECK(!bongo_cat_image_decode_wic_rows(path, cancel_rows, &calls, NULL, NULL));
+    CHECK(calls == 2);
+}
+#endif
 
 static void hardware_limit_case(const char *path, int limit, bool direct) {
     fixture(path, limit + 1, 1, 0);
@@ -196,12 +219,52 @@ static void hardware_limit_case(const char *path, int limit, bool direct) {
     if (texture) glDeleteTextures(1, &texture);
 }
 
+static void decoder_fallback_case(const char *path) {
+    // Gray+alpha is outside the RGB/RGBA streaming fast path. The fallback
+    // must still preserve original texels, alpha occupancy and progress.
+    enum { width = 193, height = 131 };
+    unsigned char pixels[width * height * 2];
+    for (size_t i = 0; i < sizeof(pixels); ++i)
+        pixels[i] = (unsigned char)((i * 17 + i / 7) % 256);
+    CHECK(stbi_write_png(path, width, height, 2, pixels, width * 2));
+    BongoCatError error = {0};
+    BongoCatImage original = {0};
+    CHECK(bongo_cat_image_load(path, &original, &error) == BONGO_CAT_OK);
+    ProgressState progress = {0};
+    BongoCatImageAlphaMask alpha, expected;
+    GLuint texture = bongo_cat_image_texture_model(path, false,
+        NULL, NULL, &alpha, check_progress, &progress, &error);
+    CHECK(texture != 0 && progress.last == 1.0f);
+    if (texture && original.pixels) {
+        check_base_pixels(texture, &original);
+        check_levels(texture, width, height, false);
+        bongo_cat_image_make_alpha_mask(&original, &expected);
+        CHECK(memcmp(&alpha, &expected, sizeof(alpha)) == 0);
+    }
+    if (texture) glDeleteTextures(1, &texture);
+    bongo_cat_image_free(&original);
+}
+
 static void upload_state_case(const char *path) {
     BongoCatGL gl;
     BongoCatError error = {0};
     if (!bongo_cat_gl_load(&gl, &error)) { CHECK(false); return; }
-    fixture(path, 8, 8, 4);
+    fixture(path, 193, 131, 4);
     GLuint previous = 0, unpack = 0;
+    PFNGLGENFRAMEBUFFERSPROC generate =
+        (PFNGLGENFRAMEBUFFERSPROC)SDL_GL_GetProcAddress("glGenFramebuffers");
+    PFNGLBINDFRAMEBUFFERPROC bind =
+        (PFNGLBINDFRAMEBUFFERPROC)SDL_GL_GetProcAddress("glBindFramebuffer");
+    PFNGLDELETEFRAMEBUFFERSPROC remove =
+        (PFNGLDELETEFRAMEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteFramebuffers");
+    CHECK(generate && bind && remove);
+    if (!generate || !bind || !remove) return;
+    GLuint framebuffers[2] = {0};
+    generate(2, framebuffers);
+    bind(GL_READ_FRAMEBUFFER, framebuffers[0]);
+    bind(GL_DRAW_FRAMEBUFFER, framebuffers[1]);
+    glReadBuffer(GL_NONE);
+    glEnable(GL_FRAMEBUFFER_SRGB);
     gl.active_texture(GL_TEXTURE3);
     glGenTextures(1, &previous);
     glBindTexture(GL_TEXTURE_2D, previous);
@@ -227,6 +290,12 @@ static void upload_state_case(const char *path) {
         glGetIntegerv(GL_UNPACK_ROW_LENGTH, &actual); CHECK(actual == 29);
         glGetIntegerv(GL_UNPACK_SKIP_PIXELS, &actual); CHECK(actual == 7);
         glGetIntegerv(GL_UNPACK_SKIP_ROWS, &actual); CHECK(actual == 3);
+        glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &actual);
+        CHECK((GLuint)actual == framebuffers[0]);
+        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &actual);
+        CHECK((GLuint)actual == framebuffers[1]);
+        glGetIntegerv(GL_READ_BUFFER, &actual); CHECK(actual == GL_NONE);
+        CHECK(glIsEnabled(GL_FRAMEBUFFER_SRGB));
         if (texture) {
             glBindTexture(GL_TEXTURE_2D, texture);
             glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, &actual);
@@ -256,6 +325,9 @@ static void upload_state_case(const char *path) {
     gl.delete_buffers(1, &unpack);
     glDeleteTextures(1, &previous);
     gl.active_texture(GL_TEXTURE0);
+    glDisable(GL_FRAMEBUFFER_SRGB);
+    bind(GL_FRAMEBUFFER, 0);
+    remove(2, framebuffers);
 }
 
 int main(int argc, char **argv) {
@@ -277,7 +349,7 @@ int main(int argc, char **argv) {
     if (path) {
         GLint limit = 0;
         glGetIntegerv(GL_MAX_TEXTURE_SIZE, &limit);
-        const int sizes[][2] = {{8, 8}, {19, 7}, {1, 7},
+        const int sizes[][2] = {{8, 8}, {19, 7}, {1, 7}, {193, 131}, {129, 257},
             {4096, 8}, {8, 4096}, {8192, 8}};
         for (size_t i = 0; i < SDL_arraysize(sizes); ++i) {
             if (sizes[i][0] > limit || sizes[i][1] > limit) continue;
@@ -291,6 +363,10 @@ int main(int argc, char **argv) {
             hardware_limit_case(path, limit, false);
         }
         upload_state_case(path);
+        decoder_fallback_case(path);
+#ifdef _WIN32
+        stream_cancel_case(path);
+#endif
         CHECK(SDL_RemovePath(path));
         SDL_free(path);
     }

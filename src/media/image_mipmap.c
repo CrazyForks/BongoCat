@@ -10,6 +10,10 @@ bool bongo_cat_image_upload_mipmaps(const BongoCatImage *image) {
         0, GL_RGBA, GL_UNSIGNED_BYTE, image->pixels);
     if (glGetError() != GL_NO_ERROR) return false;
 
+    return bongo_cat_image_generate_mipmaps();
+}
+
+bool bongo_cat_image_generate_mipmaps(void) {
     /* Premultiplied RGBA8 can be filtered directly, including translucent
        edges. Build once on the GPU, without CPU copies of every mip level. */
     PFNGLGENERATEMIPMAPPROC generate =

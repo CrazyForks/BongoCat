@@ -16,6 +16,7 @@
 #include <Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp>
 #include <SDL3/SDL_opengl.h>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -26,6 +27,7 @@ bool validate_model_setting_json(const std::vector<unsigned char> &json,
     const char *setting_file, BongoCatError *error);
 class ViewerLookUpdater;
 class ParameterOverrideUpdater;
+struct ModelTexture;
 
 class NativeModel final : public Csm::CubismUserModel {
 public:
@@ -136,6 +138,7 @@ private:
     bool restore_motion_defaults(const std::string &key);
     void select_motion(const std::string &key, bool selected);
     void release_textures();
+    const BongoCatImageAlphaMask *texture_alpha(int index) const;
     void release_renderer();
     bool create_renderer(BongoCatError *error);
     int prepare_mask_layout();
@@ -154,8 +157,7 @@ private:
     std::set<std::string> selected_motion_keys_;
     MotionMap expressions_;
     std::vector<std::string> expression_names_;
-    std::vector<GLuint> textures_;
-    std::vector<BongoCatImageAlphaMask> texture_alpha_;
+    std::vector<std::shared_ptr<ModelTexture>> textures_;
     mutable std::vector<std::vector<unsigned char>> triangle_alpha_;
     mutable std::vector<DrawableBounds> bounds_scratch_;
     std::vector<float> parameter_snapshot_;

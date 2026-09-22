@@ -9,6 +9,9 @@
 #include "bongo_cat/preferences.h"
 #include "bongo_cat/tray.h"
 #include "runtime.h"
+#ifdef _WIN32
+#include "windows_game_compatibility.h"
+#endif
 
 #include <SDL3/SDL.h>
 #include <stdio.h>
@@ -30,10 +33,27 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
         "pages.preference.cat.labels.windowSettings",
         "Window"),
         BONGO_CAT_PREF_ICON_SECTION_WINDOW);
-    bongo_cat_ui_question_tooltip(context, tr(app,
-        "pages.preference.cat.hints.gameInput", "Pet not responding in games?"),
-        tr(app, "pages.preference.cat.hints.gameInputHelp",
-            "Try running BongoCat as administrator and setting the game to windowed mode."));
+#ifdef _WIN32
+    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_ADMINISTRATOR);
+    bool game_compatibility = app->settings.app.game_compatibility;
+    if (bongo_cat_pref_toggle_help(context, "game-compatibility", tr(app,
+        "pages.preference.general.labels.gameCompatibility", "Game Compatibility Mode"),
+        tr(app, "pages.preference.cat.hints.gameCompatibility",
+            "Enable when the desktop pet cannot respond in games."),
+        tr(app, "pages.preference.cat.hints.gameCompatibilityHelp",
+            "Enable to restart BongoCat with administrator privileges. Disable to return to normal privileges."),
+        &game_compatibility)) {
+        BongoCatError compatibility_error = {0};
+        if (!bongo_cat_windows_game_compatibility_set(app,
+                game_compatibility, &compatibility_error)) {
+            char message[1024];
+            snprintf(message, sizeof(message), "%s\n%s", tr(app,
+                "pages.preference.cat.hints.gameCompatibilityFailed",
+                "Unable to change game compatibility mode."), compatibility_error.message);
+            bongo_cat_preferences_notice_show(app, message, true);
+        }
+    }
+#endif
     bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_PASS_THROUGH);
     if (bongo_cat_pref_toggle(context, "pass-through", tr(app,
         "composables.useAppMenu.labels.passThrough", "Pass Through"), tr(app,

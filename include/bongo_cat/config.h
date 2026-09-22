@@ -86,6 +86,7 @@ typedef struct BongoCatWindowState {
 typedef struct BongoCatApplicationPreferences {
     bool autostart;
     bool autostart_admin;
+    bool game_compatibility;
     bool tray_visible;
     BongoCatTheme theme;
     BongoCatLanguage language;

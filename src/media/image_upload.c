@@ -69,6 +69,146 @@ static void premultiply(BongoCatImage *image) {
     }
 }
 
+unsigned int bongo_cat_image_begin_model_texture(int width, int height,
+    bool mipmaps, BongoCatError *error) {
+    UploadState state = {0};
+    if (!begin_upload(&state)) return 0;
+    GLuint texture = create_texture(true);
+    /* Allocate the complete chain before filling any texels. Growing mutable
+       base storage during GenerateMipmap can temporarily duplicate the whole
+       atlas. Immutable storage prevents that driver-side allocation peak. */
+    PFNGLTEXSTORAGE2DPROC storage = mipmaps &&
+        SDL_GL_ExtensionSupported("GL_ARB_texture_storage") ?
+        (PFNGLTEXSTORAGE2DPROC)SDL_GL_GetProcAddress("glTexStorage2D") : NULL;
+    if (texture && storage) {
+        int levels = 1;
+        for (int size = SDL_max(width, height); size > 1; size /= 2) ++levels;
+        storage(GL_TEXTURE_2D, levels, GL_RGBA8, width, height);
+        if (glGetError() == GL_NO_ERROR) {
+            end_upload(&state);
+            return texture;
+        }
+        // Preserve the original-size mutable path on older/limited drivers.
+        glDeleteTextures(1, &texture);
+        bongo_cat_gl_clear_errors();
+        texture = create_texture(true);
+    }
+    if (texture)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height,
+            0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    GLenum status = glGetError();
+    if (!texture || status != GL_NO_ERROR) {
+        if (texture) glDeleteTextures(1, &texture);
+        texture = 0;
+        bongo_cat_error_set(error, status == GL_OUT_OF_MEMORY
+            ? BONGO_CAT_ERROR_MEMORY : BONGO_CAT_ERROR_PLATFORM,
+            "Live2D texture allocation failed (%dx%d, 0x%x)",
+            width, height, (unsigned)status);
+    }
+    end_upload(&state);
+    return texture;
+}
+
+void bongo_cat_image_release_upload_buffer(BongoCatImageUploadBuffer *buffer) {
+    if (!buffer) return;
+    if (buffer->framebuffer) {
+        PFNGLDELETEFRAMEBUFFERSPROC remove =
+            (PFNGLDELETEFRAMEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteFramebuffers");
+        if (remove) remove(1, &buffer->framebuffer);
+    }
+    if (buffer->texture) glDeleteTextures(1, &buffer->texture);
+    *buffer = (BongoCatImageUploadBuffer){0};
+}
+
+/* Upload through a small RGBA8 surface, then copy texels on the GPU. Some
+   drivers map the entire destination for even a small TexSubImage update,
+   retaining a full-atlas transfer buffer (256 MiB for an 8192 atlas). Keeping
+   CPU transfers on this strip bounds that extra allocation without changing
+   the destination format, dimensions, texels or mip generation. */
+static GLenum copy_model_rows(GLuint texture, const BongoCatImage *rows, int y,
+    BongoCatImageUploadBuffer *buffer) {
+    PFNGLGENFRAMEBUFFERSPROC generate =
+        (PFNGLGENFRAMEBUFFERSPROC)SDL_GL_GetProcAddress("glGenFramebuffers");
+    PFNGLBINDFRAMEBUFFERPROC bind =
+        (PFNGLBINDFRAMEBUFFERPROC)SDL_GL_GetProcAddress("glBindFramebuffer");
+    PFNGLFRAMEBUFFERTEXTURE2DPROC attach =
+        (PFNGLFRAMEBUFFERTEXTURE2DPROC)SDL_GL_GetProcAddress("glFramebufferTexture2D");
+    PFNGLCHECKFRAMEBUFFERSTATUSPROC check =
+        (PFNGLCHECKFRAMEBUFFERSTATUSPROC)SDL_GL_GetProcAddress("glCheckFramebufferStatus");
+    if (!generate || !bind || !attach || !check) return GL_INVALID_OPERATION;
+    GLint previous_read = 0;
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &previous_read);
+    bool ready = true;
+    if (!buffer->texture) {
+        glGenTextures(1, &buffer->texture);
+        glBindTexture(GL_TEXTURE_2D, buffer->texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, rows->width, rows->height,
+            0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        buffer->width = rows->width;
+        buffer->height = rows->height;
+        generate(1, &buffer->framebuffer);
+        if (buffer->texture && buffer->framebuffer) {
+            bind(GL_READ_FRAMEBUFFER, buffer->framebuffer);
+            attach(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                GL_TEXTURE_2D, buffer->texture, 0);
+            glReadBuffer(GL_COLOR_ATTACHMENT0);
+            ready = check(GL_READ_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+        } else ready = false;
+    }
+    GLenum status = glGetError();
+    ready = ready && buffer->width == rows->width &&
+        rows->height <= buffer->height && status == GL_NO_ERROR;
+    if (ready) {
+        glBindTexture(GL_TEXTURE_2D, buffer->texture);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, rows->width, rows->height,
+            GL_RGBA, GL_UNSIGNED_BYTE, rows->pixels);
+        bind(GL_READ_FRAMEBUFFER, buffer->framebuffer);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, 0, 0,
+            rows->width, rows->height);
+        /* Reusing a strip while its copy is still queued makes some drivers
+           retain one renamed surface per strip, recreating a full atlas of
+           temporary storage. Finish this load-time transfer before reuse. */
+        glFinish();
+        status = glGetError();
+    }
+    bind(GL_READ_FRAMEBUFFER, (GLuint)previous_read);
+    return status != GL_NO_ERROR ? status :
+        (ready ? GL_NO_ERROR : GL_INVALID_OPERATION);
+}
+
+bool bongo_cat_image_upload_model_rows(unsigned int texture,
+    BongoCatImage *rows, int y, BongoCatImageUploadBuffer *buffer,
+    BongoCatError *error) {
+    UploadState state = {0};
+    if (!begin_upload(&state)) return false;
+    premultiply(rows);
+    GLenum status = copy_model_rows(texture, rows, y, buffer);
+    GLenum restore_status = glGetError();
+    if (status == GL_NO_ERROR) status = restore_status;
+    end_upload(&state);
+    if (status != GL_NO_ERROR)
+        bongo_cat_error_set(error, status == GL_OUT_OF_MEMORY
+            ? BONGO_CAT_ERROR_MEMORY : BONGO_CAT_ERROR_PLATFORM,
+            "Live2D texture row upload failed (row %d, 0x%x)", y, (unsigned)status);
+    return status == GL_NO_ERROR;
+}
+
+bool bongo_cat_image_finish_model_texture(unsigned int texture,
+    BongoCatError *error) {
+    UploadState state = {0};
+    if (!begin_upload(&state)) return false;
+    glBindTexture(GL_TEXTURE_2D, texture);
+    bool ok = bongo_cat_image_generate_mipmaps();
+    end_upload(&state);
+    if (!ok)
+        bongo_cat_error_set(error, BONGO_CAT_ERROR_PLATFORM,
+            "Live2D mipmap generation failed");
+    return ok;
+}
+
 unsigned int bongo_cat_image_upload_texture(BongoCatImage *image,
     unsigned int existing, bool model, BongoCatError *error) {
     if (!image || !image->pixels || image->width < 1 || image->height < 1 ||

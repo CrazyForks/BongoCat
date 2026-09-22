@@ -25,6 +25,77 @@ static bool texture_fits(int width, int height, int limit,
     return false;
 }
 
+typedef struct ModelRowUpload {
+    GLuint texture;
+    BongoCatImageUploadBuffer buffer;
+    int width, height, limit;
+    const char *path;
+    BongoCatImageAlphaMask *alpha;
+    BongoCatError *error;
+    bool upload_failed;
+    bool mipmaps;
+} ModelRowUpload;
+
+typedef bool (*RowDecoder)(const char *, BongoCatImageRows, void *,
+    BongoCatImageProgress, void *);
+
+static bool upload_rows(void *userdata, BongoCatImage *rows, int height, int y) {
+    ModelRowUpload *upload = userdata;
+    if (!y) {
+        upload->width = rows->width;
+        upload->height = height;
+        if (texture_fits(rows->width, height, upload->limit,
+            upload->path, upload->error))
+            upload->texture = bongo_cat_image_begin_model_texture(
+                rows->width, height, upload->mipmaps, upload->error);
+        if (!upload->texture) upload->upload_failed = true;
+    }
+    if (upload->upload_failed) return false;
+    bongo_cat_image_alpha_mask_rows(rows, height, y, upload->alpha);
+    upload->upload_failed = !bongo_cat_image_upload_model_rows(
+        upload->texture, rows, y, &upload->buffer, upload->error);
+    return !upload->upload_failed;
+}
+
+static GLuint stream_model(const char *path, int limit, int *width, int *height,
+    BongoCatImageAlphaMask *alpha, ImageProgressStage *stage,
+    RowDecoder decode, bool *upload_failed, BongoCatError *error) {
+    ModelRowUpload upload = {.limit = limit, .path = path,
+        .alpha = alpha, .error = error, .mipmaps = true};
+    bool decoded = decode(path, upload_rows, &upload,
+        stage->progress ? report_progress : NULL, stage);
+    bongo_cat_image_release_upload_buffer(&upload.buffer);
+    BongoCatError mip_error = {0};
+    if (decoded && !bongo_cat_image_finish_model_texture(upload.texture, &mip_error)) {
+        /* Discard partial mip storage, then decode the original strips again.
+           No full-size CPU backup is needed for the linear fallback. */
+        glDeleteTextures(1, &upload.texture);
+        upload.texture = 0;
+        upload.mipmaps = false;
+        bongo_cat_gl_clear_errors();
+        stage->start += stage->span;
+        stage->span = (1.0f - stage->start) * .25f;
+        decoded = decode(path, upload_rows, &upload,
+            stage->progress ? report_progress : NULL, stage);
+        bongo_cat_image_release_upload_buffer(&upload.buffer);
+        SDL_LogWarn(SDL_LOG_CATEGORY_RENDER,
+            "Live2D mipmap upload unavailable; retrying original %dx%d pixels",
+            upload.width, upload.height);
+    }
+    *upload_failed = upload.upload_failed;
+    if (!decoded) {
+        if (upload.texture) glDeleteTextures(1, &upload.texture);
+        if (alpha) memset(alpha, 0, sizeof(*alpha));
+        return 0;
+    }
+    if (width) *width = upload.width;
+    if (height) *height = upload.height;
+    SDL_Log("Live2D texture preserved at %dx%d (streamed): %s",
+        upload.width, upload.height, path);
+    if (stage->progress) stage->progress(stage->userdata, 1.0f);
+    return upload.texture;
+}
+
 unsigned int bongo_cat_image_texture_model(const char *path, bool direct_decode,
     int *width, int *height, BongoCatImageAlphaMask *alpha,
     BongoCatImageProgress progress, void *userdata, BongoCatError *error) {
@@ -56,27 +127,31 @@ unsigned int bongo_cat_image_texture_model(const char *path, bool direct_decode,
     ImageProgressStage stage = {progress, userdata, 0.0f, .30f};
     BongoCatImageProgress staged = progress ? report_progress : NULL;
     // A small window does not imply that the parts of a large atlas are small.
-#ifdef _WIN32
     if (!direct_decode) {
-        stage.span = .20f;
-        if (!bongo_cat_image_decode_wic_responsive(path, &image, 0, 0, staged, &stage)) {
-            stage = (ImageProgressStage){progress, userdata, .20f, .10f};
-            if (bongo_cat_image_decode_pixels_responsive(path, &image,
-                staged, &stage, error) != BONGO_CAT_OK) return 0;
-        }
-    } else if (bongo_cat_image_decode_pixels_responsive(path, &image,
-        staged, &stage, error) != BONGO_CAT_OK) return 0;
-#else
-    (void)direct_decode;
+        stage.span = .65f;
+        bool upload_failed = false;
+        GLuint texture = stream_model(path, limit, width, height, alpha,
+            &stage, bongo_cat_image_decode_png_rows, &upload_failed, error);
+        if (texture || upload_failed) return texture;
+#ifdef _WIN32
+        stage = (ImageProgressStage){progress, userdata, .80f, .10f};
+        texture = stream_model(path, limit, width, height, alpha,
+            &stage, bongo_cat_image_decode_wic_rows, &upload_failed, error);
+        if (texture || upload_failed) return texture;
+#endif
+        // Unsupported encodings retain the existing general decoder fallback.
+        stage = (ImageProgressStage){progress, userdata, .95f, .01f};
+    }
     if (bongo_cat_image_decode_pixels_responsive(path, &image,
         staged, &stage, error) != BONGO_CAT_OK) return 0;
-#endif
     if (!texture_fits(image.width, image.height, limit, path, error)) {
         bongo_cat_image_free(&image);
         return 0;
     }
-    if (progress) progress(userdata, .30f);
-    stage = (ImageProgressStage){progress, userdata, .30f, .30f};
+    float decoded_progress = stage.start + stage.span;
+    if (progress) progress(userdata, decoded_progress);
+    stage = (ImageProgressStage){progress, userdata, decoded_progress,
+        (1.0f - decoded_progress) * .5f};
     bongo_cat_image_make_alpha_mask_progress(&image, alpha, staged, &stage);
     GLuint texture = bongo_cat_image_upload_texture(&image, 0, true, error);
     if (texture) {
