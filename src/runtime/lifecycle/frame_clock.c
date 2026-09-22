@@ -40,6 +40,12 @@ int bongo_cat_window_wait_timeout(const BongoCatApp *app, uint64_t now) {
         if (wait_ms > wheel_wait) wait_ms = wheel_wait;
     }
     if (app->hover_fade_active && wait_ms > 8) wait_ms = 8;
+    if (app->resize_target_pending) {
+        int resize_wait = remaining_ms(app->resize_next_ns, now);
+        if (wait_ms > resize_wait) wait_ms = resize_wait;
+    }
+    if ((app->resize_candidate || app->resize_gesture) && wait_ms > 16)
+        wait_ms = 16;
     if (app->window_snapshot && wait_ms > 16) wait_ms = 16;
     if (app->session.window.visible && !app->window_minimized &&
         (app->click_through_applied || (app->settings.window.pass_through &&
@@ -97,6 +103,12 @@ bool bongo_cat_window_wait_timeout_self_test(void) {
     app->pointer_hit_deadline_ns = now;
     if (bongo_cat_window_wait_timeout(app, now) != 0) goto done;
     app->pointer_hit_dirty = false;
+    app->resize_gesture = app->resize_target_pending = true;
+    app->resize_next_ns = now + 8000000ull;
+    if (bongo_cat_window_wait_timeout(app, now) != 8 ||
+        bongo_cat_window_wait_timeout(app, now + 3000000ull) != 5 ||
+        bongo_cat_window_wait_timeout(app, now + 8000000ull) != 0) goto done;
+    app->resize_gesture = app->resize_target_pending = false;
 #ifdef BONGO_CAT_HAS_CUBISM
     app->settings.model.max_fps = 1;
 #endif

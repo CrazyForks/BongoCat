@@ -33,6 +33,7 @@
           "maxFPS": "Taxa Máxima de Quadros"
         },
         "hints": {
+          "hoverRequires": "Ative as opções [Passagem de cliques] e [Sempre no Topo] acima.",
           "hoverUnavailable": "Ocultar ao passar o mouse não está disponível no ambiente de desktop atual.",
           "gamepadFourHands": "Mantém duas mãos extras visíveis no modo controle. A aparência depende do modelo",
           "gameInput": "O mascote não responde ao jogar?",

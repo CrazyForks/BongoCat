@@ -33,6 +33,7 @@
           "maxFPS": "Max Frame Rate"
         },
         "hints": {
+          "hoverRequires": "Requires both [Pass Through] and [Always on Top] above to be enabled.",
           "hoverUnavailable": "Hover hiding is unavailable in the current desktop environment.",
           "gamepadFourHands": "Keep two extra hands visible in gamepad mode. Appearance depends on the model",
           "gameInput": "Pet not responding in games?",

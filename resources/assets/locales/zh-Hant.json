@@ -33,6 +33,7 @@
           "maxFPS": "最大幀率"
         },
         "hints": {
+          "hoverRequires": "需要同時開啟上面的[滑鼠穿透]和[置頂]選項",
           "hoverUnavailable": "目前桌面環境暫不支援滑鼠移入隱藏。",
           "gamepadFourHands": "在手把模式下常駐顯示額外兩隻手，四手一起玩！實際效果依模型而定",
           "gameInput": "遊戲中桌寵沒反應？",

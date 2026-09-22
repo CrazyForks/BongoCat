@@ -68,6 +68,7 @@ void bongo_cat_window_mark_hit_dirty(BongoCatApp *app) {
 
 void bongo_cat_window_set_visible(BongoCatApp *app, bool visible) {
     if (!app || !app->window) return;
+    if (!visible) bongo_cat_window_resize_end(app);
     app->session.window.visible = visible;
     if (!visible) bongo_cat_window_snapshot_discard(app);
     if (!visible) {
@@ -137,6 +138,7 @@ void bongo_cat_window_schedule_hit_check(BongoCatApp *app) {
 void bongo_cat_window_sync_click_through(BongoCatApp *app) {
     if (!app || !app->window) return;
     bool forced = app->settings.window.pass_through || app->hover_hidden;
+    if (forced) bongo_cat_window_resize_end(app);
     if (forced && app->window_snapshot) bongo_cat_window_snapshot_end(app);
     if (!forced && !bongo_cat_platform_dynamic_hit_supported()) {
         app->pointer_transparent = false;
@@ -169,7 +171,7 @@ void bongo_cat_window_sync_click_through(BongoCatApp *app) {
 void bongo_cat_window_apply_pending_resize(BongoCatApp *app) {
     if (!app) return;
     if (app->window_snapshot) return;
-    if (app->wheel_animation_active) {
+    if (app->wheel_animation_active || app->resize_gesture) {
         if (!app->resize_pending) return;
         app->resize_pending = false;
         app->resize_render_target_pending = true;

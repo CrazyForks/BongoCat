@@ -199,6 +199,12 @@ void bongo_cat_app_loop(BongoCatApp *app) {
                 handle_event(app, &event);
         }
         bongo_cat_preferences_input_end(app->preferences);
+        bongo_cat_window_resize_update(app, SDL_GetTicksNS());
+        /* Recover if capture/focus changes swallowed the release event. */
+        if ((app->resize_candidate || app->resize_gesture) &&
+            !SDL_HasEvents(SDL_EVENT_MOUSE_MOTION, SDL_EVENT_MOUSE_BUTTON_UP) &&
+            !(SDL_GetGlobalMouseState(NULL, NULL) & SDL_BUTTON_RMASK))
+            bongo_cat_window_resize_end(app);
         bongo_cat_diagnostics_phase("model-watch-and-refresh");
         uint64_t now = SDL_GetTicksNS();
         bongo_cat_preferences_model_watch(app->preferences, now);

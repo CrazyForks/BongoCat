@@ -194,6 +194,11 @@ typedef struct BongoCatApp {
     bool context_menu_close_requested;
     double pointer_x, pointer_y;
     bool resize_gesture;
+    bool resize_candidate;
+    bool resize_menu_pending;
+    bool resize_target_pending;
+    uint64_t resize_next_ns;
+    float resize_pointer_delta;
     float resize_scale_start, resize_scale_target;
     int resize_base_width, resize_base_height;
     bool resize_pending;

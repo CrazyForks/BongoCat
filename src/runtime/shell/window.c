@@ -128,12 +128,12 @@ static bool event_targets_main_window(BongoCatApp *app,
     switch (event->type) {
     case SDL_EVENT_MOUSE_MOTION:
         return event->motion.windowID == id || app->window_drag_active ||
-            app->drag_candidate || app->resize_gesture;
+            app->drag_candidate || app->resize_candidate || app->resize_gesture;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
         return event->button.windowID == id;
     case SDL_EVENT_MOUSE_BUTTON_UP:
         return event->button.windowID == id || app->window_drag_active ||
-            app->drag_candidate || app->resize_gesture;
+            app->drag_candidate || app->resize_candidate || app->resize_gesture;
     case SDL_EVENT_MOUSE_WHEEL:
         return event->wheel.windowID == id;
     default:
@@ -145,6 +145,10 @@ bool bongo_cat_window_event(BongoCatApp *app, const SDL_Event *event) {
     bongo_cat_window_display_event(app, event);
     if (!event_targets_main_window(app, event)) return true;
     if (event->type == SDL_EVENT_QUIT) return false;
+    if (event->type == SDL_EVENT_WINDOW_HIDDEN ||
+        event->type == SDL_EVENT_WINDOW_MINIMIZED ||
+        event->type == SDL_EVENT_WINDOW_FOCUS_LOST)
+        bongo_cat_window_resize_end(app);
     if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
         bongo_cat_window_set_visible(app, false);
         return true;
@@ -217,7 +221,11 @@ bool bongo_cat_window_event(BongoCatApp *app, const SDL_Event *event) {
         bongo_cat_app_reset_pointer_tracking(app);
     } else if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN &&
         event->button.button == SDL_BUTTON_LEFT) {
-        bongo_cat_window_drag_begin(app, &event->button);
+        if (!app->resize_candidate && !app->resize_gesture)
+            bongo_cat_window_drag_begin(app, &event->button);
+    } else if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN &&
+        event->button.button == SDL_BUTTON_RIGHT) {
+        bongo_cat_window_resize_begin(app, &event->button);
     } else if (event->type == SDL_EVENT_MOUSE_MOTION) {
         bongo_cat_window_resize_by_pointer(app, event);
         bongo_cat_window_drag_motion(app, &event->motion);
@@ -230,13 +238,15 @@ bool bongo_cat_window_event(BongoCatApp *app, const SDL_Event *event) {
     } else if (event->type == SDL_EVENT_MOUSE_BUTTON_UP &&
         event->button.button == SDL_BUTTON_RIGHT) {
         bongo_cat_window_mark_hit_dirty(app);
-        if (app->resize_gesture) app->resize_gesture = false;
-        else bongo_cat_window_show_context_menu(app);
+        bool show_menu = app->resize_menu_pending && !app->resize_gesture;
+        bongo_cat_window_resize_end(app);
+        if (show_menu) bongo_cat_window_show_context_menu(app);
     }
     return true;
 }
 
 void bongo_cat_window_destroy(BongoCatApp *app) {
+    bongo_cat_window_resize_end(app);
     bongo_cat_window_drag_end(app);
     if (app->gl_context && SDL_GL_MakeCurrent(app->window, app->gl_context))
         bongo_cat_window_destroy_corner_mask();

@@ -90,6 +90,9 @@ void bongo_cat_window_drag_motion(BongoCatApp *app,
     const SDL_MouseMotionEvent *event);
 void bongo_cat_window_drag_end(BongoCatApp *app);
 void bongo_cat_window_resize_by_pointer(BongoCatApp *app, const SDL_Event *event);
+void bongo_cat_window_resize_begin(BongoCatApp *app, const SDL_MouseButtonEvent *event);
+void bongo_cat_window_resize_end(BongoCatApp *app);
+void bongo_cat_window_resize_update(BongoCatApp *app, uint64_t now);
 const char *bongo_cat_gamepad_axis_name(Uint8 axis);
 const char *bongo_cat_gamepad_button_name(Uint8 button);
 void bongo_cat_gamepads_set_enabled(BongoCatApp *app, bool enabled);

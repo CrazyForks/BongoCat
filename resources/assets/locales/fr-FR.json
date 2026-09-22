@@ -33,6 +33,7 @@
           "maxFPS": "Fréquence d'images maximale"
         },
         "hints": {
+          "hoverRequires": "Activez les options [Passage des clics] et [Toujours au premier plan] ci-dessus.",
           "hoverUnavailable": "Le masquage au survol est indisponible dans cet environnement de bureau.",
           "gamepadFourHands": "Affiche en permanence deux mains supplémentaires en mode manette. Le rendu dépend du modèle",
           "gameInput": "La mascotte ne réagit pas en jeu ?",
