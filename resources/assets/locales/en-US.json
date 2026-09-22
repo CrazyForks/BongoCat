@@ -22,6 +22,7 @@
           "alwaysOnTop": "Always on Top",
           "keepInScreen": "Keep on Screen",
           "windowSize": "Window Size",
+          "resetPosition": "Reset",
           "windowCorners": "Window Corners",
           "opacity": "Opacity",
           "randomExpression": "Random Expressions",
@@ -43,7 +44,7 @@
           "keepInScreen": "When enabled, the window automatically stays within the screen boundaries.",
           "obsBackground": "Window capture is black?",
           "obsBackgroundHelp": "OBS: enable this option, use the Windows 7 compatibility method, and remove the background with a color key filter.",
-          "windowSize": "Move mouse to window edge, or hold Shift and right-drag to resize.",
+          "windowSize": "[Scroll] to resize or [hold the right mouse button] and drag right to enlarge, left to shrink",
           "hideOnHover": "With Pass Through and Always on Top enabled, hide the pet immediately on hover and show it again when the pointer leaves."
         }
       },

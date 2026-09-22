@@ -22,6 +22,7 @@
           "alwaysOnTop": "窗口置顶",
           "keepInScreen": "保持在屏幕内",
           "windowSize": "窗口尺寸",
+          "resetPosition": "复位",
           "windowCorners": "窗口圆角",
           "opacity": "不透明度",
           "randomExpression": "随机表情",
@@ -43,7 +44,7 @@
           "keepInScreen": "启用后，窗口会自动调整位置，防止超出屏幕边界。",
           "obsBackground": "窗口捕获黑屏？",
           "obsBackgroundHelp": "OBS：开启当前选项，使用 Windows 7 兼容捕获，并用色键滤镜移除背景。\n哔哩哔哩直播姬：无需开启当前选项，选择游戏进程捕获，并开启允许窗口透明。",
-          "windowSize": "将鼠标移至窗口边缘，或按住 Shift 并右键拖动，也可以调整窗口大小。",
+          "windowSize": "[滚轮]调整大小 或 [按住右键]右拖放大、左拖缩小",
           "hideOnHover": "鼠标穿透和置顶均开启时，鼠标移到桌宠上立即隐藏，移开后恢复显示。"
         }
       },

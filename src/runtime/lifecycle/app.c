@@ -7,11 +7,24 @@
 #include "bongo_cat/preferences.h"
 #include "bongo_cat/tray.h"
 #include <SDL3/SDL_opengl.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 static void scan_models(BongoCatApp *app) {
     bongo_cat_app_rescan_models(app);
+}
+static void cache_startup_display_fps(BongoCatApp *app) {
+    /* Read only the active desktop mode, once after restoring pet position. */
+    SDL_DisplayID display = SDL_GetDisplayForWindow(app->window);
+    if (!display) display = SDL_GetPrimaryDisplay();
+    const SDL_DisplayMode *mode = display ? SDL_GetCurrentDisplayMode(display) : NULL;
+    app->startup_display_fps = BONGO_CAT_DEFAULT_MAX_FPS;
+    if (mode) {
+        double rounded = (double)mode->refresh_rate + 0.5;
+        if (rounded >= 61.0 && rounded < (double)INT_MAX)
+            app->startup_display_fps = (int)rounded;
+    }
 }
 static bool load_selected_model(BongoCatApp *app, BongoCatError *error) {
     const char *candidates[] = {app->session.active_model_id, "standard", "keyboard", "gamepad"};
@@ -96,6 +109,7 @@ bool bongo_cat_app_initialize(BongoCatApp *app, int argc, char **argv,
     bongo_cat_startup_stage(app, "window-ready");
     if (bongo_cat_platform_init(&app->platform, app->window, &app->input, error) != BONGO_CAT_OK) return false;
     bongo_cat_window_apply(app);
+    cache_startup_display_fps(app);
     bongo_cat_startup_stage(app, "platform-ready");
     app->live2d = bongo_cat_live2d_create(app->asset_root, error);
     if (!app->live2d) return false;

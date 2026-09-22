@@ -77,6 +77,7 @@ bool bongo_cat_window_apply_scale_centered(BongoCatApp *app, float scale,
     int base_width, int base_height, float base_scale,
     float center_x, float center_y);
 void bongo_cat_window_clamp_to_display(BongoCatApp *app);
+void bongo_cat_window_reset_position(BongoCatApp *app);
 void bongo_cat_window_drag_to(BongoCatApp *app, int x, int y);
 void bongo_cat_window_drag_bounds_refresh(BongoCatApp *app);
 void bongo_cat_window_drag_bounds_clear(BongoCatApp *app);

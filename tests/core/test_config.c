@@ -164,6 +164,11 @@ void test_config(void) {
     CHECK(strcmp(loaded_session.active_behaviors[1].behavior_id,
         "model:expression:2") == 0);
 
+    settings.model.max_fps = BONGO_CAT_DISPLAY_MAX_FPS;
+    CHECK(bongo_cat_settings_save(settings_path, &settings, &error) == BONGO_CAT_OK);
+    CHECK(bongo_cat_settings_load(settings_path, &loaded_settings, &error) == BONGO_CAT_OK);
+    CHECK(loaded_settings.model.max_fps == BONGO_CAT_DISPLAY_MAX_FPS);
+
     const char *unsupported = "bongocat-unsupported.json";
     write_text(unsupported,
         "{\"format\":\"bongocat/settings\",\"schemaVersion\":1,"

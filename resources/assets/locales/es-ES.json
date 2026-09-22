@@ -22,6 +22,7 @@
           "alwaysOnTop": "Siempre visible",
           "keepInScreen": "Mantener en pantalla",
           "windowSize": "Tamaño de la ventana",
+          "resetPosition": "Restablecer",
           "windowCorners": "Esquinas redondeadas",
           "opacity": "Opacidad",
           "randomExpression": "Expresiones aleatorias",
@@ -43,7 +44,7 @@
           "keepInScreen": "Al activarlo, la ventana se mantiene automáticamente dentro de los límites de la pantalla.",
           "obsBackground": "¿La captura de ventana aparece en negro?",
           "obsBackgroundHelp": "OBS: activa esta opción, usa el método compatible con Windows 7 y elimina el fondo con un filtro de clave de color.",
-          "windowSize": "Mueva el ratón al borde de la ventana o mantenga Mayús y arrastre con el botón derecho para cambiar el tamaño.",
+          "windowSize": "Usa la [rueda] para cambiar el tamaño o [mantén pulsado el botón derecho] y arrastra a la derecha para ampliar o a la izquierda para reducir",
           "hideOnHover": "Con el paso de clics y Siempre visible activados, la mascota se oculta inmediatamente al pasar el ratón y reaparece al retirarlo."
         }
       },

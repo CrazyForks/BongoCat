@@ -22,6 +22,7 @@
           "alwaysOnTop": "Toujours au premier plan",
           "keepInScreen": "Maintenir à l'écran",
           "windowSize": "Taille de la fenêtre",
+          "resetPosition": "Réinitialiser",
           "windowCorners": "Coins arrondis",
           "opacity": "Opacité",
           "randomExpression": "Expressions aléatoires",
@@ -43,7 +44,7 @@
           "keepInScreen": "Lorsque cette option est activée, la fenêtre reste automatiquement dans les limites de l'écran.",
           "obsBackground": "La capture de fenêtre est noire ?",
           "obsBackgroundHelp": "OBS : activez cette option, utilisez la méthode compatible Windows 7 et supprimez le fond avec un filtre d'incrustation couleur.",
-          "windowSize": "Placez la souris sur le bord de la fenêtre, ou maintenez Maj et faites glisser avec le bouton droit pour redimensionner.",
+          "windowSize": "Utilisez la [molette] pour redimensionner ou [maintenez le bouton droit enfoncé] et glissez à droite pour agrandir, à gauche pour réduire",
           "hideOnHover": "Lorsque le passage des clics et Toujours au premier plan sont activés, le compagnon se masque immédiatement au survol et réapparaît lorsque le pointeur s’éloigne."
         }
       },

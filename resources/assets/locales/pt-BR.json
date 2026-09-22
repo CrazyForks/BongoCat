@@ -22,6 +22,7 @@
           "alwaysOnTop": "Sempre no Topo",
           "keepInScreen": "Manter na Tela",
           "windowSize": "Tamanho da Janela",
+          "resetPosition": "Redefinir",
           "windowCorners": "Cantos arredondados",
           "opacity": "Opacidade",
           "randomExpression": "Expressões Aleatórias",
@@ -43,7 +44,7 @@
           "keepInScreen": "Quando ativado, a janela permanece automaticamente dentro dos limites da tela.",
           "obsBackground": "A captura da janela está preta?",
           "obsBackgroundHelp": "OBS: ative esta opção, use o método compatível com o Windows 7 e remova o fundo com um filtro de chave de cor.",
-          "windowSize": "Mova o mouse para a borda da janela ou segure Shift e arraste com o botão direito para redimensionar.",
+          "windowSize": "Use a [roda do mouse] para ajustar o tamanho ou [mantenha o botão direito pressionado] e arraste para a direita para ampliar, para a esquerda para reduzir",
           "hideOnHover": "Com a passagem de cliques e Sempre no Topo ativados, o mascote se oculta imediatamente ao passar o mouse e reaparece ao afastá-lo."
         }
       },

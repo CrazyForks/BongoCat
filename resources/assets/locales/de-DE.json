@@ -22,6 +22,7 @@
           "alwaysOnTop": "Immer im Vordergrund",
           "keepInScreen": "Auf dem Bildschirm halten",
           "windowSize": "Fenstergröße",
+          "resetPosition": "Zurücksetzen",
           "windowCorners": "Fensterrundung",
           "opacity": "Deckkraft",
           "randomExpression": "Zufällige Ausdrücke",
@@ -43,7 +44,7 @@
           "keepInScreen": "Wenn aktiviert, bleibt das Fenster automatisch innerhalb der Bildschirmgrenzen.",
           "obsBackground": "Fensteraufnahme schwarz?",
           "obsBackgroundHelp": "OBS: Diese Option aktivieren, die Windows-7-Kompatibilitätsmethode verwenden und den Hintergrund mit einem Farbschlüssel-Filter entfernen.",
-          "windowSize": "Bewegen Sie die Maus an den Fensterrand oder halten Sie Umschalt gedrückt und ziehen Sie mit der rechten Maustaste.",
+          "windowSize": "Mit dem [Mausrad] die Größe ändern oder die [rechte Maustaste gedrückt halten]: nach rechts ziehen zum Vergrößern, nach links zum Verkleinern",
           "hideOnHover": "Wenn Klickdurchlässigkeit und Immer im Vordergrund aktiviert sind, wird das Haustier beim Darüberfahren sofort ausgeblendet und beim Verlassen wieder angezeigt."
         }
       },

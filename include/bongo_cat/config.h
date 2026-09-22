@@ -4,6 +4,8 @@
 #include "bongo_cat/common.h"
 
 #define BONGO_CAT_DEFAULT_MAX_FPS 60
+/* Resolve this saved choice using the display refresh rate cached at startup. */
+#define BONGO_CAT_DISPLAY_MAX_FPS (-1)
 #define BONGO_CAT_DEFAULT_WINDOW_SCALE_PERCENT 100.0f
 #define BONGO_CAT_DEFAULT_WINDOW_OPACITY_PERCENT 100.0f
 #define BONGO_CAT_DEFAULT_RANDOM_EXPRESSION_SECONDS 5.0f
