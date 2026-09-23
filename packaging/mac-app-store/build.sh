@@ -23,7 +23,7 @@ lipo -create \
   build-app-store/arm64/BongoCat.app/Contents/MacOS/BongoCat \
   build-app-store/x86_64/BongoCat.app/Contents/MacOS/BongoCat \
   -output "$app/Contents/MacOS/BongoCat"
-lipo -verify_arch arm64 x86_64 "$app/Contents/MacOS/BongoCat"
+lipo "$app/Contents/MacOS/BongoCat" -verify_arch arm64 x86_64
 
 # Dependencies must be static or Apple system libraries. Do not upload a bundle
 # that still relies on a Homebrew library installed only on the CI machine.
