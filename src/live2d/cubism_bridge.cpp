@@ -196,8 +196,13 @@ extern "C" bool bongo_cat_live2d_texture_refresh_pending(const BongoCatLive2D *r
     return runtime && runtime->model && runtime->model->texture_refresh_pending(active);
 }
 
-extern "C" bool bongo_cat_live2d_refresh_textures(BongoCatLive2D *runtime, bool active) {
-    return runtime && runtime->model && runtime->model->refresh_texture_resolution(active);
+extern "C" bool bongo_cat_live2d_texture_refresh_due(const BongoCatLive2D *runtime,
+    bool active, bool allow_start) {
+    return runtime && runtime->model && runtime->model->texture_refresh_due(active, allow_start);
+}
+extern "C" bool bongo_cat_live2d_refresh_textures(BongoCatLive2D *runtime,
+    bool active, bool allow_start) {
+    return runtime && runtime->model && runtime->model->refresh_texture_resolution(active, allow_start);
 }
 extern "C" bool bongo_cat_live2d_texture_refresh_busy(const BongoCatLive2D *runtime) {
     return runtime && runtime->model && runtime->model->texture_refresh_busy();
@@ -209,6 +214,10 @@ extern "C" void bongo_cat_live2d_draw(BongoCatLive2D *runtime) {
     if (!runtime) return;
     if (runtime->model) runtime->model->draw();
 }
+extern "C" void bongo_cat_live2d_set_vertical_flip(BongoCatLive2D *runtime, bool flipped) {
+    if (runtime && runtime->model) runtime->model->set_vertical_flip(flipped);
+}
+
 extern "C" void bongo_cat_live2d_set_mirror(BongoCatLive2D *runtime, bool mirror) {
     if (runtime && runtime->model) runtime->model->set_mirror(mirror); }
 extern "C" void bongo_cat_live2d_set_render_options(BongoCatLive2D *runtime,

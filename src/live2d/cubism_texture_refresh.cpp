@@ -8,13 +8,15 @@
 #include <SDL3/SDL_timer.h>
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 #include <new>
 #include <utility>
 
 namespace bongo_cat {
 
 namespace {
-constexpr uint64_t kResizeSettleNs = 600000000ull;
+constexpr uint64_t kShrinkSettleNs = 300000000ull;
+constexpr uint64_t kEnlargeSettleNs = 200000000ull;
 constexpr uint64_t kPauseReleaseNs = 5000000000ull;
 }
 
@@ -123,7 +125,7 @@ void NativeModel::cancel_texture_refresh_async() {
 bool NativeModel::texture_refresh_busy() const {
     return texture_refresh_ && (texture_refresh_->finishing || texture_refresh_->cancelled ||
         (!texture_refresh_->paused_ns &&
-            SDL_GetTicksNS() - texture_resize_ns_ >= kResizeSettleNs));
+            SDL_GetTicksNS() - texture_resize_ns_ >= kEnlargeSettleNs));
 }
 
 bool NativeModel::texture_refresh_pending(bool active) const {
@@ -131,14 +133,33 @@ bool NativeModel::texture_refresh_pending(bool active) const {
         texture_refresh_memory_.due(SDL_GetTicksNS());
 }
 
-bool NativeModel::refresh_texture_resolution(bool active) {
+bool NativeModel::texture_refresh_due(bool active, bool allow_start) const {
+    const uint64_t now = SDL_GetTicksNS();
+    if (texture_refresh_) {
+        const auto &refresh = *texture_refresh_;
+        if (refresh.finishing || refresh.cancelled) return true;
+        if (active)
+            return refresh.paused_ns || (now - texture_resize_ns_ >= kEnlargeSettleNs &&
+                bongo_cat_image_texture_job_needs_poll(refresh.job));
+        /* Observe the pause transition once, then service it again only when
+           its bounded retention period expires. Modal loops must also ask
+           this query: busy() intentionally excludes paused work. */
+        return !refresh.paused_ns || now - refresh.paused_ns >= kPauseReleaseNs;
+    }
+    return texture_refresh_memory_.due(now) ||
+        (allow_start && active && texture_refresh_pending_ &&
+            dynamic_texture_resolution_ &&
+            now - texture_resize_ns_ >= kEnlargeSettleNs &&
+            !texture_refresh_memory_.cancellation_cooldown(now));
+}
+
+bool NativeModel::refresh_texture_resolution(bool active, bool allow_start) {
+    if (!texture_refresh_due(active, allow_start)) return false;
     const uint64_t now = SDL_GetTicksNS();
     if (!texture_refresh_ && texture_refresh_memory_.due(now))
         texture_refresh_memory_.poll(now, texture_storage_mib());
     if (!texture_refresh_ && texture_refresh_memory_.cancellation_cooldown(now))
         return false;
-    if (!texture_refresh_pending_ || !dynamic_texture_resolution_ ||
-        textures_.empty() || !setting_) return false;
     bool changed = false;
     if (texture_refresh_) {
         auto &refresh = *texture_refresh_;
@@ -146,17 +167,19 @@ bool NativeModel::refresh_texture_resolution(bool active) {
             /* Brief gestures/hides pause the same bounded job. A long pause
                releases its unfinished atlas; obsolete jobs drain immediately,
                even while hidden, without uploading another batch. */
-            texture_resize_ns_ = now;
             if (!refresh.paused_ns) refresh.paused_ns = now;
             if (!refresh.finishing && !refresh.cancelled &&
                 now - refresh.paused_ns >= kPauseReleaseNs) {
                 cancel_texture_refresh_async();
             }
-        } else refresh.paused_ns = 0;
+        } else if (refresh.paused_ns) {
+            refresh.paused_ns = 0;
+            texture_resize_ns_ = now;
+        }
         BongoCatError error{};
         if (!refresh.finishing) {
             if (!refresh.cancelled && (!active ||
-                now - texture_resize_ns_ < kResizeSettleNs)) return false;
+                now - texture_resize_ns_ < kEnlargeSettleNs)) return false;
             auto &next = *refresh.replacement;
             int result = bongo_cat_image_texture_job_poll(refresh.job,
                 &next.id, &next.width, &next.height, &next.alpha, &error);
@@ -169,6 +192,17 @@ bool NativeModel::refresh_texture_resolution(bool active) {
                     previous ? previous->height : 0, next.width, next.height,
                     (double)(now - refresh.started) / 1000000.0);
                 textures_[refresh.index] = std::move(refresh.replacement);
+                /* Repeated slots of the same file already share the old
+                   allocation. Keep them shared after resizing instead of
+                   decoding/uploading one identical replacement per slot.
+                   Different files may have diverged since the initial hash. */
+                const char *file = setting_->GetTextureFileName((int)refresh.index);
+                for (size_t i = 0; file && i < textures_.size(); ++i) {
+                    if (textures_[i] != previous) continue;
+                    const char *other = setting_->GetTextureFileName((int)i);
+                    if (other && std::strcmp(file, other) == 0)
+                        textures_[i] = textures_[refresh.index];
+                }
                 bind_textures();
                 triangle_alpha_.clear();
                 visual_state_cached_ = false;
@@ -204,7 +238,11 @@ bool NativeModel::refresh_texture_resolution(bool active) {
         texture_refresh_ = nullptr;
         return changed;
     }
-    if (!active || now - texture_resize_ns_ < kResizeSettleNs) return false;
+    /* Always drain an existing job above, even if future work is disabled.
+       Native modal callbacks may service resources but never start a job. */
+    if (!allow_start || !active || !texture_refresh_pending_ ||
+        !dynamic_texture_resolution_ || textures_.empty() || !setting_ ||
+        now - texture_resize_ns_ < kEnlargeSettleNs) return false;
     GLint limit = 0;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &limit);
     if (limit < 1) { texture_refresh_pending_ = false; return false; }
@@ -212,8 +250,15 @@ bool NativeModel::refresh_texture_resolution(bool active) {
         const auto &current = textures_[texture_refresh_index_];
         if (!current) continue;
         auto bound = texture_refresh_bound(*current, limit);
-        if (fitted_size(*current, bound) == std::make_pair(current->width, current->height))
+        const auto fitted = fitted_size(*current, bound);
+        if (fitted == std::make_pair(current->width, current->height))
             continue;
+        // Restore enlarged detail promptly; coalesce brief shrink bursts before
+        // preparing a smaller atlas so oversized storage can be released sooner.
+        const bool enlarging = fitted.first > current->width ||
+            fitted.second > current->height;
+        if (!enlarging && now - texture_resize_ns_ < kShrinkSettleNs)
+            return false;
         std::unique_ptr<TextureRefresh> refresh(new(std::nothrow) TextureRefresh);
         BongoCatError error{};
         std::string texture_path;

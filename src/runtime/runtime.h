@@ -25,7 +25,7 @@ void bongo_cat_model_refresh_invalidate(BongoCatApp *app);
 bool bongo_cat_model_refresh_event(BongoCatApp *app,
     const SDL_Event *event);
 void bongo_cat_model_refresh_update(BongoCatApp *app);
-void bongo_cat_app_refresh_texture_resolution(BongoCatApp *app);
+void bongo_cat_app_refresh_texture_resolution(BongoCatApp *app, bool allow_start);
 void bongo_cat_model_refresh_shutdown(BongoCatApp *app);
 BongoCatResult bongo_cat_app_locate_assets(BongoCatApp *app, BongoCatError *error);
 bool bongo_cat_startup_prepare(BongoCatApp *app, int argc, char **argv,

@@ -13,9 +13,11 @@
         "labels": {
           "modelSettings": "模型",
           "gamepadFourHands": "手柄四手模式",
-          "dynamicTextureResolution": "动态纹理分辨率",
+          "dynamicTextureResolution": "关闭动态纹理分辨率",
           "mirrorMode": "镜像模式",
-          "mouseMirror": "鼠标镜像",
+          "verticalFlip": "倒挂模式",
+          "mouseMirror": "鼠标左右反转",
+          "mouseVerticalFlip": "鼠标上下反转",
           "mouseCentered": "鼠标以桌宠为中心",
           "ignoreMouse": "忽略鼠标事件",
           "windowSettings": "窗口",
@@ -35,6 +37,7 @@
           "maxFPS": "最大帧率"
         },
         "hints": {
+          "dynamicTextureResolution": "根据实际显示尺寸自适应调整纹理精度，在维持画面细节的同时，优化显存资源占用。一般情况下不建议开启",
           "hoverRequires": "需要同时开启上面的[鼠标穿透]和[置顶]选项",
           "hoverUnavailable": "当前桌面环境暂不支持鼠标移入隐藏。",
           "gamepadFourHands": "在手柄模式下常驻显示额外两只手，四手一起玩！具体效果取决于模型",
@@ -47,7 +50,6 @@
           "obsBackground": "窗口捕获黑屏？",
           "obsBackgroundHelp": "OBS：开启当前选项，使用 Windows 7 兼容捕获，并用色键滤镜移除背景。\n哔哩哔哩直播姬：无需开启当前选项，选择游戏进程捕获，并开启允许窗口透明。",
           "windowSize": "[滚轮]调整大小 或 [按住右键]右拖放大、左拖缩小",
-          "dynamicTextureResolution": "根据当前显示尺寸缩小过大的模型纹理，以降低内存占用。更改后会重新加载模型。",
           "dynamicTextureResolutionFailed": "无法使用所选纹理模式重新加载模型。",
           "hideOnHover": "鼠标穿透和置顶均开启时，鼠标移到桌宠上立即隐藏，移开后恢复显示。"
         }
@@ -230,9 +232,9 @@
       "joinGithub": "参与 GitHub 贡献"
     },
     "multiplePets": "同时显示多个",
-    "multiplePetsLimit": "\u6700\u591a\u53ef\u540c\u65f6\u663e\u793a 8 \u4e2a\u684c\u5ba0",
-    "removeDesktopPet": "\u5173\u95ed\u6b64\u684c\u5ba0",
-    "modelLoadFailed": "\u6a21\u578b\u65e0\u6cd5\u663e\u793a",
+    "multiplePetsLimit": "最多可同时显示 8 个桌宠",
+    "removeDesktopPet": "关闭此桌宠",
+    "modelLoadFailed": "模型无法显示",
     "noBehaviors": "暂无可用项目",
     "preferencesWindowTitle": "BongoCat - Settings",
     "startup": {

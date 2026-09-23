@@ -59,12 +59,14 @@ public:
     void resize(int width, int height);
     void reshape(int width, int height);
     bool texture_refresh_pending(bool active) const;
+    bool texture_refresh_due(bool active, bool allow_start) const;
     bool texture_refresh_busy() const;
     void cancel_texture_refresh_async();
-    bool refresh_texture_resolution(bool active);
+    bool refresh_texture_resolution(bool active, bool allow_start);
     bool update(float delta_seconds);
     void draw();
     void set_mirror(bool mirror);
+    void set_vertical_flip(bool flipped);
     void set_render_options(const BongoCatLive2DRenderOptions &options);
     void set_dragging(float x, float y, bool angle_z = false);
     void prepare_viewer_audit();
@@ -220,6 +222,7 @@ private:
     bool suppress_eye_blink_ = false;
     bool automatic_idle_ = true;
     bool mirror_ = false;
+    bool vertical_flip_ = false;
     BongoCatLive2DRenderOptions render_options_{};
     bool direct_textures_ = false;
     bool dynamic_texture_resolution_ = false;

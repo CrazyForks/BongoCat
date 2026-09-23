@@ -13,9 +13,11 @@
         "labels": {
           "modelSettings": "Modelo",
           "gamepadFourHands": "Modo de quatro mãos no controle",
-          "dynamicTextureResolution": "Dynamic Texture Resolution",
+          "dynamicTextureResolution": "Desativar resolução dinâmica de texturas",
           "mirrorMode": "Modo Espelho",
-          "mouseMirror": "Espelho do Mouse",
+          "verticalFlip": "Pendurado de Cabeça para Baixo",
+          "mouseVerticalFlip": "Inverter Mouse Verticalmente",
+          "mouseMirror": "Inverter Mouse Horizontalmente",
           "mouseCentered": "Mouse centrado no mascote de mesa",
           "ignoreMouse": "Ignorar Eventos do Mouse",
           "windowSettings": "Janela",
@@ -35,6 +37,7 @@
           "maxFPS": "Taxa Máxima de Quadros"
         },
         "hints": {
+          "dynamicTextureResolution": "Ajusta automaticamente a resolução das texturas ao tamanho real de exibição, preservando os detalhes visuais e otimizando o uso da memória de vídeo. Em geral, não é recomendado ativar esta opção.",
           "hoverRequires": "Ative as opções [Passagem de cliques] e [Sempre no Topo] acima.",
           "hoverUnavailable": "Ocultar ao passar o mouse não está disponível no ambiente de desktop atual.",
           "gamepadFourHands": "Mantém duas mãos extras visíveis no modo controle. A aparência depende do modelo",
@@ -47,7 +50,6 @@
           "obsBackground": "A captura da janela está preta?",
           "obsBackgroundHelp": "OBS: ative esta opção, use o método compatível com o Windows 7 e remova o fundo com um filtro de chave de cor.",
           "windowSize": "Use a [roda do mouse] para ajustar o tamanho ou [mantenha o botão direito pressionado] e arraste para a direita para ampliar, para a esquerda para reduzir",
-          "dynamicTextureResolution": "Downsample large model textures to match the current display size. The model reloads after changing this option.",
           "dynamicTextureResolutionFailed": "Unable to reload the model with the selected texture mode.",
           "hideOnHover": "Com a passagem de cliques e Sempre no Topo ativados, o mascote se oculta imediatamente ao passar o mouse e reaparece ao afastá-lo."
         }
@@ -230,9 +232,9 @@
       "joinGithub": "Contribute on GitHub"
     },
     "multiplePets": "Exibir vários",
-    "multiplePetsLimit": "At\u00e9 8 mascotes podem ser exibidos ao mesmo tempo",
-    "removeDesktopPet": "Fechar este mascote da \u00e1rea de trabalho",
-    "modelLoadFailed": "N\u00e3o foi poss\u00edvel exibir este modelo",
+    "multiplePetsLimit": "Até 8 mascotes podem ser exibidos ao mesmo tempo",
+    "removeDesktopPet": "Fechar este mascote da área de trabalho",
+    "modelLoadFailed": "Não foi possível exibir este modelo",
     "noBehaviors": "Nenhum item",
     "preferencesWindowTitle": "BongoCat - Settings",
     "startup": {

@@ -21,6 +21,7 @@ void NativeModel::update_viewport() {
     int right = (int)std::lround(frame_.right * content_width);
     int bottom = (int)std::lround(frame_.bottom * content_height);
     int top = (int)std::lround(frame_.top * content_height);
+    if (vertical_flip_) std::swap(bottom, top);
     viewport_x_ = std::max(0, std::min(width_ - 1, left));
     viewport_y_ = std::max(0, std::min(height_ - 1, bottom));
     viewport_width_ = std::max(1,

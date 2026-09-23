@@ -169,15 +169,67 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
     bongo_cat_pref_section_icon(context, tr(app,
         "pages.preference.cat.labels.modelSettings", "Model"),
         BONGO_CAT_PREF_ICON_SECTION_MODEL);
+    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_GAMEPAD_FOUR_HANDS);
+    if (bongo_cat_pref_toggle(context, "gamepad-four-hands", tr(app,
+        "pages.preference.cat.labels.gamepadFourHands", "Gamepad Four-Hand Mode"), tr(app,
+        "pages.preference.cat.hints.gamepadFourHands",
+        "Keep two extra hands visible in gamepad mode. Appearance depends on the model"),
+        &model->gamepad_four_hands))
+        bongo_cat_app_refresh_hands(app);
+    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_MIRROR);
+    if (bongo_cat_pref_toggle(context, "mirror", tr(app,
+        "pages.preference.cat.labels.mirrorMode", "Mirror Mode"), "",
+        &model->mirror)) {
+        app->model_pointer_anchor_ready = false;
+        app->pointer_known = false;
+        app->dirty = true;
+    }
+    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_VERTICAL_FLIP);
+    if (bongo_cat_pref_toggle(context, "vertical-flip", tr(app,
+        "pages.preference.cat.labels.verticalFlip", "Hang Upside Down"), "",
+        &model->vertical_flip))
+        bongo_cat_app_reset_pointer_tracking(app);
+    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_MOUSE_MIRROR);
+    if (bongo_cat_pref_toggle(context, "mouse-mirror", tr(app,
+        "pages.preference.cat.labels.mouseMirror", "Mouse Horizontal Flip"), "",
+        &model->mouse_mirror)) {
+        app->pointer_known = false;
+        app->dirty = true;
+    }
+    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_MOUSE_VERTICAL_FLIP);
+    if (bongo_cat_pref_toggle(context, "mouse-vertical-flip", tr(app,
+        "pages.preference.cat.labels.mouseVerticalFlip", "Mouse Vertical Flip"), "",
+        &model->mouse_vertical_flip))
+        bongo_cat_app_reset_pointer_tracking(app);
+    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_MOUSE_CENTERED);
+    if (bongo_cat_pref_toggle(context, "mouse-centered", tr(app,
+        "pages.preference.cat.labels.mouseCentered", "Mouse Centered on Desktop Pet"),
+        "", &model->mouse_centered)) {
+        bongo_cat_app_reset_pointer_tracking(app);
+    }
+    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_IGNORE_MOUSE);
+    if (bongo_cat_pref_toggle(context, "ignore-mouse", tr(app,
+        "pages.preference.cat.labels.ignoreMouse", "Ignore Mouse Events"), "",
+        &model->ignore_mouse)) {
+        app->pointer_known = false;
+        app->dirty = true;
+    }
+    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_MAX_FPS);
+    model->max_fps = bongo_cat_pref_fps(context, "max-fps", tr(app,
+        "pages.preference.cat.labels.maxFPS", "Max Frame Rate"), model->max_fps,
+        app->startup_display_fps);
     bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_TEXTURE_RESOLUTION);
     bool old_dynamic_texture_resolution = model->dynamic_texture_resolution;
+    bool disable_dynamic_texture_resolution = !model->dynamic_texture_resolution;
     if (bongo_cat_pref_toggle(context, "dynamic-texture-resolution", tr(app,
         "pages.preference.cat.labels.dynamicTextureResolution",
-        "Dynamic Texture Resolution"), tr(app,
+        "Disable Dynamic Texture Resolution"), tr(app,
         "pages.preference.cat.hints.dynamicTextureResolution",
-        "Downsample large model textures to match the current display size. "
-        "The model reloads after changing this option."),
-        &model->dynamic_texture_resolution)) {
+        "Dynamically adjusts texture resolution to the actual display size, "
+        "preserving visual detail while optimizing video memory usage. "
+        "Enabling this option is generally not recommended."),
+        &disable_dynamic_texture_resolution)) {
+        model->dynamic_texture_resolution = !disable_dynamic_texture_resolution;
         SDL_LogInfo(BONGO_CAT_LOG_LIFECYCLE,
             "[memory] texture-mode-change previous=%d requested=%d",
             old_dynamic_texture_resolution, model->dynamic_texture_resolution);
@@ -197,45 +249,6 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
             "[memory] texture-mode-result reloaded=%d active=%d",
             reloaded, model->dynamic_texture_resolution);
     }
-    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_GAMEPAD_FOUR_HANDS);
-    if (bongo_cat_pref_toggle(context, "gamepad-four-hands", tr(app,
-        "pages.preference.cat.labels.gamepadFourHands", "Gamepad Four-Hand Mode"), tr(app,
-        "pages.preference.cat.hints.gamepadFourHands",
-        "Keep two extra hands visible in gamepad mode. Appearance depends on the model"),
-        &model->gamepad_four_hands))
-        bongo_cat_app_refresh_hands(app);
-    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_MIRROR);
-    if (bongo_cat_pref_toggle(context, "mirror", tr(app,
-        "pages.preference.cat.labels.mirrorMode", "Mirror Mode"), "",
-        &model->mirror)) {
-        app->model_pointer_anchor_ready = false;
-        app->pointer_known = false;
-        app->dirty = true;
-    }
-    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_MOUSE_MIRROR);
-    if (bongo_cat_pref_toggle(context, "mouse-mirror", tr(app,
-        "pages.preference.cat.labels.mouseMirror", "Mouse Mirror"), "",
-        &model->mouse_mirror)) {
-        app->pointer_known = false;
-        app->dirty = true;
-    }
-    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_MOUSE_CENTERED);
-    if (bongo_cat_pref_toggle(context, "mouse-centered", tr(app,
-        "pages.preference.cat.labels.mouseCentered", "Mouse Centered on Desktop Pet"),
-        "", &model->mouse_centered)) {
-        bongo_cat_app_reset_pointer_tracking(app);
-    }
-    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_IGNORE_MOUSE);
-    if (bongo_cat_pref_toggle(context, "ignore-mouse", tr(app,
-        "pages.preference.cat.labels.ignoreMouse", "Ignore Mouse Events"), "",
-        &model->ignore_mouse)) {
-        app->pointer_known = false;
-        app->dirty = true;
-    }
-    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_MAX_FPS);
-    model->max_fps = bongo_cat_pref_fps(context, "max-fps", tr(app,
-        "pages.preference.cat.labels.maxFPS", "Max Frame Rate"), model->max_fps,
-        app->startup_display_fps);
 }
 
 static void update_autostart(BongoCatApp *app, bool old_value, bool old_admin) {

@@ -176,6 +176,10 @@ bool bongo_cat_live2d_viewport(const BongoCatLive2D *live2d,
 void bongo_cat_live2d_resize(BongoCatLive2D *live2d, int width, int height);
 void bongo_cat_live2d_reshape(BongoCatLive2D *live2d, int width, int height);
 bool bongo_cat_live2d_texture_refresh_pending(const BongoCatLive2D *live2d, bool active);
+/* Main-thread query without GL calls. Unlike pending, excludes debounce,
+   cancellation cooldown and paused jobs that do not yet need retirement. */
+bool bongo_cat_live2d_texture_refresh_due(const BongoCatLive2D *live2d,
+    bool active, bool allow_start);
 /* True only while upload/cleanup can make progress, so low playback FPS does
    not delay reclamation. Paused jobs do not request frequent wakeups. */
 bool bongo_cat_live2d_texture_refresh_busy(const BongoCatLive2D *live2d);
@@ -184,11 +188,14 @@ bool bongo_cat_live2d_texture_refresh_busy(const BongoCatLive2D *live2d);
 void bongo_cat_live2d_cancel_texture_refresh(BongoCatLive2D *live2d);
 /* Call with the model's GL context current. False active pauses uploads during
    gestures/temporary hiding; obsolete work is still cleaned up. True permits
-   one upload batch. Long pauses release the unfinished replacement. */
-bool bongo_cat_live2d_refresh_textures(BongoCatLive2D *live2d, bool active);
+   one upload batch. Long pauses release the unfinished replacement.
+   False allow_start services existing work and settled reclamation only. */
+bool bongo_cat_live2d_refresh_textures(BongoCatLive2D *live2d,
+    bool active, bool allow_start);
 bool bongo_cat_live2d_update(BongoCatLive2D *live2d, float delta_seconds);
 void bongo_cat_live2d_draw(BongoCatLive2D *live2d);
 void bongo_cat_live2d_set_mirror(BongoCatLive2D *live2d, bool mirror);
+void bongo_cat_live2d_set_vertical_flip(BongoCatLive2D *live2d, bool flipped);
 void bongo_cat_live2d_set_render_options(BongoCatLive2D *live2d,
     const BongoCatLive2DRenderOptions *options);
 void bongo_cat_live2d_set_dragging(BongoCatLive2D *live2d, float x, float y);

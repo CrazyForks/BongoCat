@@ -110,8 +110,13 @@ bool bongo_cat_live2d_update(BongoCatLive2D *live2d, float delta_seconds) {
 bool bongo_cat_live2d_texture_refresh_pending(const BongoCatLive2D *live2d, bool active) {
     (void)live2d; (void)active; return false;
 }
-bool bongo_cat_live2d_refresh_textures(BongoCatLive2D *live2d, bool active) {
-    (void)live2d; (void)active; return false;
+bool bongo_cat_live2d_texture_refresh_due(const BongoCatLive2D *live2d,
+    bool active, bool allow_start) {
+    (void)live2d; (void)active; (void)allow_start; return false;
+}
+bool bongo_cat_live2d_refresh_textures(BongoCatLive2D *live2d,
+    bool active, bool allow_start) {
+    (void)live2d; (void)active; (void)allow_start; return false;
 }
 bool bongo_cat_live2d_texture_refresh_busy(const BongoCatLive2D *live2d) {
     (void)live2d; return false;
@@ -120,6 +125,10 @@ void bongo_cat_live2d_cancel_texture_refresh(BongoCatLive2D *live2d) {
     (void)live2d;
 }
 void bongo_cat_live2d_draw(BongoCatLive2D *live2d) { (void)live2d; }
+void bongo_cat_live2d_set_vertical_flip(BongoCatLive2D *live2d, bool flipped) {
+    (void)live2d; (void)flipped;
+}
+
 void bongo_cat_live2d_set_mirror(BongoCatLive2D *live2d, bool mirror) {
     (void)live2d; (void)mirror;
 }

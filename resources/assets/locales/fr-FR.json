@@ -13,9 +13,11 @@
         "labels": {
           "modelSettings": "Modèle",
           "gamepadFourHands": "Mode quatre mains à la manette",
-          "dynamicTextureResolution": "Dynamic Texture Resolution",
+          "dynamicTextureResolution": "Désactiver la résolution dynamique des textures",
           "mirrorMode": "Mode miroir",
-          "mouseMirror": "Miroir de la souris",
+          "verticalFlip": "Suspendre la tête en bas",
+          "mouseVerticalFlip": "Inverser la souris verticalement",
+          "mouseMirror": "Inverser la souris horizontalement",
           "mouseCentered": "Souris centrée sur le compagnon",
           "ignoreMouse": "Ignorer les événements de souris",
           "windowSettings": "Fenêtre",
@@ -35,6 +37,7 @@
           "maxFPS": "Fréquence d'images maximale"
         },
         "hints": {
+          "dynamicTextureResolution": "Adapte automatiquement la résolution des textures à la taille réelle d’affichage, tout en préservant les détails visuels et en optimisant l’utilisation de la mémoire vidéo. Il est généralement déconseillé d’activer cette option.",
           "hoverRequires": "Activez les options [Passage des clics] et [Toujours au premier plan] ci-dessus.",
           "hoverUnavailable": "Le masquage au survol est indisponible dans cet environnement de bureau.",
           "gamepadFourHands": "Affiche en permanence deux mains supplémentaires en mode manette. Le rendu dépend du modèle",
@@ -47,7 +50,6 @@
           "obsBackground": "La capture de fenêtre est noire ?",
           "obsBackgroundHelp": "OBS : activez cette option, utilisez la méthode compatible Windows 7 et supprimez le fond avec un filtre d'incrustation couleur.",
           "windowSize": "Utilisez la [molette] pour redimensionner ou [maintenez le bouton droit enfoncé] et glissez à droite pour agrandir, à gauche pour réduire",
-          "dynamicTextureResolution": "Downsample large model textures to match the current display size. The model reloads after changing this option.",
           "dynamicTextureResolutionFailed": "Unable to reload the model with the selected texture mode.",
           "hideOnHover": "Lorsque le passage des clics et Toujours au premier plan sont activés, le compagnon se masque immédiatement au survol et réapparaît lorsque le pointeur s’éloigne."
         }
@@ -230,7 +232,7 @@
       "joinGithub": "Contribute on GitHub"
     },
     "multiplePets": "Afficher plusieurs modèles",
-    "multiplePetsLimit": "Jusqu'\u00e0 8 mascottes peuvent \u00eatre affich\u00e9es \u00e0 la fois",
+    "multiplePetsLimit": "Jusqu'à 8 mascottes peuvent être affichées à la fois",
     "removeDesktopPet": "Fermer cette mascotte de bureau",
     "modelLoadFailed": "Impossible d'afficher ce modèle",
     "noBehaviors": "Aucun élément",

@@ -13,9 +13,11 @@
         "labels": {
           "modelSettings": "모델",
           "gamepadFourHands": "게임패드 네 손 모드",
-          "dynamicTextureResolution": "Dynamic Texture Resolution",
+          "dynamicTextureResolution": "동적 텍스처 해상도 끄기",
           "mirrorMode": "미러 모드",
-          "mouseMirror": "마우스 반전",
+          "verticalFlip": "거꾸로 매달리기 모드",
+          "mouseVerticalFlip": "마우스 상하 반전",
+          "mouseMirror": "마우스 좌우 반전",
           "mouseCentered": "마우스를 데스크톱 펫 중심으로",
           "ignoreMouse": "마우스 이벤트 무시",
           "windowSettings": "창",
@@ -35,6 +37,7 @@
           "maxFPS": "최대 프레임 속도"
         },
         "hints": {
+          "dynamicTextureResolution": "실제 표시 크기에 맞춰 텍스처 해상도를 자동으로 조정하여 화면의 세부 묘사를 유지하면서 비디오 메모리 사용량을 최적화합니다. 일반적으로 이 옵션을 켜는 것은 권장하지 않습니다.",
           "hoverRequires": "위에 있는 [클릭 통과]와 [항상 위에 표시]를 모두 켜야 합니다.",
           "hoverUnavailable": "현재 데스크톱 환경에서는 마우스를 올려 숨기기 기능을 사용할 수 없습니다.",
           "gamepadFourHands": "게임패드 모드에서 손 두 개를 추가로 항상 표시합니다. 모습은 모델에 따라 달라집니다",
@@ -47,7 +50,6 @@
           "obsBackground": "창 캡처가 검은 화면인가요?",
           "obsBackgroundHelp": "OBS: 이 옵션을 켜고 Windows 7 호환 방식으로 캡처한 뒤 색상 키 필터로 배경을 제거하세요.",
           "windowSize": "[휠]로 크기를 조절하거나 [오른쪽 버튼을 누른 채] 오른쪽으로 드래그하면 확대, 왼쪽으로 드래그하면 축소",
-          "dynamicTextureResolution": "Downsample large model textures to match the current display size. The model reloads after changing this option.",
           "dynamicTextureResolutionFailed": "Unable to reload the model with the selected texture mode.",
           "hideOnHover": "클릭 통과와 항상 위에 표시가 모두 켜져 있으면 펫에 마우스를 올릴 때 즉시 숨기고, 마우스를 치우면 다시 표시합니다."
         }
@@ -230,8 +232,8 @@
       "joinGithub": "Contribute on GitHub"
     },
     "multiplePets": "여러 개 동시에 표시",
-    "multiplePetsLimit": "\ub370\uc2a4\ud06c\ud1b1 \ud3ab\uc740 \ud55c \ubc88\uc5d0 \ucd5c\ub300 8\uac1c\uae4c\uc9c0 \ud45c\uc2dc\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4",
-    "removeDesktopPet": "\uc774 \ub370\uc2a4\ud06c\ud1b1 \ud3ab \ub2eb\uae30",
+    "multiplePetsLimit": "데스크톱 펫은 한 번에 최대 8개까지 표시할 수 있습니다",
+    "removeDesktopPet": "이 데스크톱 펫 닫기",
     "modelLoadFailed": "이 모델을 표시할 수 없습니다",
     "noBehaviors": "항목 없음",
     "preferencesWindowTitle": "BongoCat - Settings",

@@ -13,9 +13,11 @@
         "labels": {
           "modelSettings": "Model",
           "gamepadFourHands": "Gamepad Four-Hand Mode",
-          "dynamicTextureResolution": "Dynamic Texture Resolution",
+          "dynamicTextureResolution": "Disable Dynamic Texture Resolution",
           "mirrorMode": "Mirror Mode",
-          "mouseMirror": "Mouse Mirror",
+          "verticalFlip": "Hang Upside Down",
+          "mouseVerticalFlip": "Mouse Vertical Flip",
+          "mouseMirror": "Mouse Horizontal Flip",
           "mouseCentered": "Mouse Centered on Desktop Pet",
           "ignoreMouse": "Ignore Mouse Events",
           "windowSettings": "Window",
@@ -35,6 +37,7 @@
           "maxFPS": "Max Frame Rate"
         },
         "hints": {
+          "dynamicTextureResolution": "Dynamically adjusts texture resolution to the actual display size, preserving visual detail while optimizing video memory usage. Enabling this option is generally not recommended.",
           "hoverRequires": "Requires both [Pass Through] and [Always on Top] above to be enabled.",
           "hoverUnavailable": "Hover hiding is unavailable in the current desktop environment.",
           "gamepadFourHands": "Keep two extra hands visible in gamepad mode. Appearance depends on the model",
@@ -47,7 +50,6 @@
           "obsBackground": "Window capture is black?",
           "obsBackgroundHelp": "OBS: enable this option, use the Windows 7 compatibility method, and remove the background with a color key filter.",
           "windowSize": "[Scroll] to resize or [hold the right mouse button] and drag right to enlarge, left to shrink",
-          "dynamicTextureResolution": "Downsample large model textures to match the current display size. The model reloads after changing this option.",
           "dynamicTextureResolutionFailed": "Unable to reload the model with the selected texture mode.",
           "hideOnHover": "With Pass Through and Always on Top enabled, hide the pet immediately on hover and show it again when the pointer leaves."
         }

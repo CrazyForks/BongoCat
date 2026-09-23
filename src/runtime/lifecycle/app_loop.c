@@ -52,6 +52,7 @@ static bool render(BongoCatApp *app, bool present) {
     glDisable(GL_SCISSOR_TEST);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     bongo_cat_window_clear_background(app);
+    bongo_cat_live2d_set_vertical_flip(app->live2d, app->settings.model.vertical_flip);
     int content_x = 0, content_y = 0, content_width = width,
         content_height = height;
     bool content_viewport = bongo_cat_live2d_viewport(app->live2d,
@@ -59,6 +60,7 @@ static bool render(BongoCatApp *app, bool present) {
         content_width > 0 && content_height > 0;
     if (content_viewport)
         glViewport(content_x, content_y, content_width, content_height);
+    bongo_cat_overlay_set_vertical_flip(app->overlay, app->settings.model.vertical_flip);
     bongo_cat_overlay_draw_background(app->overlay,
         app->settings.model.mirror);
     bool cover_requested = !present && bongo_cat_model_cover_pending(app);
@@ -227,7 +229,7 @@ void bongo_cat_app_loop(BongoCatApp *app) {
         bongo_cat_window_update_display_recovery(app, now);
         bongo_cat_runtime_flow_update(app, now);
         bongo_cat_window_apply_pending_resize(app);
-        bongo_cat_app_refresh_texture_resolution(app);
+        bongo_cat_app_refresh_texture_resolution(app, true);
         bongo_cat_resource_trace_poll();
         bongo_cat_app_drain_input(app, true);
         if (app->context_menu_requested) {

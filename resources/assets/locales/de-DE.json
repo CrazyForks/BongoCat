@@ -13,9 +13,11 @@
         "labels": {
           "modelSettings": "Modell",
           "gamepadFourHands": "Vierhandmodus am Gamepad",
-          "dynamicTextureResolution": "Dynamic Texture Resolution",
+          "dynamicTextureResolution": "Dynamische Texturauflösung deaktivieren",
           "mirrorMode": "Spiegelmodus",
-          "mouseMirror": "Maus spiegeln",
+          "verticalFlip": "Kopfüber hängen",
+          "mouseVerticalFlip": "Maus vertikal spiegeln",
+          "mouseMirror": "Maus horizontal spiegeln",
           "mouseCentered": "Maus auf Desktop-Begleiter zentriert",
           "ignoreMouse": "Mausereignisse ignorieren",
           "windowSettings": "Fenster",
@@ -35,6 +37,7 @@
           "maxFPS": "Maximale Bildrate"
         },
         "hints": {
+          "dynamicTextureResolution": "Passt die Texturauflösung automatisch an die tatsächliche Anzeigegröße an, um Bilddetails zu erhalten und gleichzeitig die Grafikspeichernutzung zu optimieren. Es wird generell davon abgeraten, diese Option zu aktivieren.",
           "hoverRequires": "Die obigen Optionen [Klickdurchlässigkeit] und [Immer im Vordergrund] müssen aktiviert sein.",
           "hoverUnavailable": "Ausblenden bei Mausberührung ist in dieser Desktop-Umgebung nicht verfügbar.",
           "gamepadFourHands": "Im Gamepad-Modus bleiben zwei zusätzliche Hände sichtbar. Das Aussehen hängt vom Modell ab",
@@ -47,7 +50,6 @@
           "obsBackground": "Fensteraufnahme schwarz?",
           "obsBackgroundHelp": "OBS: Diese Option aktivieren, die Windows-7-Kompatibilitätsmethode verwenden und den Hintergrund mit einem Farbschlüssel-Filter entfernen.",
           "windowSize": "Mit dem [Mausrad] die Größe ändern oder die [rechte Maustaste gedrückt halten]: nach rechts ziehen zum Vergrößern, nach links zum Verkleinern",
-          "dynamicTextureResolution": "Downsample large model textures to match the current display size. The model reloads after changing this option.",
           "dynamicTextureResolutionFailed": "Unable to reload the model with the selected texture mode.",
           "hideOnHover": "Wenn Klickdurchlässigkeit und Immer im Vordergrund aktiviert sind, wird das Haustier beim Darüberfahren sofort ausgeblendet und beim Verlassen wieder angezeigt."
         }
@@ -230,8 +232,8 @@
       "joinGithub": "Contribute on GitHub"
     },
     "multiplePets": "Mehrere gleichzeitig anzeigen",
-    "multiplePetsLimit": "Bis zu 8 Desktop-Begleiter k\u00f6nnen gleichzeitig angezeigt werden",
-    "removeDesktopPet": "Diesen Desktop-Begleiter schlie\u00dfen",
+    "multiplePetsLimit": "Bis zu 8 Desktop-Begleiter können gleichzeitig angezeigt werden",
+    "removeDesktopPet": "Diesen Desktop-Begleiter schließen",
     "modelLoadFailed": "Dieses Modell kann nicht angezeigt werden",
     "noBehaviors": "Keine Einträge",
     "preferencesWindowTitle": "BongoCat - Settings",

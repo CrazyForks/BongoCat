@@ -192,6 +192,7 @@ void bongo_cat_settings_defaults(BongoCatSettings *config) {
     memset(config, 0, sizeof(*config));
     config->model.mouse_centered = true;
     config->model.max_fps = BONGO_CAT_DEFAULT_MAX_FPS;
+    config->model.dynamic_texture_resolution = true;
     config->window.always_on_top = true;
     config->window.keep_in_screen = false;
     config->window.obs_background_color = BONGO_CAT_OBS_BACKGROUND_GREEN;

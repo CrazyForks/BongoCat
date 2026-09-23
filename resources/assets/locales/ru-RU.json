@@ -13,9 +13,11 @@
         "labels": {
           "modelSettings": "Модель",
           "gamepadFourHands": "Режим четырёх рук с геймпадом",
-          "dynamicTextureResolution": "Dynamic Texture Resolution",
+          "dynamicTextureResolution": "Отключить динамическое разрешение текстур",
           "mirrorMode": "Зеркальный режим",
-          "mouseMirror": "Отражение мыши",
+          "verticalFlip": "Висеть вниз головой",
+          "mouseVerticalFlip": "Вертикальная инверсия мыши",
+          "mouseMirror": "Горизонтальная инверсия мыши",
           "mouseCentered": "Мышь относительно питомца",
           "ignoreMouse": "Игнорировать события мыши",
           "windowSettings": "Окно",
@@ -35,6 +37,7 @@
           "maxFPS": "Максимальная частота кадров"
         },
         "hints": {
+          "dynamicTextureResolution": "Автоматически подстраивает разрешение текстур под фактический размер отображения, сохраняя детализацию изображения и оптимизируя использование видеопамяти. Как правило, включать эту опцию не рекомендуется.",
           "hoverRequires": "Включите расположенные выше параметры [Пропуск кликов] и [Поверх всех окон].",
           "hoverUnavailable": "Скрытие при наведении недоступно в текущем окружении рабочего стола.",
           "gamepadFourHands": "В режиме геймпада постоянно видны две дополнительные руки. Внешний вид зависит от модели",
@@ -47,7 +50,6 @@
           "obsBackground": "Захват окна показывает чёрный экран?",
           "obsBackgroundHelp": "OBS: включите этот параметр, используйте метод совместимости с Windows 7 и удалите фон фильтром цветового ключа.",
           "windowSize": "Меняйте размер [колесом мыши] или [удерживайте правую кнопку мыши] и тяните вправо для увеличения, влево для уменьшения",
-          "dynamicTextureResolution": "Downsample large model textures to match the current display size. The model reloads after changing this option.",
           "dynamicTextureResolutionFailed": "Unable to reload the model with the selected texture mode.",
           "hideOnHover": "Если включены пропуск кликов и отображение поверх всех окон, питомец мгновенно скрывается при наведении и появляется, когда указатель уходит."
         }
@@ -230,8 +232,8 @@
       "joinGithub": "Contribute on GitHub"
     },
     "multiplePets": "Показывать несколько",
-    "multiplePetsLimit": "\u041e\u0434\u043d\u043e\u0432\u0440\u0435\u043c\u0435\u043d\u043d\u043e \u043c\u043e\u0436\u043d\u043e \u043e\u0442\u043e\u0431\u0440\u0430\u0437\u0438\u0442\u044c \u0434\u043e 8 \u043f\u0438\u0442\u043e\u043c\u0446\u0435\u0432",
-    "removeDesktopPet": "\u0417\u0430\u043a\u0440\u044b\u0442\u044c \u044d\u0442\u043e\u0433\u043e \u043f\u0438\u0442\u043e\u043c\u0446\u0430",
+    "multiplePetsLimit": "Одновременно можно отобразить до 8 питомцев",
+    "removeDesktopPet": "Закрыть этого питомца",
     "modelLoadFailed": "Не удалось отобразить эту модель",
     "noBehaviors": "Нет элементов",
     "preferencesWindowTitle": "BongoCat - Settings",

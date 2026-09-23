@@ -162,7 +162,9 @@ static void reload_secondary_settings(BongoCatApp *app) {
     bool model_changed =
         settings.model.multiple_pets != app->settings.model.multiple_pets ||
         settings.model.mirror != app->settings.model.mirror ||
+        settings.model.vertical_flip != app->settings.model.vertical_flip ||
         settings.model.mouse_mirror != app->settings.model.mouse_mirror ||
+        settings.model.mouse_vertical_flip != app->settings.model.mouse_vertical_flip ||
         settings.model.mouse_centered != app->settings.model.mouse_centered ||
         settings.model.ignore_mouse != app->settings.model.ignore_mouse ||
         settings.model.gamepad_four_hands != app->settings.model.gamepad_four_hands ||
@@ -193,7 +195,11 @@ static void reload_secondary_settings(BongoCatApp *app) {
             app->settings.window.random_motion_interval_seconds ||
         settings.window.corner_radius_percent !=
             app->settings.window.corner_radius_percent;
+    bool pointer_orientation_changed = settings.model.vertical_flip !=
+        app->settings.model.vertical_flip ||
+        settings.model.mouse_vertical_flip != app->settings.model.mouse_vertical_flip;
     app->settings = settings;
+    if (pointer_orientation_changed) bongo_cat_app_reset_pointer_tracking(app);
     if (hands_changed) bongo_cat_app_refresh_hands(app);
     if (texture_resolution_changed && app->loaded_model[0]) {
         BongoCatError reload_error = {0};

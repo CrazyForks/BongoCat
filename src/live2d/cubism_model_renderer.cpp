@@ -48,6 +48,11 @@ void NativeModel::draw() {
     auto *manager = Csm::Rendering::CubismOffscreenManager_OpenGLES2::GetInstance();
     Csm::CubismMatrix44 projection;
     build_projection(projection, viewport_width_, viewport_height_);
+    if (vertical_flip_) {
+        // Reflect the complete projection, including authored translation.
+        float *matrix = projection.GetArray();
+        for (int i = 1; i < 16; i += 4) matrix[i] = -matrix[i];
+    }
     apply_viewport_projection(projection);
     visual_state_ = BongoCatLive2DVisualState{};
     visual_state_.fit_scale = 1.0f;

@@ -47,9 +47,14 @@ void test_config(void) {
     settings.app.game_compatibility = true;
     settings.model.max_fps = 30;
     settings.model.multiple_pets = true;
+    CHECK(!settings.model.vertical_flip);
+    CHECK(!settings.model.mouse_vertical_flip);
+    settings.model.mouse_vertical_flip = true;
     settings.model.mirror = true;
+    settings.model.vertical_flip = true;
     settings.model.mouse_centered = false;
     settings.model.gamepad_four_hands = true;
+    settings.model.dynamic_texture_resolution = false;
     settings.window.pass_through = true;
     settings.window.obs_background = true;
     settings.window.random_expression = true;
@@ -131,6 +136,8 @@ void test_config(void) {
         BONGO_CAT_OK);
     CHECK(loaded_settings.model.max_fps == 30 && loaded_settings.model.mirror &&
         loaded_settings.model.multiple_pets);
+    CHECK(loaded_settings.model.vertical_flip);
+    CHECK(loaded_settings.model.mouse_vertical_flip);
     CHECK(loaded_settings.window.pass_through &&
         loaded_settings.window.obs_background &&
         loaded_settings.window.random_expression &&
@@ -140,6 +147,7 @@ void test_config(void) {
     CHECK(loaded_settings.app.language == BONGO_CAT_LANG_ZH_CN);
     CHECK(loaded_settings.app.game_compatibility);
     CHECK(loaded_settings.model.gamepad_four_hands);
+    CHECK(!loaded_settings.model.dynamic_texture_resolution);
     CHECK(strstr(loaded_settings.extensions_json,
         "\"enabled\":true") != NULL);
     CHECK(strcmp(bongo_cat_model_name(&loaded_settings,
