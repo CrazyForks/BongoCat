@@ -58,10 +58,28 @@ for kind, prefixes in (
 PY
 
 app="build-app-store/BongoCat.app"
+# Only the shipped bundle should be public, never the temporary signing inputs.
+# prepare.py writes the embedded profile under umask 077; normalize it along
+# with other resources while preserving executable bits and directory access.
+chmod -R a+rX "$app"
+# codesign creates _CodeSignature/CodeResources. It must also be readable by
+# ordinary users, so use the public-file mask before signing and packaging.
+umask 022
 codesign --force --sign "$(cat "$work/app-identity")" \
   --keychain "$keychain" --entitlements "$work/entitlements.plist" \
   --timestamp "$app"
 codesign --verify --deep --strict --verbose=2 "$app"
+python3 - "$app" <<'PY'
+from pathlib import Path
+import stat
+import sys
+app = Path(sys.argv[1])
+for path in (app, *app.rglob('*')):
+    mode = path.stat().st_mode
+    required = 0o555 if stat.S_ISDIR(mode) or mode & 0o111 else 0o444
+    if mode & required != required:
+        raise SystemExit(f'Bundle entry is not accessible to ordinary users: {path}')
+PY
 mkdir -p build-app-store/dist
 productbuild --component "$app" /Applications \
   --sign "$(cat "$work/installer-identity")" --keychain "$keychain" \
