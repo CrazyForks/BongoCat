@@ -13,6 +13,7 @@
         "labels": {
           "modelSettings": "Modelo",
           "gamepadFourHands": "Modo de quatro mãos no controle",
+          "dynamicTextureResolution": "Dynamic Texture Resolution",
           "mirrorMode": "Modo Espelho",
           "mouseMirror": "Espelho do Mouse",
           "mouseCentered": "Mouse centrado no mascote de mesa",
@@ -46,6 +47,8 @@
           "obsBackground": "A captura da janela está preta?",
           "obsBackgroundHelp": "OBS: ative esta opção, use o método compatível com o Windows 7 e remova o fundo com um filtro de chave de cor.",
           "windowSize": "Use a [roda do mouse] para ajustar o tamanho ou [mantenha o botão direito pressionado] e arraste para a direita para ampliar, para a esquerda para reduzir",
+          "dynamicTextureResolution": "Downsample large model textures to match the current display size. The model reloads after changing this option.",
+          "dynamicTextureResolutionFailed": "Unable to reload the model with the selected texture mode.",
           "hideOnHover": "Com a passagem de cliques e Sempre no Topo ativados, o mascote se oculta imediatamente ao passar o mouse e reaparece ao afastá-lo."
         }
       },
@@ -55,7 +58,6 @@
           "appSettings": "Aplicativo",
           "launchOnStartup": "Iniciar na inicialização",
           "gameCompatibility": "Modo de compatibilidade com jogos",
-          "launchAsAdministrator": "Iniciar como administrador",
           "showTrayIcon": "Mostrar ícone na bandeja",
           "appearanceSettings": "Aparência",
           "themeMode": "Tema",

@@ -20,6 +20,7 @@ void bongo_cat_window_snapshot_begin(BongoCatApp *app) {
         app->hover_fade_active ||
         app->settings.window.pass_through ||
         !(SDL_GetWindowFlags(app->window) & SDL_WINDOW_TRANSPARENT)) return;
+    if (!bongo_cat_windows_snapshot_available()) return;
     SDL_Window *previous_window = SDL_GL_GetCurrentWindow();
     SDL_GLContext previous_context = SDL_GL_GetCurrentContext();
     if (!SDL_GL_MakeCurrent(app->window, app->gl_context)) return;

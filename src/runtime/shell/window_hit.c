@@ -28,7 +28,9 @@ bool bongo_cat_window_visible_at_pointer(BongoCatApp *app, float x, float y) {
         pixel_x, pixel_y, &presented_alpha)) return presented_alpha > 8;
     SDL_Window *previous_window = SDL_GL_GetCurrentWindow();
     SDL_GLContext previous_context = SDL_GL_GetCurrentContext();
-    if (!SDL_GL_MakeCurrent(app->window, app->gl_context)) return false;
+    bool switch_context = previous_window != app->window ||
+        previous_context != app->gl_context;
+    if (switch_context && !SDL_GL_MakeCurrent(app->window, app->gl_context)) return false;
     GLint previous_buffer;
     GLubyte pixel[4] = {0};
     glGetIntegerv(GL_READ_BUFFER, &previous_buffer);
@@ -39,7 +41,7 @@ bool bongo_cat_window_visible_at_pointer(BongoCatApp *app, float x, float y) {
         glReadPixels(pixel_x, pixel_y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
     }
     glReadBuffer((GLenum)previous_buffer);
-    if (previous_window && previous_context)
+    if (switch_context && previous_window && previous_context)
         SDL_GL_MakeCurrent(previous_window, previous_context);
     return pixel[3] > 8;
 }

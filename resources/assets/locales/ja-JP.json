@@ -13,6 +13,7 @@
         "labels": {
           "modelSettings": "モデル",
           "gamepadFourHands": "ゲームパッド4本の手モード",
+          "dynamicTextureResolution": "Dynamic Texture Resolution",
           "mirrorMode": "ミラーモード",
           "mouseMirror": "マウスを反転",
           "mouseCentered": "マウスをデスクトップペット中心にする",
@@ -46,6 +47,8 @@
           "obsBackground": "ウィンドウキャプチャが黒い？",
           "obsBackgroundHelp": "OBS：「Windows 7互換」方式でキャプチャする場合はこの項目を有効にし、カラーキーフィルターで背景を除去してください。",
           "windowSize": "[ホイール]でサイズ調整、または[右ボタンを押したまま]右にドラッグで拡大、左で縮小",
+          "dynamicTextureResolution": "Downsample large model textures to match the current display size. The model reloads after changing this option.",
+          "dynamicTextureResolutionFailed": "Unable to reload the model with the selected texture mode.",
           "hideOnHover": "クリック透過と最前面表示が有効な場合、ペットにマウスを重ねるとすぐに非表示になり、離すと再表示されます。"
         }
       },
@@ -55,7 +58,6 @@
           "appSettings": "アプリ",
           "launchOnStartup": "起動時に実行",
           "gameCompatibility": "ゲーム互換モード",
-          "launchAsAdministrator": "管理者権限で起動",
           "showTrayIcon": "トレイアイコンを表示",
           "appearanceSettings": "外観",
           "themeMode": "テーマ",

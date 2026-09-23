@@ -13,6 +13,7 @@
         "labels": {
           "modelSettings": "Model",
           "gamepadFourHands": "Gamepad Four-Hand Mode",
+          "dynamicTextureResolution": "Dynamic Texture Resolution",
           "mirrorMode": "Mirror Mode",
           "mouseMirror": "Mouse Mirror",
           "mouseCentered": "Mouse Centered on Desktop Pet",
@@ -46,6 +47,8 @@
           "obsBackground": "Window capture is black?",
           "obsBackgroundHelp": "OBS: enable this option, use the Windows 7 compatibility method, and remove the background with a color key filter.",
           "windowSize": "[Scroll] to resize or [hold the right mouse button] and drag right to enlarge, left to shrink",
+          "dynamicTextureResolution": "Downsample large model textures to match the current display size. The model reloads after changing this option.",
+          "dynamicTextureResolutionFailed": "Unable to reload the model with the selected texture mode.",
           "hideOnHover": "With Pass Through and Always on Top enabled, hide the pet immediately on hover and show it again when the pointer leaves."
         }
       },
@@ -55,7 +58,6 @@
           "appSettings": "Application",
           "launchOnStartup": "Launch on Startup",
           "gameCompatibility": "Game Compatibility Mode",
-          "launchAsAdministrator": "Run as Administrator",
           "showTrayIcon": "Show Tray Icon",
           "appearanceSettings": "Appearance",
           "themeMode": "Theme",

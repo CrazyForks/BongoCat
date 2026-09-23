@@ -34,6 +34,7 @@ typedef struct DialCover { GLuint texture; float width, height; bool attempted; 
 typedef struct DialPaint {
     BongoCatGL gl;
     GLuint program, vao, vbo, white, font_texture;
+    int font_width, font_height;
     GLint projection, sampler;
     DialVertex *vertices;
     size_t count, capacity;

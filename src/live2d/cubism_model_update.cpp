@@ -16,12 +16,11 @@ void NativeModel::update_geometry() {
     visual_state_cached_ = false;
 }
 
-template<typename Getter>
-static bool changed(std::vector<float> &snapshot, int count, Getter value) {
+static bool changed(std::vector<float> &snapshot, int count, const float *values) {
     bool result = snapshot.size() != (size_t)count;
     if (result) snapshot.resize((size_t)count);
     for (int i = 0; i < count; ++i) {
-        float current = value(i);
+        float current = values[i];
         if (result || std::fabs(snapshot[(size_t)i] - current) > 0.00001f) result = true;
         snapshot[(size_t)i] = current;
     }
@@ -46,10 +45,13 @@ bool NativeModel::update(float delta_seconds) {
     apply_parameter_overrides();
     _opacity = _model->GetModelOpacity();
     update_geometry();
+    /* These snapshots contain only real Core indices. Read their contiguous
+       buffers directly instead of probing Cubism's virtual-ID maps for every
+       parameter and part on every frame. Preserve the comparison threshold. */
     bool result = changed(parameter_snapshot_, _model->GetParameterCount(),
-        [this](int index) { return _model->GetParameterValue(index); });
+        Live2D::Cubism::Core::csmGetParameterValues(_model->GetModel()));
     result = changed(part_snapshot_, _model->GetPartCount(),
-        [this](int index) { return _model->GetPartOpacity(index); }) || result;
+        Live2D::Cubism::Core::csmGetPartOpacities(_model->GetModel())) || result;
     if (std::fabs(opacity_snapshot_ - _opacity) > 0.00001f) result = true;
     opacity_snapshot_ = _opacity;
     return result;

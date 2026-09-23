@@ -47,19 +47,47 @@ static int paeth(int left, int above, int corner) {
     return a <= b && a <= c ? left : b <= c ? above : corner;
 }
 
+static void unfilter_row(PngRows *png) {
+    unsigned char *row = png->line + 1;
+    const unsigned char *above = png->previous;
+    size_t bytes = png->line_size - 1;
+    size_t channels = (size_t)png->channels;
+    /* A PNG filter is constant for the whole row. Select it once, and
+       handle the first pixel separately to avoid per-byte boundary tests.
+       Keep PNG's integer arithmetic and byte wrapping unchanged. */
+    switch (png->line[0]) {
+    case 0:
+        break;
+    case 1:
+        for (size_t x = channels; x < bytes; ++x)
+            row[x] = (unsigned char)(row[x] + row[x - channels]);
+        break;
+    case 2:
+        for (size_t x = 0; x < bytes; ++x)
+            row[x] = (unsigned char)(row[x] + above[x]);
+        break;
+    case 3:
+        for (size_t x = 0; x < channels; ++x)
+            row[x] = (unsigned char)(row[x] + above[x] / 2);
+        for (size_t x = channels; x < bytes; ++x)
+            row[x] = (unsigned char)(row[x] +
+                (row[x - channels] + above[x]) / 2);
+        break;
+    case 4:
+        for (size_t x = 0; x < channels; ++x)
+            row[x] = (unsigned char)(row[x] + above[x]);
+        for (size_t x = channels; x < bytes; ++x)
+            row[x] = (unsigned char)(row[x] +
+                paeth(row[x - channels], above[x], above[x - channels]));
+        break;
+    }
+}
+
 static bool finish_row(PngRows *png) {
     if (png->row >= png->height || png->line[0] > 4) return false;
+    unfilter_row(png);
     unsigned char *row = png->line + 1;
     size_t bytes = png->line_size - 1;
-    unsigned filter = png->line[0];
-    for (size_t x = 0; x < bytes; ++x) {
-        int left = x >= (size_t)png->channels ? row[x - png->channels] : 0;
-        int above = png->previous[x];
-        int corner = x >= (size_t)png->channels ? png->previous[x - png->channels] : 0;
-        int prediction = filter == 1 ? left : filter == 2 ? above :
-            filter == 3 ? (left + above) / 2 : filter == 4 ? paeth(left, above, corner) : 0;
-        row[x] = (unsigned char)(row[x] + prediction);
-    }
     /* The consumer may premultiply/reuse the RGBA strip. Preserve the raw
        previous row separately for the next PNG filter. */
     memcpy(png->previous, row, bytes);

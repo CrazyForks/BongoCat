@@ -2,6 +2,7 @@
 #include "bongo_cat/audio.h"
 #include "bongo_cat/file.h"
 #include "bongo_cat/i18n.h"
+#include "bongo_cat/image.h"
 #include "bongo_cat/path.h"
 #include "bongo_cat/overlay.h"
 #include "bongo_cat/preferences.h"
@@ -65,6 +66,7 @@ bool bongo_cat_app_initialize(BongoCatApp *app, int argc, char **argv,
     bongo_cat_shortcut_init(&app->shortcut_state);
     bongo_cat_models_init(&app->models);
     if (!bongo_cat_startup_prepare(app, argc, argv, error)) return false;
+    bongo_cat_image_set_texture_cache_root(app->cache_root);
     bongo_cat_config_store_load(app);
     if (app->secondary_pet) {
         snprintf(app->session.active_model_id,

@@ -137,11 +137,32 @@ typedef struct BongoCatLive2DRenderOptions {
     int pointer_bottom;
 } BongoCatLive2DRenderOptions;
 
+/* Runtime texture policy.  This is deliberately separate from model package
+   rendering metadata: it is a user preference and can be changed without
+   modifying an imported model. */
+typedef bool (*BongoCatLive2DTextureDisplaySize)(void *userdata,
+    const BongoCatLive2DRenderOptions *options, int canvas_width,
+    int canvas_height, int *display_width, int *display_height);
+typedef struct BongoCatLive2DTextureOptions {
+    bool dynamic_resolution;
+    /* Synchronous planner, called after reading the incoming canvas and before
+       allocating its atlases. Returns content pixels, excluding transparent
+       frame padding. It must not change the live model or window. */
+    BongoCatLive2DTextureDisplaySize display_size;
+    void *display_size_userdata;
+} BongoCatLive2DTextureOptions;
+
 BongoCatLive2D *bongo_cat_live2d_create(const char *asset_root, BongoCatError *error);
 void bongo_cat_live2d_destroy(BongoCatLive2D *live2d);
 BongoCatResult bongo_cat_live2d_load(BongoCatLive2D *live2d, const char *model_dir,
     const char *setting_file, bool preset,
     const BongoCatLive2DRenderOptions *render_options,
+    BongoCatLive2DLoadProgress progress, void *userdata,
+    BongoCatError *error);
+BongoCatResult bongo_cat_live2d_load_ex(BongoCatLive2D *live2d,
+    const char *model_dir, const char *setting_file, bool preset,
+    const BongoCatLive2DRenderOptions *render_options,
+    const BongoCatLive2DTextureOptions *texture_options,
     BongoCatLive2DLoadProgress progress, void *userdata,
     BongoCatError *error);
 bool bongo_cat_live2d_ready(const BongoCatLive2D *live2d);
@@ -154,6 +175,17 @@ bool bongo_cat_live2d_viewport(const BongoCatLive2D *live2d,
     int *x, int *y, int *width, int *height);
 void bongo_cat_live2d_resize(BongoCatLive2D *live2d, int width, int height);
 void bongo_cat_live2d_reshape(BongoCatLive2D *live2d, int width, int height);
+bool bongo_cat_live2d_texture_refresh_pending(const BongoCatLive2D *live2d, bool active);
+/* True only while upload/cleanup can make progress, so low playback FPS does
+   not delay reclamation. Paused jobs do not request frequent wakeups. */
+bool bongo_cat_live2d_texture_refresh_busy(const BongoCatLive2D *live2d);
+/* Request cancellation without joining the worker. Continue polling cleanup.
+   The displayed atlas remains valid; pending resolution work resumes on show. */
+void bongo_cat_live2d_cancel_texture_refresh(BongoCatLive2D *live2d);
+/* Call with the model's GL context current. False active pauses uploads during
+   gestures/temporary hiding; obsolete work is still cleaned up. True permits
+   one upload batch. Long pauses release the unfinished replacement. */
+bool bongo_cat_live2d_refresh_textures(BongoCatLive2D *live2d, bool active);
 bool bongo_cat_live2d_update(BongoCatLive2D *live2d, float delta_seconds);
 void bongo_cat_live2d_draw(BongoCatLive2D *live2d);
 void bongo_cat_live2d_set_mirror(BongoCatLive2D *live2d, bool mirror);

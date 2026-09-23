@@ -33,7 +33,8 @@ static void render_live(BongoCatPreferences *value) {
 }
 
 static bool capture_live(BongoCatPreferences *value) {
-    if (!value || !SDL_GL_MakeCurrent(value->window, value->gl_context))
+    if (!value || value->app->loading_model[0] ||
+        !SDL_GL_MakeCurrent(value->window, value->gl_context))
         return false;
     bool result = bongo_cat_ui_resize_cache_capture(&value->ui);
     SDL_GL_MakeCurrent(value->app->window, value->app->gl_context);
@@ -41,7 +42,8 @@ static bool capture_live(BongoCatPreferences *value) {
 }
 
 static bool present_live(BongoCatPreferences *value) {
-    if (!value || !SDL_GL_MakeCurrent(value->window, value->gl_context))
+    if (!value || value->app->loading_model[0] ||
+        !SDL_GL_MakeCurrent(value->window, value->gl_context))
         return false;
     bool result = bongo_cat_ui_resize_cache_present(&value->ui) &&
         bongo_cat_ui_present(value->window);
@@ -51,7 +53,8 @@ static bool present_live(BongoCatPreferences *value) {
 }
 
 static void pump_pet(BongoCatPreferences *value) {
-    if (value && value->live_resize_modal_ready)
+    /* The previous model has released its GPU resources during handoff. */
+    if (value && !value->app->loading_model[0] && value->live_resize_modal_ready)
         bongo_cat_modal_frame_tick(&value->live_resize_modal_frame);
 }
 
@@ -109,7 +112,8 @@ static LRESULT CALLBACK live_resize_proc(HWND window, UINT message,
         render_live(value);
         pump_pet(value);
         value->live_resize_modal_ready = false;
-        if (SDL_GL_MakeCurrent(value->window, value->gl_context)) {
+        if (!value->app->loading_model[0] &&
+            SDL_GL_MakeCurrent(value->window, value->gl_context)) {
             bongo_cat_ui_resize_cache_destroy(&value->ui);
             SDL_GL_MakeCurrent(value->app->window, value->app->gl_context);
         }

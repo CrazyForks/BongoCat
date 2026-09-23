@@ -6,6 +6,7 @@
 #include "ui_tooltip.h"
 #include "bongo_cat/audio.h"
 #include "bongo_cat/i18n.h"
+#include "bongo_cat/log.h"
 #include "bongo_cat/preferences.h"
 #include "bongo_cat/tray.h"
 #include "runtime.h"
@@ -168,6 +169,34 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
     bongo_cat_pref_section_icon(context, tr(app,
         "pages.preference.cat.labels.modelSettings", "Model"),
         BONGO_CAT_PREF_ICON_SECTION_MODEL);
+    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_TEXTURE_RESOLUTION);
+    bool old_dynamic_texture_resolution = model->dynamic_texture_resolution;
+    if (bongo_cat_pref_toggle(context, "dynamic-texture-resolution", tr(app,
+        "pages.preference.cat.labels.dynamicTextureResolution",
+        "Dynamic Texture Resolution"), tr(app,
+        "pages.preference.cat.hints.dynamicTextureResolution",
+        "Downsample large model textures to match the current display size. "
+        "The model reloads after changing this option."),
+        &model->dynamic_texture_resolution)) {
+        SDL_LogInfo(BONGO_CAT_LOG_LIFECYCLE,
+            "[memory] texture-mode-change previous=%d requested=%d",
+            old_dynamic_texture_resolution, model->dynamic_texture_resolution);
+        BongoCatError reload_error = {0};
+        bool reloaded = !app->loaded_model[0] ||
+            bongo_cat_app_reload_model_with_error(app, &reload_error);
+        if (!reloaded) {
+            model->dynamic_texture_resolution = old_dynamic_texture_resolution;
+            char message[1024];
+            snprintf(message, sizeof(message), "%s\n%s", tr(app,
+                "pages.preference.cat.hints.dynamicTextureResolutionFailed",
+                "Unable to reload the model with the selected texture mode."),
+                reload_error.message);
+            bongo_cat_preferences_notice_show(app, message, true);
+        } else app->dirty = true;
+        SDL_LogInfo(BONGO_CAT_LOG_LIFECYCLE,
+            "[memory] texture-mode-result reloaded=%d active=%d",
+            reloaded, model->dynamic_texture_resolution);
+    }
     bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_GAMEPAD_FOUR_HANDS);
     if (bongo_cat_pref_toggle(context, "gamepad-four-hands", tr(app,
         "pages.preference.cat.labels.gamepadFourHands", "Gamepad Four-Hand Mode"), tr(app,
@@ -212,7 +241,10 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
 static void update_autostart(BongoCatApp *app, bool old_value, bool old_admin) {
     BongoCatError error = {0};
     if (bongo_cat_platform_set_autostart(app->settings.app.autostart,
-        app->settings.app.autostart_admin, &error) == BONGO_CAT_OK) return;
+        app->settings.app.game_compatibility, &error) == BONGO_CAT_OK) {
+        app->settings.app.autostart_admin = app->settings.app.game_compatibility;
+        return;
+    }
     app->settings.app.autostart = old_value;
     app->settings.app.autostart_admin = old_admin;
     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", error.message);
@@ -309,17 +341,6 @@ static void page_general(BongoCatApp *app, struct nk_context *context) {
     if (bongo_cat_pref_toggle(context, "autostart", tr(app,
         "pages.preference.general.labels.launchOnStartup", "Launch on Startup"), "",
         &options->autostart)) update_autostart(app, old_autostart, old_admin);
-#ifdef _WIN32
-    /* Use the same conditional rows as Hide on Hover above. */
-    if (options->autostart) {
-        bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_ADMINISTRATOR);
-        if (bongo_cat_pref_toggle(context, "autostart-admin", tr(app,
-            "pages.preference.general.labels.launchAsAdministrator",
-            "Run as Administrator"), "",
-            &options->autostart_admin))
-            update_autostart(app, options->autostart, old_admin);
-    }
-#endif
     section_gap(context, 7);
     bongo_cat_pref_section_icon(context, tr(app,
         "pages.preference.general.labels.appearanceSettings", "Appearance"),

@@ -32,6 +32,7 @@ struct BongoCatPreferences {
     bool owns_gl_context;
     bool transparent_window;
     bool visible;
+    unsigned release_wait_flags;
     bool ui_initialized;
     BongoCatUIBackend ui;
     unsigned int logo_texture;
@@ -82,6 +83,10 @@ struct BongoCatPreferences {
     float model_load_progress;
     float model_load_render_progress;
     uint64_t model_load_render_ns;
+    uint64_t model_load_render_cost_ns;
+    uint64_t model_load_render_total_ns;
+    unsigned model_load_render_count;
+    unsigned model_load_render_deferred;
     uint64_t model_load_visual_started_ns;
     uint64_t model_load_visual_completion_ns;
     char pending_model_id[BONGO_CAT_ID_CAP];
@@ -148,6 +153,7 @@ int bongo_cat_preferences_resolved_theme(const BongoCatPreferences *value);
 void bongo_cat_preferences_apply_theme(BongoCatPreferences *value);
 bool bongo_cat_preferences_open_window(BongoCatPreferences *value);
 void bongo_cat_preferences_release_idle_window(BongoCatPreferences *value);
+void bongo_cat_preferences_resource_note(BongoCatPreferences *value, const char *stage);
 bool bongo_cat_preferences_scale_event(BongoCatPreferences *value,
     const SDL_Event *event);
 bool bongo_cat_preferences_refresh_raster(BongoCatPreferences *value);
@@ -165,6 +171,7 @@ void bongo_cat_preferences_model_visual_begin(BongoCatPreferences *value,
     const char *model_id);
 void bongo_cat_preferences_model_load_progress(BongoCatPreferences *value,
     float progress);
+bool bongo_cat_preferences_model_texture_busy(const BongoCatPreferences *value);
 float bongo_cat_preferences_model_visual_progress(BongoCatPreferences *value,
     const char *model_id);
 void bongo_cat_preferences_assets_clear(BongoCatPreferences *value);

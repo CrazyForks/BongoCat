@@ -26,6 +26,7 @@ static int tooltip_wrap_length(const struct nk_user_font *font,
 
 static void tooltip_long(struct nk_context *context, const char *text,
     struct nk_rect anchor, bool hovered, struct nk_color color) {
+    if (!context || !text || !text[0]) return;
     static struct nk_context *owner;
     static const char *active_text;
     static struct nk_rect bounds;
@@ -210,7 +211,16 @@ void bongo_cat_ui_question_tooltip(struct nk_context *context,
         cursor += fitting;
         remaining -= fitting;
     }
+    struct nk_style_item saved_background = context->style.window.fixed_background;
+    struct nk_color saved_window_color = context->style.window.background;
+    struct nk_color background = bongo_cat_ui_dark(context)
+        ? palette.background : nk_rgb(0xfb, 0xfc, 0xfe);
+    background.a = 255;
+    context->style.window.fixed_background = nk_style_item_color(background);
+    context->style.window.background = background;
     if (strlen(reply) > 512)
         tooltip_long(context, reply, text, hover, palette.pink);
     else if (hover) tooltip_multiline(context, reply, palette.pink);
+    context->style.window.fixed_background = saved_background;
+    context->style.window.background = saved_window_color;
 }

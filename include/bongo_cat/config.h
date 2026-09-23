@@ -48,6 +48,7 @@ typedef struct BongoCatModelPreferences {
     bool mouse_centered;
     bool ignore_mouse;
     bool gamepad_four_hands;
+    bool dynamic_texture_resolution;
     int max_fps;
 } BongoCatModelPreferences;
 

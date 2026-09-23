@@ -13,6 +13,7 @@
         "labels": {
           "modelSettings": "模型",
           "gamepadFourHands": "手把四手模式",
+          "dynamicTextureResolution": "動態紋理解析度",
           "mirrorMode": "鏡像模式",
           "mouseMirror": "滑鼠游標鏡像",
           "mouseCentered": "滑鼠以桌寵為中心",
@@ -46,6 +47,8 @@
           "obsBackground": "視窗擷取黑屏？",
           "obsBackgroundHelp": "OBS：開啟目前選項，使用 Windows 7 相容擷取，並用色鍵濾鏡移除背景。\n嗶哩嗶哩直播姬：不需要開啟目前選項，選擇遊戲程序擷取，並開啟允許視窗透明。",
           "windowSize": "[滾輪]調整大小 或 [按住右鍵]右拖放大、左拖縮小",
+          "dynamicTextureResolution": "根據目前顯示尺寸縮小過大的模型紋理，以降低記憶體使用量。變更後會重新載入模型。",
+          "dynamicTextureResolutionFailed": "無法使用所選紋理模式重新載入模型。",
           "hideOnHover": "滑鼠穿透和置頂皆啟用時，滑鼠移到桌寵上立即隱藏，移開後恢復顯示。"
         }
       },
@@ -55,7 +58,6 @@
           "appSettings": "應用程式",
           "launchOnStartup": "開機自動啟動",
           "gameCompatibility": "遊戲相容模式",
-          "launchAsAdministrator": "以系統管理員權限啟動",
           "showTrayIcon": "顯示托盤圖示",
           "appearanceSettings": "外觀",
           "themeMode": "主題",

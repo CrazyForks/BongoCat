@@ -57,6 +57,8 @@ static bool read_model(yyjson_val *object, BongoCatModelPreferences *value,
             error) &&
         read_bool(object, "ignorePointerInput", &value->ignore_mouse, error) &&
         read_bool(object, "gamepadFourHands", &value->gamepad_four_hands, error) &&
+        read_bool(object, "dynamicTextureResolution",
+            &value->dynamic_texture_resolution, error) &&
         read_int(object, "maximumFps", &value->max_fps, error);
 }
 

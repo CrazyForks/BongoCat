@@ -6,6 +6,7 @@
 #include "bongo_cat/overlay.h"
 #include "bongo_cat/preferences.h"
 #include "bongo_cat/tray.h"
+#include "bongo_cat/resource_trace.h"
 
 #include <stdlib.h>
 
@@ -32,6 +33,7 @@ void bongo_cat_app_shutdown(BongoCatApp *app, const char *stage,
     bongo_cat_audio_destroy(app->audio);
     bongo_cat_overlay_destroy(app->overlay);
     bongo_cat_live2d_destroy(app->live2d);
+    bongo_cat_resource_trace_shutdown();
     bongo_cat_behaviors_clear(&app->behaviors);
     bongo_cat_app_model_shortcuts_clear(app);
     bongo_cat_behaviors_clear(app->behavior_cache); free(app->behavior_cache);

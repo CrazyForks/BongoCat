@@ -13,6 +13,7 @@
         "labels": {
           "modelSettings": "Modelo",
           "gamepadFourHands": "Modo de cuatro manos con mando",
+          "dynamicTextureResolution": "Dynamic Texture Resolution",
           "mirrorMode": "Modo espejo",
           "mouseMirror": "Invertir ratón",
           "mouseCentered": "Ratón centrado en la mascota",
@@ -46,6 +47,8 @@
           "obsBackground": "¿La captura de ventana aparece en negro?",
           "obsBackgroundHelp": "OBS: activa esta opción, usa el método compatible con Windows 7 y elimina el fondo con un filtro de clave de color.",
           "windowSize": "Usa la [rueda] para cambiar el tamaño o [mantén pulsado el botón derecho] y arrastra a la derecha para ampliar o a la izquierda para reducir",
+          "dynamicTextureResolution": "Downsample large model textures to match the current display size. The model reloads after changing this option.",
+          "dynamicTextureResolutionFailed": "Unable to reload the model with the selected texture mode.",
           "hideOnHover": "Con el paso de clics y Siempre visible activados, la mascota se oculta inmediatamente al pasar el ratón y reaparece al retirarlo."
         }
       },
@@ -55,7 +58,6 @@
           "appSettings": "Aplicación",
           "launchOnStartup": "Iniciar con el sistema",
           "gameCompatibility": "Modo de compatibilidad con juegos",
-          "launchAsAdministrator": "Iniciar como administrador",
           "showTrayIcon": "Mostrar icono en la bandeja",
           "appearanceSettings": "Apariencia",
           "themeMode": "Tema",

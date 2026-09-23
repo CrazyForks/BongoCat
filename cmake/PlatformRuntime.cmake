@@ -46,7 +46,7 @@ if(WIN32)
     src/platform/windows)
   target_link_libraries(bongo_cat_runtime PRIVATE
     dwmapi ole32 shell32 user32 uuid windowscodecs advapi32
-    winhttp comctl32 oleaut32 taskschd)
+    winhttp comctl32 oleaut32 taskschd psapi)
 elseif(APPLE)
   find_package(CURL REQUIRED)
   enable_language(OBJC)

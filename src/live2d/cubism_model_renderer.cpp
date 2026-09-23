@@ -1,4 +1,6 @@
 #include "cubism_model.hpp"
+#include "bongo_cat/model_memory.h"
+#include "bongo_cat/resource_trace.h"
 #include "cubism_target_bindings.hpp"
 #include "bongo_cat/gl_api.h"
 
@@ -39,6 +41,9 @@ void NativeModel::draw() {
 #ifdef CSM_TARGET_MAC_GL
     CoreProfileBinding binding(core_buffers_);
 #endif
+    const bool first_frame = trim_offscreen_pool_;
+    const bool resources_changed = first_frame ||
+        width_ != mask_last_width_ || height_ != mask_last_height_;
     update_mask_buffers();
     auto *manager = Csm::Rendering::CubismOffscreenManager_OpenGLES2::GetInstance();
     Csm::CubismMatrix44 projection;
@@ -61,6 +66,27 @@ void NativeModel::draw() {
         // needs. Drop unused targets retained by a previously loaded model.
         manager->ReleaseStaleRenderTextures();
         trim_offscreen_pool_ = false;
+    }
+    if (resources_changed) {
+        // Cubism creates each clipping manager only when the model uses that
+        // mask type. Its count getters dereference those optional managers.
+        const int drawable_count = _model->IsUsingMasking()
+            ? renderer->GetDrawableRenderTextureCount() : 0;
+        const int offscreen_count = _model->IsUsingMaskingForOffscreen()
+            ? renderer->GetOffscreenRenderTextureCount() : 0;
+        double mask_mib = drawable_count * bongo_cat_model_texture_mib(
+            drawable_masks_.size.width, drawable_masks_.size.height, false) +
+            offscreen_count * bongo_cat_model_texture_mib(
+                offscreen_masks_.size.width, offscreen_masks_.size.height, false);
+        bongo_cat_resource_trace_render(mask_mib,
+            (unsigned)manager->GetOffscreenRenderTargetListSize(), width_, height_);
+        if (first_frame) bongo_cat_model_memory_log("renderer-first-frame",
+            "window=%dx%d viewport=%dx%d drawable_masks=%dx%dx%d "
+            "offscreen_masks=%dx%dx%d mask_rgba8_est_mib=%.1f pool_targets=%u",
+            width_, height_, viewport_width_, viewport_height_,
+            drawable_masks_.size.width, drawable_masks_.size.height, drawable_count,
+            offscreen_masks_.size.width, offscreen_masks_.size.height, offscreen_count,
+            mask_mib, (unsigned)manager->GetOffscreenRenderTargetListSize());
     }
 }
 

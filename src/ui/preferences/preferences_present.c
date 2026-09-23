@@ -12,6 +12,12 @@
 void bongo_cat_preferences_render(BongoCatPreferences *value) {
     bongo_cat_preferences_release_idle_window(value);
     if (!value || !value->window || !value->visible) return;
+    /* Also cover native resize/expose paths reached by SDL_PumpEvents. Keep
+       the main GL context current until the atlas transfer has completed. */
+    if (bongo_cat_preferences_model_texture_busy(value)) {
+        value->render_dirty = true;
+        return;
+    }
     bongo_cat_preferences_drag_tick(value);
     uint64_t now = SDL_GetTicksNS();
     bool raster_due = value->pending_raster_scale > 0.0f &&
@@ -33,8 +39,13 @@ void bongo_cat_preferences_render(BongoCatPreferences *value) {
         return;
     }
     value->render_retry_ns = 0;
+    bool loading_model = value->model_loading || value->app->loading_model[0];
+    /* A resize ending during handoff defers GL cleanup until this context is
+       safe to use again. Do not retain the cached window image indefinitely. */
+    if (!loading_model && !value->live_resize_active && value->ui.resize_cache_texture)
+        bongo_cat_ui_resize_cache_destroy(&value->ui);
     /* Retry transient image failures, retaining successfully loaded assets. */
-    if ((!value->logo_texture || !value->icon_texture) &&
+    if (!loading_model && (!value->logo_texture || !value->icon_texture) &&
         value->asset_retry_count < 3 && now >= value->asset_retry_ns) {
         value->asset_retry_count++;
         value->asset_retry_ns = now + 1000000000ull;
@@ -51,7 +62,7 @@ void bongo_cat_preferences_render(BongoCatPreferences *value) {
             value->font_reload_defer_once = false;
         }
     }
-    if (!importing && !refreshing_models) {
+    if (!loading_model && !importing && !refreshing_models) {
         bongo_cat_preferences_refresh_raster(value);
         bongo_cat_preferences_reload_language(value);
     }
@@ -60,7 +71,7 @@ void bongo_cat_preferences_render(BongoCatPreferences *value) {
         if (value->notices[i].message[0] && value->notices[i].until_ns > now &&
             !bongo_cat_preferences_model_glyphs_ready(value, value->notices[i].message))
             notice_font_reload = true;
-    if (value->font_reload_pending &&
+    if (!loading_model && value->font_reload_pending &&
         (notice_font_reload || (!importing && !refreshing_models))) {
         if (value->font_reload_defer_once) {
             value->font_reload_defer_once = false;
@@ -109,7 +120,7 @@ void bongo_cat_preferences_render(BongoCatPreferences *value) {
         value->render_retry_ns = now + 1000000000ull;
         SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO,
             "Preferences frame presentation failed: %s", SDL_GetError());
-    } else bongo_cat_memory_policy_ui_frame_presented();
+    } else if (!loading_model) bongo_cat_memory_policy_ui_frame_presented();
     bongo_cat_preferences_record_frame(value);
     if (value->shortcut_recording || value->model_load_visual_active ||
         importing || bongo_cat_pref_controls_animating(&value->ui.context) ||

@@ -1,4 +1,5 @@
 #include "runtime.h"
+#include "bongo_cat/resource_trace.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -82,6 +83,8 @@ bool bongo_cat_window_apply_geometry(BongoCatApp *app, int x, int y,
     if (!app || !app->window || width < WINDOW_MIN_DIMENSION ||
         height < WINDOW_MIN_DIMENSION || width > WINDOW_MAX_DIMENSION ||
         height > WINDOW_MAX_DIMENSION) return false;
+    bongo_cat_resource_trace_resize_request(app->session.window.width,
+        app->session.window.height, width, height);
     if (!bongo_cat_platform_set_geometry(&app->platform, x, y, width, height))
         return false;
     app->session.window.scale_percent = scale;

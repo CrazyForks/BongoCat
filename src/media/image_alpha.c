@@ -1,6 +1,20 @@
-#include "bongo_cat/image.h"
+#include "image_internal.h"
 
 #include <string.h>
+
+void bongo_cat_image_premultiply(BongoCatImage *image) {
+    size_t count = (size_t)image->width * image->height;
+    for (size_t i = 0; i < count; ++i) {
+        unsigned char *pixel = image->pixels + i * 4;
+        if (pixel[3] == 255) continue;
+        if (!pixel[3]) {
+            pixel[0] = pixel[1] = pixel[2] = 0;
+            continue;
+        }
+        for (int c = 0; c < 3; ++c)
+            pixel[c] = (unsigned char)((pixel[c] * pixel[3] + 127) / 255);
+    }
+}
 
 void bongo_cat_image_alpha_mask_rows(const BongoCatImage *rows, int height,
     int y_begin, BongoCatImageAlphaMask *mask) {

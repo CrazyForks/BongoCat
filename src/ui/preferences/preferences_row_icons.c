@@ -122,6 +122,14 @@ static void ignore_mouse(struct nk_command_buffer *c, struct nk_rect b,
     line(c, b, 1, 17, 17, 1, color);
 }
 
+static void texture_resolution(struct nk_command_buffer *c, struct nk_rect b,
+    struct nk_color color) {
+    nk_stroke_rect(c, nk_rect(b.x + 2, b.y + 2, 14, 14), 2, 1.5f, color);
+    nk_stroke_rect(c, nk_rect(b.x + 6, b.y + 6, 6, 6), 1, 1.5f, color);
+    line(c, b, 2, 2, 6, 6, color);
+    line(c, b, 16, 16, 12, 12, color);
+}
+
 static void max_fps(struct nk_command_buffer *c, struct nk_rect b,
     struct nk_color color) {
     nk_stroke_rect(c, nk_rect(b.x + 1, b.y + 2, 16, 14), 2, 1.5f, color);
@@ -215,7 +223,7 @@ bool bongo_cat_pref_row_icon_draw(struct nk_command_buffer *canvas,
     static const Draw draws[] = {multiple_models, pass_through, always_on_top,
         keep_in_screen, solid_background, window_size, window_corners, opacity,
         random_expression, random_motion, mirror, mouse_mirror, mouse_centered,
-        ignore_mouse,
+        ignore_mouse, texture_resolution,
         max_fps, autostart, administrator, language, theme, shortcut_visibility,
         shortcut_preferences, shortcut_menu, hide_fade, gamepad_four_hands};
     int index = icon - BONGO_CAT_PREF_ICON_MULTIPLE_MODELS;

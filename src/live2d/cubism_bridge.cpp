@@ -1,9 +1,11 @@
 #include "bongo_cat/file.h"
 #include "bongo_cat/model.h"
+#include "bongo_cat/resource_trace.h"
 #if defined(CSM_TARGET_WIN_GL) || defined(CSM_TARGET_LINUX_GL) || defined(CSM_TARGET_MAC_GL)
 #include <GL/glew.h>
 #endif
 #include "cubism_runtime.hpp"
+#include "cubism_render_resources.hpp"
 
 #include <CubismFramework.hpp>
 #include <SDL3/SDL_filesystem.h>
@@ -140,6 +142,10 @@ extern "C" BongoCatLive2D *bongo_cat_live2d_create(const char *asset_root,
 extern "C" void bongo_cat_live2d_destroy(BongoCatLive2D *runtime) {
     if (!runtime) return;
     delete runtime->model;
+    bongo_cat_resource_trace_atlas(0.0);
+    /* Retire the renderer before its unused singleton targets, while the
+       owning GL context is still available. */
+    if (runtime_count == 1) bongo_cat::release_offscreen_pool();
     delete runtime;
     stop_framework();
 }
@@ -184,6 +190,20 @@ extern "C" void bongo_cat_live2d_reshape(BongoCatLive2D *runtime, int width, int
 extern "C" bool bongo_cat_live2d_update(BongoCatLive2D *runtime, float elapsed) {
     if (!runtime) return false;
     return runtime->model && runtime->model->update(elapsed);
+}
+
+extern "C" bool bongo_cat_live2d_texture_refresh_pending(const BongoCatLive2D *runtime, bool active) {
+    return runtime && runtime->model && runtime->model->texture_refresh_pending(active);
+}
+
+extern "C" bool bongo_cat_live2d_refresh_textures(BongoCatLive2D *runtime, bool active) {
+    return runtime && runtime->model && runtime->model->refresh_texture_resolution(active);
+}
+extern "C" bool bongo_cat_live2d_texture_refresh_busy(const BongoCatLive2D *runtime) {
+    return runtime && runtime->model && runtime->model->texture_refresh_busy();
+}
+extern "C" void bongo_cat_live2d_cancel_texture_refresh(BongoCatLive2D *runtime) {
+    if (runtime && runtime->model) runtime->model->cancel_texture_refresh_async();
 }
 extern "C" void bongo_cat_live2d_draw(BongoCatLive2D *runtime) {
     if (!runtime) return;

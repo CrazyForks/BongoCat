@@ -3,6 +3,7 @@
 #include "bongo_cat/log.h"
 #include "bongo_cat/memory.h"
 #include "bongo_cat/runtime_diagnostics.h"
+#include "bongo_cat/resource_trace.h"
 #include <stdlib.h>
 #ifdef _WIN32
 #include "windows_hdr.h"
@@ -133,21 +134,46 @@ static bool create(Dial *d) {
     return true;
 }
 
+static void trace_menu(Dial *d, const char *stage) {
+    unsigned covers = 0;
+    double pixels = 0;
+    for (size_t i = 0; i < BONGO_CAT_MODEL_CAP; ++i) {
+        if (!d->covers[i].texture) continue;
+        ++covers;
+        pixels += (double)d->covers[i].width * d->covers[i].height;
+    }
+    const double mib = 1024.0 * 1024.0;
+    bongo_cat_resource_trace_note(BONGO_CAT_RESOURCE_MENU, stage,
+        "window=%d context=%d pixels=%dx%d font_r8_est_mib=%.2f "
+        "covers=%u cover_rgba_est_mib=%.2f vertex_capacity_mib=%.2f",
+        d->window != NULL, d->context != NULL, d->pixel_width, d->pixel_height,
+        (double)d->paint.font_width * d->paint.font_height / mib,
+        covers, pixels * 4 / mib, (double)d->paint.capacity * sizeof(DialVertex) / mib);
+}
+
 BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
     const BongoCatMenuLabels *labels) {
     if (!platform || !platform->window || !labels) return BONGO_CAT_MENU_NONE;
+    bongo_cat_resource_trace_begin(BONGO_CAT_RESOURCE_MENU, "radial-menu");
     SDL_LogInfo(BONGO_CAT_LOG_LIFECYCLE,"Radial menu requested: owner=%u",
         (unsigned)SDL_GetWindowID(platform->window));
     Dial *d = calloc(1,sizeof(*d));
-    if (!d) return BONGO_CAT_MENU_NONE;
+    if (!d) {
+        bongo_cat_resource_trace_end(BONGO_CAT_RESOURCE_MENU, "allocation-failed", NULL);
+        return BONGO_CAT_MENU_NONE;
+    }
     d->owner = platform->window; d->labels = labels; d->dark = labels->dark_theme;
     d->previous_window = SDL_GL_GetCurrentWindow();
     d->previous_context = SDL_GL_GetCurrentContext();
     d->active = d->child = d->pressed = -1;
     dial_items(d);
     bool ready = create(d);
+    trace_menu(d, ready ? "ready" : "create-failed");
+    uint64_t render_total_ns = 0, max_render_ns = 0;
+    unsigned render_frames = 0;
     if (!ready) SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,"Radial menu initialization failed: %s",SDL_GetError());
     while (ready && !d->done) {
+        bongo_cat_resource_trace_poll();
         uint64_t start = SDL_GetTicks();
         SDL_PumpEvents();
         if (!SDL_GetWindowFromID(d->window_id)) { d->done = true; break; }
@@ -191,7 +217,12 @@ BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
         if (d->dirty && SDL_GetTicks() >= d->render_retry_at) {
             d->dirty = false;
             const char *previous = bongo_cat_diagnostics_phase("radial-menu-render");
+            uint64_t render_started_ns = SDL_GetTicksNS();
             bool painted = dial_paint_frame(d);
+            uint64_t render_ns = SDL_GetTicksNS() - render_started_ns;
+            render_total_ns += render_ns;
+            max_render_ns = SDL_max(max_render_ns, render_ns);
+            ++render_frames;
             bongo_cat_diagnostics_phase(previous);
             if (!painted) {
                 SDL_LogError(SDL_LOG_CATEGORY_VIDEO,"Radial menu rendering failed: %s",SDL_GetError());
@@ -208,8 +239,11 @@ BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
         uint64_t elapsed = SDL_GetTicks()-start;
         if (elapsed < 16) SDL_Delay((Uint32)(16-elapsed));
     }
-    if (!d->context || (SDL_GetWindowFromID(d->window_id) &&
-        SDL_GL_MakeCurrent(d->window,d->context))) dial_paint_free(d);
+    trace_menu(d, "before-release");
+    uint64_t cleanup_started_ns = SDL_GetTicksNS();
+    bool cleanup_gl = !d->context || (SDL_GetWindowFromID(d->window_id) &&
+        SDL_GL_MakeCurrent(d->window,d->context));
+    if (cleanup_gl) dial_paint_free(d);
     else {
         /* A destroyed window cannot safely own GL deletion calls. Its context
            releases GPU allocations; release only CPU allocations here. */
@@ -217,7 +251,7 @@ BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
         for (int i = 0; i < 4; ++i) free(d->paint.ranges[i]);
         free(d->paint.vertices);
     }
-    if (d->context) SDL_GL_DestroyContext(d->context);
+    bool context_destroyed = !d->context || SDL_GL_DestroyContext(d->context);
     if (d->window_id && SDL_GetWindowFromID(d->window_id)) SDL_DestroyWindow(d->window);
     if (d->previous_window && d->previous_context)
         SDL_GL_MakeCurrent(d->previous_window,d->previous_context);
@@ -226,5 +260,11 @@ BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
     free(d);
     /* Trim only after GL/CPU teardown and preview restoration have finished. */
     bongo_cat_platform_trim_memory();
+    bongo_cat_resource_trace_end(BONGO_CAT_RESOURCE_MENU, "released",
+        "created=%d gl_cleanup=%d context_destroyed=%d action=%d "
+        "cleanup_ms=%.1f frames=%u render_ms=%.1f max_frame_ms=%.1f",
+        ready, cleanup_gl, context_destroyed, (int)result,
+        (double)(SDL_GetTicksNS() - cleanup_started_ns) / 1000000.0,
+        render_frames, (double)render_total_ns / 1000000.0, (double)max_render_ns / 1000000.0);
     return result;
 }

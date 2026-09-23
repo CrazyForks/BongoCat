@@ -138,7 +138,8 @@ bool launch(bool administrator, BongoCatError *error) {
         Handle shell, shell_token;
         shell.value = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, shell_pid);
         if (!shell.value || !OpenProcessToken(shell.value,
-                TOKEN_QUERY | TOKEN_DUPLICATE | TOKEN_ASSIGN_PRIMARY, &shell_token.value))
+                TOKEN_QUERY | TOKEN_DUPLICATE | TOKEN_ASSIGN_PRIMARY |
+                TOKEN_ADJUST_DEFAULT | TOKEN_ADJUST_SESSIONID, &shell_token.value))
             return failure(error, GetLastError());
         if (elevated(shell_token.value) || sid(shell_token.value) != user)
             return failure(error, ERROR_ACCESS_DENIED);
@@ -146,9 +147,17 @@ bool launch(bool administrator, BongoCatError *error) {
         STARTUPINFOW startup = {};
         startup.cb = sizeof(startup);
         PROCESS_INFORMATION info = {};
-        if (!CreateProcessWithTokenW(shell_token.value, LOGON_WITH_PROFILE,
-                executable, &command[0], 0, nullptr, directory.data(), &startup, &info))
+        Handle primary;
+        if (!DuplicateTokenEx(shell_token.value, MAXIMUM_ALLOWED, nullptr,
+                SecurityImpersonation, TokenPrimary, &primary.value))
             return failure(error, GetLastError());
+        BOOL created = CreateProcessAsUserW(primary.value, executable,
+            &command[0], nullptr, nullptr, FALSE, CREATE_UNICODE_ENVIRONMENT,
+            nullptr, directory.data(), &startup, &info);
+        if (!created)
+            created = CreateProcessWithTokenW(primary.value, LOGON_WITH_PROFILE,
+                executable, &command[0], 0, nullptr, directory.data(), &startup, &info);
+        if (!created) return failure(error, GetLastError());
         CloseHandle(info.hThread);
         process.value = info.hProcess;
     }

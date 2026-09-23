@@ -1,4 +1,5 @@
 #include "image_internal.h"
+#include "image_upload_sync.h"
 #include "bongo_cat/gl_api.h"
 
 #include <SDL3/SDL.h>
@@ -53,20 +54,6 @@ static GLuint create_texture(bool model) {
                 SDL_min(maximum, 8.0f));
     }
     return texture;
-}
-
-static void premultiply(BongoCatImage *image) {
-    size_t count = (size_t)image->width * image->height;
-    for (size_t i = 0; i < count; ++i) {
-        unsigned char *pixel = image->pixels + i * 4;
-        if (pixel[3] == 255) continue;
-        if (!pixel[3]) {
-            pixel[0] = pixel[1] = pixel[2] = 0;
-            continue;
-        }
-        for (int c = 0; c < 3; ++c)
-            pixel[c] = (unsigned char)((pixel[c] * pixel[3] + 127) / 255);
-    }
 }
 
 unsigned int bongo_cat_image_begin_model_texture(int width, int height,
@@ -126,7 +113,7 @@ void bongo_cat_image_release_upload_buffer(BongoCatImageUploadBuffer *buffer) {
    CPU transfers on this strip bounds that extra allocation without changing
    the destination format, dimensions, texels or mip generation. */
 static GLenum copy_model_rows(GLuint texture, const BongoCatImage *rows, int y,
-    BongoCatImageUploadBuffer *buffer) {
+    BongoCatImageUploadBuffer *buffer, BongoCatImageUploadSync *sync) {
     PFNGLGENFRAMEBUFFERSPROC generate =
         (PFNGLGENFRAMEBUFFERSPROC)SDL_GL_GetProcAddress("glGenFramebuffers");
     PFNGLBINDFRAMEBUFFERPROC bind =
@@ -170,9 +157,11 @@ static GLenum copy_model_rows(GLuint texture, const BongoCatImage *rows, int y,
             rows->width, rows->height);
         /* Reusing a strip while its copy is still queued makes some drivers
            retain one renamed surface per strip, recreating a full atlas of
-           temporary storage. Finish this load-time transfer before reuse. */
-        glFinish();
+           temporary storage. Loaders must check completion before reusing
+           the strip; contexts without fences finish synchronously here. */
         status = glGetError();
+        if (status == GL_NO_ERROR)
+            status = bongo_cat_image_upload_sync_submit(sync);
     }
     bind(GL_READ_FRAMEBUFFER, (GLuint)previous_read);
     return status != GL_NO_ERROR ? status :
@@ -182,10 +171,22 @@ static GLenum copy_model_rows(GLuint texture, const BongoCatImage *rows, int y,
 bool bongo_cat_image_upload_model_rows(unsigned int texture,
     BongoCatImage *rows, int y, BongoCatImageUploadBuffer *buffer,
     BongoCatError *error) {
+    bongo_cat_image_premultiply(rows);
+    return bongo_cat_image_upload_model_rows_prepared(texture, rows, y,
+        buffer, NULL, error);
+}
+
+bool bongo_cat_image_upload_model_rows_prepared(unsigned int texture,
+    const BongoCatImage *rows, int y, BongoCatImageUploadBuffer *buffer,
+    BongoCatImageUploadSync *sync, BongoCatError *error) {
+    if (sync && sync->fence) {
+        bongo_cat_error_set(error, BONGO_CAT_ERROR_ARGUMENT,
+            "Texture staging strip is still in use");
+        return false;
+    }
     UploadState state = {0};
     if (!begin_upload(&state)) return false;
-    premultiply(rows);
-    GLenum status = copy_model_rows(texture, rows, y, buffer);
+    GLenum status = copy_model_rows(texture, rows, y, buffer, sync);
     GLenum restore_status = glGetError();
     if (status == GL_NO_ERROR) status = restore_status;
     end_upload(&state);
@@ -227,7 +228,7 @@ unsigned int bongo_cat_image_upload_texture(BongoCatImage *image,
             "Image upload requires OpenGL buffer bindings");
         return 0;
     }
-    if (model) premultiply(image);
+    if (model) bongo_cat_image_premultiply(image);
     GLuint texture = existing ? existing : create_texture(model);
     if (texture) {
         glBindTexture(GL_TEXTURE_2D, texture);

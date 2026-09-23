@@ -243,6 +243,8 @@ void bongo_cat_app_shortcuts(BongoCatApp *app, const BongoCatInputEvent *event);
 bool bongo_cat_app_select_model(BongoCatApp *app, const char *id);
 bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
     const char *id, BongoCatError *error);
+bool bongo_cat_app_reload_model_with_error(BongoCatApp *app,
+    BongoCatError *error);
 bool bongo_cat_app_model_active(const BongoCatApp *app, const char *id);
 size_t bongo_cat_app_active_model_count(const BongoCatApp *app);
 bool bongo_cat_app_set_model_active(BongoCatApp *app, const char *id,

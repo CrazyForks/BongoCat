@@ -13,6 +13,7 @@
         "labels": {
           "modelSettings": "Модель",
           "gamepadFourHands": "Режим четырёх рук с геймпадом",
+          "dynamicTextureResolution": "Dynamic Texture Resolution",
           "mirrorMode": "Зеркальный режим",
           "mouseMirror": "Отражение мыши",
           "mouseCentered": "Мышь относительно питомца",
@@ -46,6 +47,8 @@
           "obsBackground": "Захват окна показывает чёрный экран?",
           "obsBackgroundHelp": "OBS: включите этот параметр, используйте метод совместимости с Windows 7 и удалите фон фильтром цветового ключа.",
           "windowSize": "Меняйте размер [колесом мыши] или [удерживайте правую кнопку мыши] и тяните вправо для увеличения, влево для уменьшения",
+          "dynamicTextureResolution": "Downsample large model textures to match the current display size. The model reloads after changing this option.",
+          "dynamicTextureResolutionFailed": "Unable to reload the model with the selected texture mode.",
           "hideOnHover": "Если включены пропуск кликов и отображение поверх всех окон, питомец мгновенно скрывается при наведении и появляется, когда указатель уходит."
         }
       },
@@ -55,7 +58,6 @@
           "appSettings": "Приложение",
           "launchOnStartup": "Запускать при входе в систему",
           "gameCompatibility": "Режим совместимости с играми",
-          "launchAsAdministrator": "Запуск от имени администратора",
           "showTrayIcon": "Показывать значок в трее",
           "appearanceSettings": "Оформление",
           "themeMode": "Тема",

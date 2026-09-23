@@ -20,10 +20,15 @@ set(BONGO_CAT_MEDIA_SOURCES
   src/media/image_decode.c
   src/media/image_wic_stream.c
   src/media/image_png_stream.c
+  src/media/image_png_scaled.c
+  src/media/image_texture_cache.c
+  src/media/image_texture_cache_storage.c
+  src/media/image_texture_job.c
   src/media/image_info.c
   src/media/image_model.c
   src/media/image_mipmap.c
   src/media/image_upload.c
+  src/media/image_upload_sync.c
   src/media/image_resize.c
   src/media/image_alpha.c
   src/media/stb_image_impl.c)
@@ -61,6 +66,8 @@ set(BONGO_CAT_RUNTIME_UPDATE_SOURCES
   src/runtime/update/update_service.c)
 
 set(BONGO_CAT_RUNTIME_DIAGNOSTIC_SOURCES
+  src/runtime/diagnostics/resource_trace.c
+  src/runtime/diagnostics/model_memory.c
   src/runtime/diagnostics/frame_audit.c
   src/runtime/diagnostics/frame_presentation_audit.c
   src/runtime/diagnostics/live2d_audit.c
@@ -83,6 +90,7 @@ set(BONGO_CAT_RUNTIME_INPUT_SOURCES
 set(BONGO_CAT_RUNTIME_MODEL_SOURCES
   src/runtime/model/model_behavior.c
   src/runtime/model/model_behavior_cache.c
+  src/runtime/model/model_texture_refresh.c
   src/runtime/model/model_behavior_state.c
   src/runtime/model/model_catalog_runtime.c
   src/runtime/model/model_catalog_builtins.c
@@ -262,6 +270,7 @@ set(BONGO_CAT_UI_PREFERENCES_SOURCES
   src/ui/preferences/preferences_icons.c
   src/ui/preferences/preferences_language.c
   src/ui/preferences/preferences_lifecycle.c
+  src/ui/preferences/preferences_resources.c
   src/ui/preferences/preferences_live_resize.c
   src/ui/preferences/preferences_model.c
   src/ui/preferences/preferences_model_card.c

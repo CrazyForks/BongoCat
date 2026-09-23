@@ -146,6 +146,7 @@ static ControlReadResult read_control(BongoCatApp *app,
 
 static void reload_secondary_settings(BongoCatApp *app) {
     BongoCatSettings settings = app->settings;
+    BongoCatSettings previous_settings = app->settings;
     BongoCatError error = {0};
     BongoCatResult loaded = bongo_cat_settings_load(
         app->settings_path, &settings, &error);
@@ -165,7 +166,12 @@ static void reload_secondary_settings(BongoCatApp *app) {
         settings.model.mouse_centered != app->settings.model.mouse_centered ||
         settings.model.ignore_mouse != app->settings.model.ignore_mouse ||
         settings.model.gamepad_four_hands != app->settings.model.gamepad_four_hands ||
+        settings.model.dynamic_texture_resolution !=
+            app->settings.model.dynamic_texture_resolution ||
         settings.model.max_fps != app->settings.model.max_fps;
+    bool texture_resolution_changed =
+        settings.model.dynamic_texture_resolution !=
+        app->settings.model.dynamic_texture_resolution;
     bool hands_changed = settings.model.gamepad_four_hands !=
         app->settings.model.gamepad_four_hands;
     bool window_changed =
@@ -189,6 +195,19 @@ static void reload_secondary_settings(BongoCatApp *app) {
             app->settings.window.corner_radius_percent;
     app->settings = settings;
     if (hands_changed) bongo_cat_app_refresh_hands(app);
+    if (texture_resolution_changed && app->loaded_model[0]) {
+        BongoCatError reload_error = {0};
+        if (!bongo_cat_app_reload_model_with_error(app, &reload_error)) {
+            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
+                "[runtime] Multi-pet texture resolution reload failed: %s",
+                reload_error.message);
+            /* Keep the setting aligned with the model that survived the
+               failed transaction. Other settings from the control file may
+               still be applied normally. */
+            app->settings.model.dynamic_texture_resolution =
+                previous_settings.model.dynamic_texture_resolution;
+        }
+    }
     const BongoCatModelEntry *active = bongo_cat_models_find(&app->models, app->loaded_model);
     if (active && !bongo_cat_mver_shortcuts_load(app, active, &error))
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", error.message);

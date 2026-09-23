@@ -9,6 +9,7 @@
 #include "bongo_cat/overlay.h"
 #include "bongo_cat/preferences.h"
 #include "bongo_cat/log.h"
+#include "bongo_cat/model_memory.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_opengl.h>
@@ -61,7 +62,11 @@ static void model_progress_runtime_stage(BongoCatApp *app, float progress) {
     static const char *names[] = {"", "model-core", "texture-loading",
         "finalizing"};
     unsigned stage = progress >= .95f ? 3 : progress >= .50f ? 2 : 1;
-    if (!app || stage == app->model_load_runtime_stage) return;
+    if (!app) return;
+    /* Real progress is a watchdog heartbeat, even within the same stage.
+       This updates memory only; the on-disk stage still changes sparingly. */
+    bongo_cat_diagnostics_phase(names[stage]);
+    if (stage == app->model_load_runtime_stage) return;
     app->model_load_runtime_stage = stage;
     char state[BONGO_CAT_ID_CAP + 40];
     snprintf(state, sizeof(state), "model-load:%s:%s", names[stage],
@@ -71,6 +76,7 @@ static void model_progress_runtime_stage(BongoCatApp *app, float progress) {
 
 static void model_load_progress(void *userdata, float progress) {
     BongoCatApp *app = userdata;
+    bongo_cat_model_memory_sample();
     model_progress_runtime_stage(app, progress);
     /* Keep native window procedures responsive while the main loop is
        synchronously loading Cubism and OpenGL resources. */
@@ -108,8 +114,8 @@ static void commit_model(BongoCatApp *app,
     request_model_frame(app, reveal);
 }
 
-bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
-    const char *id, BongoCatError *error) {
+static bool select_model_with_error(BongoCatApp *app, const char *id,
+    BongoCatError *error, bool force_reload) {
     BongoCatError local = {0};
     BongoCatError *failure = error ? error : &local;
     *failure = (BongoCatError){0};
@@ -125,7 +131,8 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
         return false;
     }
     bongo_cat_window_snapshot_end(app);
-    if (app->loaded_model[0] && strcmp(app->loaded_model, entry->id) == 0) {
+    if (!force_reload && app->loaded_model[0] &&
+        strcmp(app->loaded_model, entry->id) == 0) {
         commit_model(app, entry, false, false);
         return true;
     }
@@ -176,6 +183,10 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
         "force_mouse=%d left_handed=%d pointer_bounds=%d",
         render_options.projection_scale, render_options.mouse_force_move,
         render_options.pointer_left_handed, render_options.custom_pointer_bounds);
+    BongoCatLive2DTextureOptions texture_options = {
+        .dynamic_resolution = app->settings.model.dynamic_texture_resolution,
+        .display_size = bongo_cat_model_texture_display_size,
+        .display_size_userdata = app};
     BongoCatModelContentAnchor content_anchor =
         bongo_cat_model_content_anchor(app);
     int pixel_width = app->session.window.width, pixel_height = app->session.window.height;
@@ -195,6 +206,8 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
     snprintf(previous_model, sizeof(previous_model), "%s",
         app->loaded_model[0] ? app->loaded_model : "none");
     uint64_t load_started_ns = SDL_GetTicksNS();
+    bongo_cat_model_memory_begin(previous_model, entry->id,
+        texture_options.dynamic_resolution, pixel_width, pixel_height);
     GLenum initial_gl_error = glGetError();
     SDL_Log("[runtime] Model switch transaction: stage=begin previous=%s next=%s "
         "main_window=%p main_context=%p current_window=%p current_context=%p "
@@ -205,13 +218,21 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
     snprintf(app->loading_model, sizeof(app->loading_model), "%s", entry->id);
     app->model_load_runtime_stage = 0;
     model_runtime_stage(app, "started", entry);
-    app->model_load_last_frame_ns = replacing_model ? SDL_GetTicksNS() : 0;
-    BongoCatResult load_result = bongo_cat_live2d_load(app->live2d, entry->directory,
-        entry->setting_file, entry->preset, &render_options,
+    /* The loader releases the old render resources before decoding the new
+       model. Keep the already-present front buffer on screen while that
+       happens instead of redrawing into an intentionally resource-less model. */
+    app->model_load_last_frame_ns = 0;
+    const char *previous_phase = bongo_cat_diagnostics_phase("model-load");
+    BongoCatResult load_result = bongo_cat_live2d_load_ex(app->live2d,
+        entry->directory, entry->setting_file, entry->preset, &render_options,
+        &texture_options,
         model_load_progress, app, failure);
+    bongo_cat_diagnostics_phase(previous_phase);
     app->model_load_last_frame_ns = 0;
     if (replacing_model) app->last_frame_ns = SDL_GetTicksNS();
     if (load_result != BONGO_CAT_OK) {
+        bongo_cat_model_memory_log("load-error", "error=%s", failure->message);
+        bongo_cat_model_memory_complete(false, pixel_width, pixel_height);
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Model switch transaction: "
             "stage=failed previous=%s next=%s elapsed_ms=%.2f gl_error=0x%x "
             "error=%s", previous_model, entry->id,
@@ -273,6 +294,8 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
         SDL_GetWindowSizeInPixels(app->window, &pixel_width, &pixel_height);
     }
     bongo_cat_live2d_resize(app->live2d, pixel_width, pixel_height);
+    bongo_cat_model_memory_log("window-ready", "window=%dx%d",
+        pixel_width, pixel_height);
     bongo_cat_audio_reset(app->audio);
     memset(&app->sound_shortcut_state, 0, sizeof(app->sound_shortcut_state));
     bongo_cat_app_reset_sound_bindings(app);
@@ -312,6 +335,7 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
             "Cannot restore the previous OpenGL context: %s", SDL_GetError());
     bongo_cat_memory_policy_model_loaded();
+    bongo_cat_model_memory_complete(true, pixel_width, pixel_height);
     SDL_Log("[runtime] Model switch transaction: stage=complete previous=%s "
         "next=%s elapsed_ms=%.2f current_window=%p current_context=%p "
         "gl_error=0x%x", previous_model, entry->id,
@@ -324,5 +348,22 @@ bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
 }
 
 bool bongo_cat_app_select_model(BongoCatApp *app, const char *id) {
-    return bongo_cat_app_select_model_with_error(app, id, NULL);
+    return select_model_with_error(app, id, NULL, false);
+}
+
+bool bongo_cat_app_select_model_with_error(BongoCatApp *app,
+    const char *id, BongoCatError *error) {
+    return select_model_with_error(app, id, error, false);
+}
+
+bool bongo_cat_app_reload_model_with_error(BongoCatApp *app,
+    BongoCatError *error) {
+    if (!app || !app->loaded_model[0]) {
+        bongo_cat_error_set(error, BONGO_CAT_ERROR_ARGUMENT,
+            "Cannot reload without an active model");
+        return false;
+    }
+    char id[BONGO_CAT_ID_CAP];
+    snprintf(id, sizeof(id), "%s", app->loaded_model);
+    return select_model_with_error(app, id, error, true);
 }

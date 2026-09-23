@@ -54,9 +54,13 @@ if(EXISTS "${CUBISM_CORE_HEADER}")
     include(cmake/Cubism.cmake)
     set(BONGO_CAT_LIVE2D_SOURCES
       src/live2d/cubism_bridge.cpp src/live2d/cubism_bridge_load.cpp
+      src/live2d/cubism_render_resources.cpp
       src/live2d/cubism_bridge_visual.cpp
       src/live2d/cubism_expression.cpp
       src/live2d/cubism_model_load.cpp
+      src/live2d/cubism_texture_resolution.cpp
+      src/live2d/cubism_texture_refresh.cpp
+      src/live2d/cubism_texture_refresh_memory.cpp
       src/live2d/cubism_model_renderer.cpp
       src/live2d/cubism_model_masks.cpp
       src/live2d/cubism_model_projection.cpp

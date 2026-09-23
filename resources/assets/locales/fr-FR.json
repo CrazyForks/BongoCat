@@ -13,6 +13,7 @@
         "labels": {
           "modelSettings": "Modèle",
           "gamepadFourHands": "Mode quatre mains à la manette",
+          "dynamicTextureResolution": "Dynamic Texture Resolution",
           "mirrorMode": "Mode miroir",
           "mouseMirror": "Miroir de la souris",
           "mouseCentered": "Souris centrée sur le compagnon",
@@ -46,6 +47,8 @@
           "obsBackground": "La capture de fenêtre est noire ?",
           "obsBackgroundHelp": "OBS : activez cette option, utilisez la méthode compatible Windows 7 et supprimez le fond avec un filtre d'incrustation couleur.",
           "windowSize": "Utilisez la [molette] pour redimensionner ou [maintenez le bouton droit enfoncé] et glissez à droite pour agrandir, à gauche pour réduire",
+          "dynamicTextureResolution": "Downsample large model textures to match the current display size. The model reloads after changing this option.",
+          "dynamicTextureResolutionFailed": "Unable to reload the model with the selected texture mode.",
           "hideOnHover": "Lorsque le passage des clics et Toujours au premier plan sont activés, le compagnon se masque immédiatement au survol et réapparaît lorsque le pointeur s’éloigne."
         }
       },
@@ -55,7 +58,6 @@
           "appSettings": "Application",
           "launchOnStartup": "Lancer au démarrage",
           "gameCompatibility": "Mode de compatibilité des jeux",
-          "launchAsAdministrator": "Démarrer en tant qu’administrateur",
           "showTrayIcon": "Afficher l'icône dans la zone de notification",
           "appearanceSettings": "Apparence",
           "themeMode": "Thème",

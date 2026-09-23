@@ -6,9 +6,11 @@ namespace bongo_cat {
 
 void NativeModel::resize(int width, int height) {
     if (width <= 0 || height <= 0) return;
+    bool changed = width != width_ || height != height_;
     width_ = width;
     height_ = height;
     update_viewport();
+    if (changed) schedule_texture_refresh();
     if (!_model || (width == renderer_width_ && height == renderer_height_)) return;
     if (!_model->IsBlendModeEnabled()) {
         renderer_width_ = width_;
@@ -25,9 +27,11 @@ void NativeModel::resize(int width, int height) {
 
 void NativeModel::reshape(int width, int height) {
     if (width > 0 && height > 0) {
+        bool changed = width != width_ || height != height_;
         width_ = width;
         height_ = height;
         update_viewport();
+        if (changed) schedule_texture_refresh();
     }
 }
 

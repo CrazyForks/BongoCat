@@ -13,6 +13,7 @@
         "labels": {
           "modelSettings": "Modell",
           "gamepadFourHands": "Vierhandmodus am Gamepad",
+          "dynamicTextureResolution": "Dynamic Texture Resolution",
           "mirrorMode": "Spiegelmodus",
           "mouseMirror": "Maus spiegeln",
           "mouseCentered": "Maus auf Desktop-Begleiter zentriert",
@@ -46,6 +47,8 @@
           "obsBackground": "Fensteraufnahme schwarz?",
           "obsBackgroundHelp": "OBS: Diese Option aktivieren, die Windows-7-Kompatibilitätsmethode verwenden und den Hintergrund mit einem Farbschlüssel-Filter entfernen.",
           "windowSize": "Mit dem [Mausrad] die Größe ändern oder die [rechte Maustaste gedrückt halten]: nach rechts ziehen zum Vergrößern, nach links zum Verkleinern",
+          "dynamicTextureResolution": "Downsample large model textures to match the current display size. The model reloads after changing this option.",
+          "dynamicTextureResolutionFailed": "Unable to reload the model with the selected texture mode.",
           "hideOnHover": "Wenn Klickdurchlässigkeit und Immer im Vordergrund aktiviert sind, wird das Haustier beim Darüberfahren sofort ausgeblendet und beim Verlassen wieder angezeigt."
         }
       },
@@ -55,7 +58,6 @@
           "appSettings": "Anwendung",
           "launchOnStartup": "Beim Systemstart ausführen",
           "gameCompatibility": "Spielkompatibilitätsmodus",
-          "launchAsAdministrator": "Als Administrator starten",
           "showTrayIcon": "Infobereichssymbol anzeigen",
           "appearanceSettings": "Erscheinungsbild",
           "themeMode": "Design",

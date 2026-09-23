@@ -1,6 +1,8 @@
 #include "runtime.h"
 #include "bongo_cat/audio.h"
 #include "bongo_cat/log.h"
+#include "bongo_cat/model_memory.h"
+#include "bongo_cat/resource_trace.h"
 #include "model_cover.h"
 #include "bongo_cat/overlay.h"
 #include "bongo_cat/preferences.h"
@@ -128,7 +130,7 @@ static bool render(BongoCatApp *app, bool present) {
 }
 
 void bongo_cat_app_render_now(BongoCatApp *app) {
-    if (app && app->window && app->session.window.visible &&
+    if (app && !app->loading_model[0] && app->window && app->session.window.visible &&
         !app->window_minimized)
         render(app, true);
 }
@@ -216,6 +218,8 @@ void bongo_cat_app_loop(BongoCatApp *app) {
         bongo_cat_diagnostics_phase("snapshot-and-multi-pet");
         bongo_cat_window_snapshot_update(app, now);
         bongo_cat_multi_pet_update(app, now);
+        bongo_cat_memory_policy_poll();
+        bongo_cat_model_memory_poll();
         bongo_cat_diagnostics_phase("random-behavior");
         bongo_cat_random_behavior_update(app, now);
         bongo_cat_diagnostics_phase("audio-and-display-recovery");
@@ -223,6 +227,8 @@ void bongo_cat_app_loop(BongoCatApp *app) {
         bongo_cat_window_update_display_recovery(app, now);
         bongo_cat_runtime_flow_update(app, now);
         bongo_cat_window_apply_pending_resize(app);
+        bongo_cat_app_refresh_texture_resolution(app);
+        bongo_cat_resource_trace_poll();
         bongo_cat_app_drain_input(app, true);
         if (app->context_menu_requested) {
             app->context_menu_requested = false;

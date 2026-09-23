@@ -8,6 +8,7 @@
 #include "bongo_cat/model.h"
 #include "bongo_cat/image.h"
 #include "cubism_mask_policy.hpp"
+#include "cubism_texture_refresh_memory.hpp"
 
 #include <Model/CubismUserModel.hpp>
 #include <CubismModelSettingJson.hpp>
@@ -28,23 +29,39 @@ bool validate_model_setting_json(const std::vector<unsigned char> &json,
 class ViewerLookUpdater;
 class ParameterOverrideUpdater;
 struct ModelTexture;
+struct TextureRefresh;
+struct TextureResolution;
 
 class NativeModel final : public Csm::CubismUserModel {
 public:
     NativeModel();
     ~NativeModel() override;
     bool load(const char *directory, const char *setting_file, bool direct_textures,
+        bool dynamic_texture_resolution,
         BongoCatLive2DLoadProgress progress, void *userdata,
         BongoCatError *error);
+    /* Keep the internal test and tooling call shape source-compatible. */
+    bool load(const char *directory, const char *setting_file, bool direct_textures,
+        BongoCatLive2DLoadProgress progress, void *userdata,
+        BongoCatError *error) {
+        return load(directory, setting_file, direct_textures, false,
+            progress, userdata, error);
+    }
     bool load_textures(BongoCatError *error,
-        BongoCatLive2DLoadProgress progress, void *userdata);
+        BongoCatLive2DLoadProgress progress, void *userdata,
+        int display_width = 0, int display_height = 0);
     size_t texture_count() const { return textures_.size(); }
+    double texture_storage_mib() const;
     void release_render_resources();
     bool canvas_size(int *width, int *height) const;
     bool frame(BongoCatLive2DFrame *frame) const;
     bool viewport(int *x, int *y, int *width, int *height) const;
     void resize(int width, int height);
     void reshape(int width, int height);
+    bool texture_refresh_pending(bool active) const;
+    bool texture_refresh_busy() const;
+    void cancel_texture_refresh_async();
+    bool refresh_texture_resolution(bool active);
     bool update(float delta_seconds);
     void draw();
     void set_mirror(bool mirror);
@@ -138,6 +155,9 @@ private:
     bool restore_motion_defaults(const std::string &key);
     void select_motion(const std::string &key, bool selected);
     void release_textures();
+    void schedule_texture_refresh();
+    void cancel_texture_refresh();
+    TextureResolution texture_refresh_bound(const ModelTexture &texture, int limit) const;
     const BongoCatImageAlphaMask *texture_alpha(int index) const;
     void release_renderer();
     bool create_renderer(BongoCatError *error);
@@ -202,6 +222,12 @@ private:
     bool mirror_ = false;
     BongoCatLive2DRenderOptions render_options_{};
     bool direct_textures_ = false;
+    bool dynamic_texture_resolution_ = false;
+    TextureRefresh *texture_refresh_ = nullptr;
+    TextureRefreshMemory texture_refresh_memory_;
+    bool texture_refresh_pending_ = false;
+    uint64_t texture_resize_ns_ = 0;
+    size_t texture_refresh_index_ = 0;
     bool trim_offscreen_pool_ = true;
     bool parameter_overrides_applied_ = false;
     std::vector<std::string> idle_motion_keys_;

@@ -35,6 +35,10 @@ int bongo_cat_window_wait_timeout(const BongoCatApp *app, uint64_t now) {
     uint64_t frame_deadline = app->last_frame_ns + frame_interval_ns(app);
     int wait_ms = app->session.window.visible && !app->window_minimized ? remaining_ms(
         frame_deadline, now) : 250;
+    /* Service bounded upload/retirement work independently of animation FPS.
+       Paused/no-job states keep their existing idle cadence. */
+    if (wait_ms > 16 && bongo_cat_live2d_texture_refresh_busy(app->live2d))
+        wait_ms = 16;
     if (bongo_cat_preferences_needs_frame(app->preferences) && wait_ms > 4)
         wait_ms = 4;
     if (app->wheel_animation_active) {
