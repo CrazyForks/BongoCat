@@ -17,12 +17,17 @@ password="$(openssl rand -hex 32)"
 security create-keychain -p "$password" "$keychain"
 security set-keychain-settings -lut 21600 "$keychain"
 security unlock-keychain -p "$password" "$keychain"
+security list-keychains -d user -s "$keychain"
 for certificate in app installer; do
   security import "$work/$certificate.p12" -k "$keychain" \
     -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/productbuild
 done
-security set-key-partition-list -S apple-tool:,apple:,codesign: -s \
-  -k "$password" "$keychain" >/dev/null
+# The -T flags above authorize the signing tools. Some macOS runner images
+# reject set-key-partition-list with "item could not be found" for imported
+# distribution identities, so do not make that optional metadata operation a
+# blocker for an otherwise valid temporary keychain.
+security set-key-partition-list -S apple-tool:,apple:,codesign: \
+  -k "$password" "$keychain" >/dev/null 2>&1 || true
 
 # Select valid identities from this temporary keychain only, and ensure the app
 # certificate is one of the certificates authorized by the provisioning profile.
