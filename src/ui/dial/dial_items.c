@@ -9,7 +9,7 @@ void dial_items(Dial *d) {
             l->mirror_checked, 0},
         {l->vertical_flip, BONGO_CAT_MENU_VERTICAL_FLIP, 0xff38bdf8, 2,
             l->vertical_flip_checked, 0},
-        {l->always_on_top, BONGO_CAT_MENU_ALWAYS_ON_TOP, 0xff60a5fa, 3,
+        {l->always_on_top, BONGO_CAT_MENU_ALWAYS_ON_TOP, 0xfff77daa, 3,
             l->always_on_top_checked, 0},
         {l->window_size, BONGO_CAT_MENU_NONE, 0xff34d399, 4, false, 16},
         {l->opacity, BONGO_CAT_MENU_NONE, 0xff818cf8, 5, false, 10},
