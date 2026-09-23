@@ -18,6 +18,7 @@ concurrency:
 jobs:
   upload:
     name: Build, sign and upload macOS universal app
+    if: github.repository == 'vladelaina/BongoCat'
     runs-on: macos-15
     timeout-minutes: 90
     defaults:
