@@ -8,21 +8,27 @@
 const char *bongo_cat_ui_fontconfig_font(char *path, size_t capacity,
     const char *language, bool bold) {
     if (!path || !capacity) return NULL;
+    FcConfig *config = FcInitLoadConfigAndFonts();
+    if (!config) return NULL;
     FcPattern *request = FcPatternCreate();
-    if (!request) return NULL;
+    if (!request) {
+        FcConfigDestroy(config);
+        return NULL;
+    }
     if (!FcPatternAddString(request, FC_FAMILY, (const FcChar8 *)"sans-serif") ||
         !FcPatternAddString(request, FC_LANG, (const FcChar8 *)language) ||
         !FcPatternAddInteger(request, FC_WEIGHT,
             bold ? FC_WEIGHT_BOLD : FC_WEIGHT_REGULAR) ||
         !FcPatternAddBool(request, FC_SCALABLE, FcTrue) ||
-        !FcConfigSubstitute(NULL, request, FcMatchPattern)) {
+        !FcConfigSubstitute(config, request, FcMatchPattern)) {
         FcPatternDestroy(request);
+        FcConfigDestroy(config);
         return NULL;
     }
     FcDefaultSubstitute(request);
     FcResult result;
     /* Do not trim: an earlier face may be unsupported by our rasterizer. */
-    FcFontSet *fonts = FcFontSort(NULL, request, FcFalse, NULL, &result);
+    FcFontSet *fonts = FcFontSort(config, request, FcFalse, NULL, &result);
     bool found = false;
     FcChar32 probe = strcmp(language, "ko") == 0 ? 0xac00 :
         strcmp(language, "zh-cn") == 0 ? 0x4e2d : 'A';
@@ -51,5 +57,6 @@ const char *bongo_cat_ui_fontconfig_font(char *path, size_t capacity,
     }
     if (fonts) FcFontSetDestroy(fonts);
     FcPatternDestroy(request);
+    FcConfigDestroy(config);
     return found ? path : NULL;
 }
