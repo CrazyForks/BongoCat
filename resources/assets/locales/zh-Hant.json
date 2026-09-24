@@ -122,7 +122,6 @@
           "shortcutSaveFailed": "無法儲存模型快捷鍵，請檢查檔案權限和可用磁碟空間",
           "behaviorRenameLimit": "無法儲存更多自訂動作名稱，已達到自訂設定數量上限",
           "clickOrDragToImport": "點擊或拖入模型資料夾",
-          "supportedImportFormats": "支援 Mver 與 Tauri 格式",
           "openDirectoryFailed": "無法開啟模型目錄"
         },
         "tooltips": {

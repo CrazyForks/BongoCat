@@ -122,7 +122,6 @@
           "shortcutSaveFailed": "No se pudo guardar el atajo del modelo. Compruebe los permisos de los archivos y el espacio disponible en el disco",
           "behaviorRenameLimit": "No se pueden guardar más nombres de acciones personalizados. Se ha alcanzado el límite de ajustes personalizados",
           "clickOrDragToImport": "Haz clic o arrastra una carpeta",
-          "supportedImportFormats": "Compatible con Mver y Tauri",
           "openDirectoryFailed": "No se pudo abrir la carpeta del modelo"
         },
         "tooltips": {

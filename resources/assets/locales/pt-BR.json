@@ -122,7 +122,6 @@
           "shortcutSaveFailed": "Não foi possível salvar o atalho do modelo. Verifique as permissões dos arquivos e o espaço disponível em disco",
           "behaviorRenameLimit": "Não é possível salvar mais nomes de ações personalizados. O limite de configurações personalizadas foi atingido",
           "clickOrDragToImport": "Clique ou arraste uma pasta",
-          "supportedImportFormats": "Compatível com Mver e Tauri",
           "openDirectoryFailed": "Não foi possível abrir a pasta do modelo"
         },
         "tooltips": {

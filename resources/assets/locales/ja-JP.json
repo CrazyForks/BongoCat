@@ -122,7 +122,6 @@
           "shortcutSaveFailed": "モデルのショートカットを保存できません。ファイルの権限とディスクの空き容量を確認してください",
           "behaviorRenameLimit": "カスタム設定数の上限に達したため、これ以上アクションのカスタム名を保存できません",
           "clickOrDragToImport": "モデルフォルダーをクリックまたはドラッグ",
-          "supportedImportFormats": "Mver・Tauri形式に対応",
           "openDirectoryFailed": "モデルフォルダーを開けません"
         },
         "tooltips": {

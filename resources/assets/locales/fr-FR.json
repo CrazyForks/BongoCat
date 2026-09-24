@@ -122,7 +122,6 @@
           "shortcutSaveFailed": "Impossible d’enregistrer le raccourci du modèle. Vérifiez les autorisations des fichiers et l’espace disque disponible",
           "behaviorRenameLimit": "Impossible d’enregistrer davantage de noms d’actions personnalisés. La limite de paramètres personnalisés est atteinte",
           "clickOrDragToImport": "Cliquez ou déposez un dossier",
-          "supportedImportFormats": "Formats Mver et Tauri pris en charge",
           "openDirectoryFailed": "Impossible d'ouvrir le dossier du modèle"
         },
         "tooltips": {

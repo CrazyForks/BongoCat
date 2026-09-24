@@ -122,7 +122,6 @@
           "shortcutSaveFailed": "Unable to save the model shortcut. Check file permissions and available disk space",
           "behaviorRenameLimit": "Cannot save another custom action name: user override limit reached",
           "clickOrDragToImport": "Click or drag a model folder",
-          "supportedImportFormats": "Supports Mver and Tauri formats",
           "openDirectoryFailed": "Unable to open model directory"
         },
         "tooltips": {
