@@ -138,11 +138,10 @@ int main(void) {
     CHECK(resize_calls == 1 && viewport.scale == 1.0f);
 
     reset(app);
-    app->settings.window.keep_in_screen = true;
     window_x = 0; requested.left = .25f;
     bongo_cat_window_update_model_frame(app);
     CHECK(!resize_calls && window_x == 0 && viewport.scale < 1.0f);
-    CHECK(viewport.x - requested.left * viewport.width >= 0);
+    CHECK(viewport.x - requested.left * viewport.width < 0);
 
     reset(app);
     dpi = 4; update_viewport();

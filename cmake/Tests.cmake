@@ -20,6 +20,11 @@ if(BUILD_TESTING)
   target_include_directories(bongo_cat_mask_policy_tests PRIVATE src/live2d tests/support)
   target_link_libraries(bongo_cat_mask_policy_tests PRIVATE bongo_cat_warnings)
   add_test(NAME live2d-mask-policy COMMAND bongo_cat_mask_policy_tests)
+  add_executable(bongo_cat_texture_resolution_tests
+    tests/live2d/test_texture_resolution.cpp src/live2d/cubism_texture_resolution.cpp)
+  target_include_directories(bongo_cat_texture_resolution_tests PRIVATE src/live2d tests/support)
+  target_link_libraries(bongo_cat_texture_resolution_tests PRIVATE bongo_cat_warnings)
+  add_test(NAME live2d-texture-resolution COMMAND bongo_cat_texture_resolution_tests)
   add_executable(bongo_cat_frame_policy_tests tests/live2d/test_frame_policy.cpp)
   target_include_directories(bongo_cat_frame_policy_tests PRIVATE
     src/live2d tests/support include "${BONGO_CAT_GENERATED_INCLUDE_DIR}")
@@ -94,6 +99,11 @@ if(BUILD_TESTING)
   target_link_libraries(bongo_cat_image_png_stream_tests PRIVATE
     bongo_cat_runtime bongo_cat_archive bongo_cat_warnings)
   add_test(NAME image-png-stream COMMAND bongo_cat_image_png_stream_tests)
+  add_executable(bongo_cat_image_texture_cache_tests tests/media/test_image_texture_cache.c)
+  target_include_directories(bongo_cat_image_texture_cache_tests PRIVATE src/media tests/support)
+  target_link_libraries(bongo_cat_image_texture_cache_tests PRIVATE
+    bongo_cat_runtime bongo_cat_archive bongo_cat_warnings)
+  add_test(NAME image-texture-cache COMMAND bongo_cat_image_texture_cache_tests)
   add_executable(bongo_cat_image_upload_fallback_tests
     tests/media/test_image_upload_fallback.c)
   target_include_directories(bongo_cat_image_upload_fallback_tests PRIVATE

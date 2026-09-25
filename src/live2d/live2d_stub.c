@@ -114,6 +114,10 @@ bool bongo_cat_live2d_texture_refresh_due(const BongoCatLive2D *live2d,
     bool active, bool allow_start) {
     (void)live2d; (void)active; (void)allow_start; return false;
 }
+bool bongo_cat_live2d_try_reuse_texture_quality(BongoCatLive2D *live2d,
+    float quality_percent) {
+    (void)live2d; (void)quality_percent; return false;
+}
 
 bool bongo_cat_live2d_measure_frame(BongoCatLive2D *live2d,
     BongoCatLive2DFrame *required) {

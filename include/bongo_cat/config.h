@@ -4,6 +4,7 @@
 #include "bongo_cat/common.h"
 
 #define BONGO_CAT_DEFAULT_MAX_FPS 60
+#define BONGO_CAT_DEFAULT_RENDER_QUALITY_PERCENT 100
 /* Resolve this saved choice using the display refresh rate cached at startup. */
 #define BONGO_CAT_DISPLAY_MAX_FPS (-1)
 #define BONGO_CAT_DEFAULT_WINDOW_SCALE_PERCENT 100.0f
@@ -51,6 +52,8 @@ typedef struct BongoCatModelPreferences {
     bool ignore_mouse;
     bool gamepad_four_hands;
     bool dynamic_texture_resolution;
+    /* Approximate texture-memory budget: 0.1, 1, then 10 to 100 percent. */
+    float render_quality_percent;
     int max_fps;
 } BongoCatModelPreferences;
 
@@ -58,7 +61,6 @@ typedef struct BongoCatWindowPreferences {
     bool pass_through;
     bool always_on_top;
     bool hide_on_hover;
-    bool keep_in_screen;
     bool obs_background;
     bool random_expression;
     bool random_motion;

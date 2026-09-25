@@ -185,6 +185,17 @@ void test_config(void) {
     CHECK(bongo_cat_settings_load(settings_path, &loaded_settings, &error) == BONGO_CAT_OK);
     CHECK(loaded_settings.model.max_fps == BONGO_CAT_DISPLAY_MAX_FPS);
 
+    // Fractional quality must survive persistence, not round to zero and
+    // silently revert to full-size textures on the next application start.
+    const float quality_levels[] = {0.1f, 1.0f, 10.0f, 100.0f};
+    for (size_t i = 0; i < sizeof(quality_levels) / sizeof(quality_levels[0]); ++i) {
+        settings.model.render_quality_percent = quality_levels[i];
+        CHECK(bongo_cat_settings_save(settings_path, &settings, &error) == BONGO_CAT_OK);
+        loaded_settings.model.render_quality_percent = -1.0f;
+        CHECK(bongo_cat_settings_load(settings_path, &loaded_settings, &error) == BONGO_CAT_OK);
+        CHECK(loaded_settings.model.render_quality_percent == quality_levels[i]);
+    }
+
     const char *unsupported = "bongocat-unsupported.json";
     write_text(unsupported,
         "{\"format\":\"bongocat/settings\",\"schemaVersion\":1,"

@@ -168,6 +168,7 @@ static bool decode_png(FILE *file, PngRows *png) {
     size_t stride = (size_t)width * 4;
     size_t batch = 4u * 1024u * 1024u / stride;
     png->batch = (int)(batch < 1 ? 1 : batch > 64 ? 64 : batch);
+    if (png->batch > png->height) png->batch = png->height;
     png->line = malloc(png->line_size);
     png->previous = calloc(1, png->line_size);
     png->pixels = malloc(stride * png->batch);

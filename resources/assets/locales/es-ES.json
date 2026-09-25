@@ -18,7 +18,7 @@
           "verticalFlip": "Colgar boca abajo",
           "mouseVerticalFlip": "Invertir ratón verticalmente",
           "mouseMirror": "Invertir ratón horizontalmente",
-          "mouseCentered": "Ratón centrado en la mascota",
+          "mouseCentered": "Desactivar el centrado del ratón en la mascota",
           "ignoreMouse": "Ignorar eventos del ratón",
           "windowSettings": "Ventana",
           "passThrough": "Dejar pasar clics",

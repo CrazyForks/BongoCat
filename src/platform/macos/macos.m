@@ -252,6 +252,7 @@ bool bongo_cat_platform_single_instance_begin(void) {
     close(instance_lock); instance_lock = -1; return false;
 }
 bool bongo_cat_platform_single_instance_take_wake(void) { return false; }
+bool bongo_cat_platform_single_instance_take_settings(void) { return false; }
 void bongo_cat_platform_single_instance_end(void) {
     if (instance_lock >= 0) close(instance_lock);
     instance_lock = -1;

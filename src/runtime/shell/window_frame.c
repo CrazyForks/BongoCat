@@ -49,24 +49,7 @@ void bongo_cat_window_limit_initial_frame(BongoCatApp *app,
 static BongoCatLive2DFrame limit_display(BongoCatApp *app,
     BongoCatLive2DFrame current, BongoCatLive2DFrame required,
     int x, int y, int cw, int ch) {
-    SDL_Rect bounds;
-    SDL_DisplayID display = SDL_GetDisplayForWindow(app->window);
-    if (!app->settings.window.keep_in_screen || !display ||
-        !SDL_GetDisplayUsableBounds(display, &bounds)) return required;
-    bool flip = app->settings.model.vertical_flip;
-    double content_x = x + round(cw * (double)current.left);
-    double content_y = y + round(ch * (double)(flip ? current.bottom : current.top));
-    required.left = (float)fmax(current.left,
-        fmin(required.left, (content_x - bounds.x) / cw));
-    required.right = (float)fmax(current.right,
-        fmin(required.right, ((double)bounds.x + bounds.w - content_x - cw) / cw));
-    float top = (float)fmax(flip ? current.bottom : current.top,
-        fmin(flip ? required.bottom : required.top, (content_y - bounds.y) / ch));
-    float bottom = (float)fmax(flip ? current.top : current.bottom,
-        fmin(flip ? required.top : required.bottom,
-            ((double)bounds.y + bounds.h - content_y - ch) / ch));
-    required.top = flip ? bottom : top;
-    required.bottom = flip ? top : bottom;
+    (void)app; (void)current; (void)x; (void)y; (void)cw; (void)ch;
     return required;
 }
 

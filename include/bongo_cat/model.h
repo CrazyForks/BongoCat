@@ -145,6 +145,8 @@ typedef bool (*BongoCatLive2DTextureDisplaySize)(void *userdata,
     int canvas_height, int *display_width, int *display_height);
 typedef struct BongoCatLive2DTextureOptions {
     bool dynamic_resolution;
+    /* Approximate texture-memory budget: 0.1, 1, then 10 to 100 percent. */
+    float render_quality_percent;
     /* Synchronous planner, called after reading the incoming canvas and before
        allocating its atlases. Returns content pixels, excluding transparent
        frame padding. It must not change the live model or window. */
@@ -183,6 +185,11 @@ bool bongo_cat_live2d_viewport(const BongoCatLive2D *live2d,
     int *x, int *y, int *width, int *height);
 void bongo_cat_live2d_resize(BongoCatLive2D *live2d, int width, int height);
 void bongo_cat_live2d_reshape(BongoCatLive2D *live2d, int width, int height);
+/* Main-thread fast path with no GL calls. Commit the new quality only when
+   every current atlas already has the required pixels. False leaves the
+   model unchanged; the caller can use the normal reload/rollback path. */
+bool bongo_cat_live2d_try_reuse_texture_quality(BongoCatLive2D *live2d,
+    float quality_percent);
 bool bongo_cat_live2d_texture_refresh_pending(const BongoCatLive2D *live2d, bool active);
 /* Main-thread query without GL calls. Unlike pending, excludes debounce,
    cancellation cooldown and paused jobs that do not yet need retirement. */

@@ -170,17 +170,20 @@ static void reload_secondary_settings(BongoCatApp *app) {
         settings.model.gamepad_four_hands != app->settings.model.gamepad_four_hands ||
         settings.model.dynamic_texture_resolution !=
             app->settings.model.dynamic_texture_resolution ||
+        settings.model.render_quality_percent !=
+            app->settings.model.render_quality_percent ||
         settings.model.max_fps != app->settings.model.max_fps;
     bool texture_resolution_changed =
         settings.model.dynamic_texture_resolution !=
-        app->settings.model.dynamic_texture_resolution;
+            app->settings.model.dynamic_texture_resolution ||
+        settings.model.render_quality_percent !=
+            app->settings.model.render_quality_percent;
     bool hands_changed = settings.model.gamepad_four_hands !=
         app->settings.model.gamepad_four_hands;
     bool window_changed =
         settings.window.pass_through != app->settings.window.pass_through ||
         settings.window.always_on_top != app->settings.window.always_on_top ||
         settings.window.hide_on_hover != app->settings.window.hide_on_hover ||
-        settings.window.keep_in_screen != app->settings.window.keep_in_screen ||
         settings.window.obs_background != app->settings.window.obs_background ||
         settings.window.random_expression != app->settings.window.random_expression ||
         settings.window.random_motion != app->settings.window.random_motion ||
@@ -203,7 +206,11 @@ static void reload_secondary_settings(BongoCatApp *app) {
     if (hands_changed) bongo_cat_app_refresh_hands(app);
     if (texture_resolution_changed && app->loaded_model[0]) {
         BongoCatError reload_error = {0};
-        if (!bongo_cat_app_reload_model_with_error(app, &reload_error)) {
+        bool reused = settings.model.dynamic_texture_resolution ==
+            previous_settings.model.dynamic_texture_resolution &&
+            bongo_cat_live2d_try_reuse_texture_quality(app->live2d,
+                settings.model.render_quality_percent);
+        if (!reused && !bongo_cat_app_reload_model_with_error(app, &reload_error)) {
             SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
                 "[runtime] Multi-pet texture resolution reload failed: %s",
                 reload_error.message);
@@ -212,6 +219,8 @@ static void reload_secondary_settings(BongoCatApp *app) {
                still be applied normally. */
             app->settings.model.dynamic_texture_resolution =
                 previous_settings.model.dynamic_texture_resolution;
+            app->settings.model.render_quality_percent =
+                previous_settings.model.render_quality_percent;
         }
     }
     const BongoCatModelEntry *active = bongo_cat_models_find(&app->models, app->loaded_model);

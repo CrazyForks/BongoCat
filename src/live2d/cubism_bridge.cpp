@@ -201,6 +201,11 @@ extern "C" bool bongo_cat_live2d_texture_refresh_due(const BongoCatLive2D *runti
     return runtime && runtime->model && runtime->model->texture_refresh_due(active, allow_start);
 }
 
+extern "C" bool bongo_cat_live2d_try_reuse_texture_quality(BongoCatLive2D *runtime,
+    float quality_percent) {
+    return runtime && runtime->model && runtime->model->try_reuse_texture_quality(quality_percent);
+}
+
 extern "C" bool bongo_cat_live2d_measure_frame(BongoCatLive2D *runtime,
     BongoCatLive2DFrame *required) {
     return runtime && runtime->model && runtime->model->measure_frame(required);

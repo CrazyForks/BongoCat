@@ -50,23 +50,14 @@ void NativeModel::cancel_texture_refresh() {
    would otherwise schedule redundant refreshes indefinitely. */
 static std::pair<int, int> fitted_size(const ModelTexture &texture,
     const TextureResolution &bound) {
-    int width = texture.source_width, height = texture.source_height;
-    if (width < 1 || height < 1 || bound.max_width < 1 || bound.max_height < 1)
+    auto size = texture_fitted_size(texture.source_width, texture.source_height, bound);
+    if (size.first < 1 || size.second < 1)
         return {texture.width, texture.height};
-    if (width > bound.max_width || height > bound.max_height) {
-        if ((int64_t)bound.max_width * height <= (int64_t)bound.max_height * width) {
-            height = std::max(1, (int)((int64_t)height * bound.max_width / width));
-            width = bound.max_width;
-        } else {
-            width = std::max(1, (int)((int64_t)width * bound.max_height / height));
-            height = bound.max_height;
-        }
-    }
-    return {width, height};
+    return size;
 }
 
 TextureResolution NativeModel::texture_refresh_bound(const ModelTexture &texture,
-    int limit) const {
+    int limit, float quality_percent) const {
     int reference_width = 0, reference_height = 0;
     canvas_size(&reference_width, &reference_height);
     if (render_options_.mver_projection) {
@@ -75,8 +66,27 @@ TextureResolution NativeModel::texture_refresh_bound(const ModelTexture &texture
     }
     if (reference_width <= 0) reference_width = width_;
     if (reference_height <= 0) reference_height = height_;
-    return texture_resolution_for(true, viewport_width_, viewport_height_,
-        reference_width, reference_height, texture.source_width, texture.source_height, limit);
+    return texture_resolution_for(dynamic_texture_resolution_,
+        viewport_width_, viewport_height_, reference_width, reference_height,
+        texture.source_width, texture.source_height, limit, quality_percent);
+}
+
+bool NativeModel::try_reuse_texture_quality(float quality_percent) {
+    /* No GL calls: settings can be drawn with a different context current.
+       Commit only after every atlas fits. Active workers keep their original
+       budget; a real resize still uses the existing reload/rollback path. */
+    if (!texture_quality_valid(quality_percent) || !_model || textures_.empty() ||
+        texture_refresh_ || texture_limit_ < 1 ||
+        !GetRenderer<Csm::Rendering::CubismRenderer_OpenGLES2>()) return false;
+    for (const auto &texture : textures_) {
+        if (!texture || !texture->id || texture->source_width < 1 ||
+            texture->source_height < 1) return false;
+        const auto bound = texture_refresh_bound(*texture, texture_limit_, quality_percent);
+        if (fitted_size(*texture, bound) !=
+            std::make_pair(texture->width, texture->height)) return false;
+    }
+    render_quality_percent_ = quality_percent;
+    return true;
 }
 
 double NativeModel::texture_storage_mib() const {
@@ -106,7 +116,8 @@ void NativeModel::schedule_texture_refresh() {
     refresh.rescan = true;
     if (refresh.finishing || refresh.cancelled) return;
     const auto &next = *refresh.replacement;
-    const auto bound = texture_refresh_bound(next, refresh.texture_limit);
+    const auto bound = texture_refresh_bound(next, refresh.texture_limit,
+        render_quality_percent_);
     const TextureResolution previous_bound{next.max_width, next.max_height, true};
     /* Compare actual aspect-fitted pixels, not window pixels or rounded
        bounds. Different notifications can request exactly the same atlas. */
@@ -257,7 +268,7 @@ bool NativeModel::refresh_texture_resolution(bool active, bool allow_start) {
     for (; texture_refresh_index_ < textures_.size(); ++texture_refresh_index_) {
         const auto &current = textures_[texture_refresh_index_];
         if (!current) continue;
-        auto bound = texture_refresh_bound(*current, limit);
+        auto bound = texture_refresh_bound(*current, limit, render_quality_percent_);
         const auto fitted = fitted_size(*current, bound);
         if (fitted == std::make_pair(current->width, current->height))
             continue;
@@ -281,7 +292,7 @@ bool NativeModel::refresh_texture_resolution(bool active, bool allow_start) {
         auto &next = *refresh->replacement;
         next.context = current->context;
         next.direct = current->direct;
-        next.dynamic_resolution = true;
+        next.dynamic_resolution = dynamic_texture_resolution_;
         next.max_width = bound.max_width; next.max_height = bound.max_height;
         next.source_width = current->source_width; next.source_height = current->source_height;
         refresh->index = texture_refresh_index_;

@@ -218,6 +218,10 @@ void bongo_cat_app_loop(BongoCatApp *app) {
         bongo_cat_preferences_model_watch(app->preferences, now);
         bongo_cat_model_refresh_update(app);
         take_instance_wake(app);
+        if (bongo_cat_platform_single_instance_take_settings()) {
+            bongo_cat_preferences_show(app->preferences);
+            SDL_Log("Existing instance requested settings window");
+        }
         if (take_update_shutdown(app)) continue;
         now = SDL_GetTicksNS();
         bongo_cat_window_update_wheel_animation(app, now);

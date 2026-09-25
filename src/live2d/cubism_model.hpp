@@ -49,9 +49,12 @@ public:
     }
     bool load_textures(BongoCatError *error,
         BongoCatLive2DLoadProgress progress, void *userdata,
-        int display_width = 0, int display_height = 0);
+        int display_width = 0, int display_height = 0,
+        float render_quality_percent = 100.0f);
     size_t texture_count() const { return textures_.size(); }
     double texture_storage_mib() const;
+    float render_quality_percent() const { return render_quality_percent_; }
+    bool try_reuse_texture_quality(float quality_percent);
     void release_render_resources();
     bool canvas_size(int *width, int *height) const;
     bool frame(BongoCatLive2DFrame *frame) const;
@@ -168,7 +171,8 @@ private:
     void release_textures();
     void schedule_texture_refresh();
     void cancel_texture_refresh();
-    TextureResolution texture_refresh_bound(const ModelTexture &texture, int limit) const;
+    TextureResolution texture_refresh_bound(const ModelTexture &texture,
+        int limit, float quality_percent) const;
     const BongoCatImageAlphaMask *texture_alpha(int index) const;
     void release_renderer();
     bool create_renderer(BongoCatError *error);
@@ -239,6 +243,8 @@ private:
     BongoCatLive2DRenderOptions render_options_{};
     bool direct_textures_ = false;
     bool dynamic_texture_resolution_ = false;
+    float render_quality_percent_ = 100.0f;
+    int texture_limit_ = 0;
     TextureRefresh *texture_refresh_ = nullptr;
     TextureRefreshMemory texture_refresh_memory_;
     bool texture_refresh_pending_ = false;

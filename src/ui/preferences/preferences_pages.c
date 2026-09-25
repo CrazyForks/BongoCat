@@ -95,11 +95,6 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
             bongo_cat_app_update_hover(app, SDL_GetTicksNS());
         }
     }
-    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_KEEP_IN_SCREEN);
-    if (bongo_cat_pref_toggle(context, "keep-in-screen", tr(app,
-        "pages.preference.cat.labels.keepInScreen", "Keep on Screen"), "",
-        &window->keep_in_screen) && window->keep_in_screen)
-        bongo_cat_window_clamp_to_display(app);
     bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_SOLID_BACKGROUND);
     if (bongo_cat_pref_obs_background(context, "obs-background", tr(app,
         "pages.preference.cat.labels.obsBackground", "Solid Background"), tr(app,
@@ -202,9 +197,11 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
         &model->mouse_vertical_flip))
         bongo_cat_app_reset_pointer_tracking(app);
     bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_MOUSE_CENTERED);
+    bool disable_mouse_centered = !model->mouse_centered;
     if (bongo_cat_pref_toggle(context, "mouse-centered", tr(app,
-        "pages.preference.cat.labels.mouseCentered", "Mouse Centered on Desktop Pet"),
-        "", &model->mouse_centered)) {
+        "pages.preference.cat.labels.mouseCentered",
+        "Disable Mouse Centering on Desktop Pet"), "", &disable_mouse_centered)) {
+        model->mouse_centered = !disable_mouse_centered;
         bongo_cat_app_reset_pointer_tracking(app);
     }
     bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_IGNORE_MOUSE);
@@ -218,6 +215,30 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
     model->max_fps = bongo_cat_pref_fps(context, "max-fps", tr(app,
         "pages.preference.cat.labels.maxFPS", "Max Frame Rate"), model->max_fps,
         app->startup_display_fps);
+    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_RENDER_QUALITY);
+    float next_quality = bongo_cat_pref_render_quality(context, "render-quality",
+        tr(app, "pages.preference.cat.labels.renderQuality",
+            "Model Quality (%)"),
+        tr(app, "pages.preference.cat.hints.renderQuality",
+            "Try to find a visual balance and save memory."),
+        model->render_quality_percent);
+    if (next_quality != model->render_quality_percent) {
+        float old_quality = model->render_quality_percent;
+        model->render_quality_percent = next_quality;
+        BongoCatError reload_error = {0};
+        bool reloaded = !app->loaded_model[0] ||
+            bongo_cat_live2d_try_reuse_texture_quality(app->live2d, next_quality) ||
+            bongo_cat_app_reload_model_with_error(app, &reload_error);
+        if (!reloaded) {
+            model->render_quality_percent = old_quality;
+            char message[1024];
+            snprintf(message, sizeof(message), "%s\n%s", tr(app,
+                "pages.preference.cat.hints.dynamicTextureResolutionFailed",
+                "Unable to reload the model with the selected texture mode."),
+                reload_error.message);
+            bongo_cat_preferences_notice_show(app, message, true);
+        } else app->dirty = true;
+    }
     bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_TEXTURE_RESOLUTION);
     bool old_dynamic_texture_resolution = model->dynamic_texture_resolution;
     bool disable_dynamic_texture_resolution = !model->dynamic_texture_resolution;

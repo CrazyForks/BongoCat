@@ -18,7 +18,7 @@
           "verticalFlip": "거꾸로 매달리기 모드",
           "mouseVerticalFlip": "마우스 상하 반전",
           "mouseMirror": "마우스 좌우 반전",
-          "mouseCentered": "마우스를 데스크톱 펫 중심으로",
+          "mouseCentered": "마우스를 데스크톱 펫 중심으로 설정하는 기능 끄기",
           "ignoreMouse": "마우스 이벤트 무시",
           "windowSettings": "창",
           "passThrough": "클릭 통과",

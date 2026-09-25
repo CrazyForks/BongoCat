@@ -18,7 +18,7 @@
           "verticalFlip": "Suspendre la tête en bas",
           "mouseVerticalFlip": "Inverser la souris verticalement",
           "mouseMirror": "Inverser la souris horizontalement",
-          "mouseCentered": "Souris centrée sur le compagnon",
+          "mouseCentered": "Désactiver le centrage de la souris sur le compagnon",
           "ignoreMouse": "Ignorer les événements de souris",
           "windowSettings": "Fenêtre",
           "passThrough": "Clics traversants",

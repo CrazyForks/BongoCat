@@ -18,7 +18,7 @@
           "verticalFlip": "逆さ吊りモード",
           "mouseVerticalFlip": "マウス上下反転",
           "mouseMirror": "マウス左右反転",
-          "mouseCentered": "マウスをデスクトップペット中心にする",
+          "mouseCentered": "マウスをデスクトップペット中心にする機能を無効化",
           "ignoreMouse": "マウスイベントを無視",
           "windowSettings": "ウィンドウ",
           "passThrough": "クリックを透過",

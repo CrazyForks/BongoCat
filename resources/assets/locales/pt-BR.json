@@ -18,7 +18,7 @@
           "verticalFlip": "Pendurado de Cabeça para Baixo",
           "mouseVerticalFlip": "Inverter Mouse Verticalmente",
           "mouseMirror": "Inverter Mouse Horizontalmente",
-          "mouseCentered": "Mouse centrado no mascote de mesa",
+          "mouseCentered": "Desativar a centralização do mouse no mascote de mesa",
           "ignoreMouse": "Ignorar Eventos do Mouse",
           "windowSettings": "Janela",
           "passThrough": "Janela Transparente",

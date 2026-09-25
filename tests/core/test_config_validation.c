@@ -14,10 +14,23 @@ static void check_defaults_and_validation(void) {
     bongo_cat_session_defaults(&session);
     CHECK(settings.model.max_fps == 60 && settings.model.mouse_centered &&
         !settings.model.multiple_pets);
-    CHECK(settings.window.always_on_top && !settings.window.keep_in_screen);
+    CHECK(settings.window.always_on_top);
     CHECK(!settings.window.obs_background);
     CHECK(!settings.model.gamepad_four_hands);
     CHECK(settings.model.dynamic_texture_resolution);
+    CHECK(settings.model.render_quality_percent == 100.0f);
+    const float quality_levels[] = {0.1f, 1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
+    for (size_t i = 0; i < sizeof(quality_levels) / sizeof(quality_levels[0]); ++i) {
+        settings.model.render_quality_percent = quality_levels[i];
+        bongo_cat_settings_validate(&settings);
+        CHECK(settings.model.render_quality_percent == quality_levels[i]);
+    }
+    const float invalid_quality[] = {0, -1, 0.01f, 2, 11, 101, NAN, INFINITY};
+    for (size_t i = 0; i < sizeof(invalid_quality) / sizeof(invalid_quality[0]); ++i) {
+        settings.model.render_quality_percent = invalid_quality[i];
+        bongo_cat_settings_validate(&settings);
+        CHECK(settings.model.render_quality_percent == 100.0f);
+    }
     CHECK(!settings.window.random_motion &&
         settings.window.random_motion_interval_seconds ==
         BONGO_CAT_DEFAULT_RANDOM_MOTION_SECONDS);
