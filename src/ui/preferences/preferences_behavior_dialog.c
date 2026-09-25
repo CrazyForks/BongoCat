@@ -211,8 +211,8 @@ static void draw_segments(BongoCatPreferences *value,
 static void draw_rows(BongoCatPreferences *value, struct nk_context *context,
     struct nk_command_buffer *canvas, struct nk_rect panel,
     BongoCatUIPalette p, float opacity, bool enabled, size_t count) {
-    struct nk_rect viewport = nk_rect(panel.x + 20, panel.y + 144,
-        panel.w - 40, panel.h - 164);
+    struct nk_rect viewport = nk_rect(panel.x + 20, panel.y + 174,
+        panel.w - 40, panel.h - 194);
     float content_height = count * 56.0f;
     float maximum = NK_MAX(0.0f, content_height - viewport.h);
     float saved_offset = value->behavior_scroll[value->behavior_tab];
@@ -258,6 +258,35 @@ static void draw_rows(BongoCatPreferences *value, struct nk_context *context,
     nk_push_scissor(canvas, nk_window_get_content_region(context));
 }
 
+static void draw_random_pool_controls(BongoCatPreferences *value,
+    struct nk_context *context, struct nk_command_buffer *canvas,
+    struct nk_rect panel, BongoCatUIPalette p, float opacity, bool enabled) {
+    const char *title = tr(value,
+        "pages.preference.model.behaviorModal.hints.randomPool", "加入随机池");
+    text(canvas, nk_rect(panel.x + 20, panel.y + 135, panel.w - 180, 24),
+        title, value->ui.label_font, alpha(p.pink, opacity));
+    struct nk_rect all = nk_rect(panel.x + 166, panel.y + 136, 18, 18);
+    bool hover = enabled && nk_input_is_mouse_hovering_rect(&context->input, all);
+    bool checked = bongo_cat_preferences_behavior_random_all_selected(value);
+    if (checked) {
+        nk_fill_rect(canvas, all, 5, alpha(p.accent, opacity));
+        nk_stroke_line(canvas, all.x + 4, all.y + 9, all.x + 8, all.y + 13,
+            2.2f, alpha(nk_rgb(255, 255, 255), opacity));
+        nk_stroke_line(canvas, all.x + 8, all.y + 13, all.x + 15, all.y + 5,
+            2.2f, alpha(nk_rgb(255, 255, 255), opacity));
+    } else {
+        nk_fill_rect(canvas, all, 5, alpha(p.field, opacity));
+        nk_stroke_rect(canvas, all, 5, 1,
+            alpha(hover ? p.accent : p.border_subtle, opacity));
+    }
+    text(canvas, nk_rect(all.x + 25, all.y - 2, 45, 22),
+        tr(value, "pages.preference.model.behaviorModal.labels.selectAll", "全选"),
+        value->ui.caption_font, alpha(hover ? p.accent : p.text, opacity));
+    if (hover) bongo_cat_ui_cursor_hover_rect(context, all, BONGO_CAT_UI_CURSOR_POINTER);
+    if (hit(context, all, enabled))
+        bongo_cat_preferences_behavior_random_set_all(value, !checked);
+}
+
 void bongo_cat_preferences_behavior_dialog_draw(
     BongoCatPreferences *value, struct nk_context *context) {
     if (!bongo_cat_preferences_behavior_dialog_active(value)) return;
@@ -269,7 +298,7 @@ void bongo_cat_preferences_behavior_dialog_draw(
     struct nk_rect region = nk_window_get_bounds(context);
     size_t count = row_count(value);
     float width = NK_MIN(540.0f, region.w - 48.0f);
-    float height = NK_MIN(165.0f + count * 56.0f, region.h - 48.0f);
+    float height = NK_MIN(195.0f + count * 56.0f, region.h - 48.0f);
     BongoCatOverlayFrame frame = bongo_cat_preferences_overlay_frame(
         region, width, height, value->behavior_dialog_opened_ns,
         value->behavior_dialog_closing_ns);
@@ -292,6 +321,8 @@ void bongo_cat_preferences_behavior_dialog_draw(
     bool close = draw_header(value, context, canvas, frame.panel, p,
         opacity, !closing && input_ready);
     draw_segments(value, context, canvas, frame.panel, p, opacity,
+        !closing && input_ready);
+    draw_random_pool_controls(value, context, canvas, frame.panel, p, opacity,
         !closing && input_ready);
     draw_rows(value, context, canvas, frame.panel, p, opacity,
         !closing && input_ready, count);

@@ -5,7 +5,30 @@
 #include "windows_tray.h"
 
 #ifdef _WIN32
+#include <SDL3/SDL_hints.h>
 #include <stdlib.h>
+#include <string.h>
+
+void bongo_cat_windows_borderless_prepare_ui(void) {
+    typedef LONG (WINAPI *RtlGetVersionFn)(OSVERSIONINFOW *);
+    HMODULE module = GetModuleHandleW(L"ntdll.dll");
+    FARPROC address = module ? GetProcAddress(module, "RtlGetVersion") : NULL;
+    RtlGetVersionFn get_version = NULL;
+    memcpy(&get_version, &address, sizeof(get_version));
+    OSVERSIONINFOW version = {0};
+    version.dwOSVersionInfoSize = sizeof(version);
+    if (!get_version || get_version(&version) != 0 ||
+        version.dwMajorVersion != 6 || version.dwMinorVersion != 1) return;
+
+    /* SDL normally retains WS_CAPTION/WS_THICKFRAME on borderless windows
+       and removes their non-client area in WM_NCCALCSIZE. On Windows 7 this
+       can leave the OpenGL drawable offset from the mouse client coordinates.
+       Use an actual popup frame; our SDL hit test still supplies resize edges.
+       Keep these hints set because SDL recalculates styles on later window
+       changes as well as creation. Modern Windows keeps SDL's defaults. */
+    SDL_SetHint("SDL_BORDERLESS_WINDOWED_STYLE", "0");
+    SDL_SetHint("SDL_BORDERLESS_RESIZABLE_STYLE", "0");
+}
 
 static const wchar_t original_proc_property[] = L"BongoCat.BorderlessWindowProc";
 static const wchar_t click_through_property[] = L"BongoCat.ClickThrough";

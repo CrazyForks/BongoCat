@@ -45,6 +45,10 @@ void bongo_cat_preferences_behavior_row_draw(BongoCatPreferences *value,
     struct nk_context *context, struct nk_command_buffer *canvas,
     struct nk_rect row, const BongoCatBehaviorEntry *entry, BongoCatUIPalette palette,
     float opacity, bool enabled);
+void bongo_cat_preferences_behavior_random_set_all(BongoCatPreferences *value,
+    bool enabled);
+bool bongo_cat_preferences_behavior_random_all_selected(
+    BongoCatPreferences *value);
 void bongo_cat_preferences_page_shortcuts(BongoCatPreferences *value,
     struct nk_context *context);
 void bongo_cat_preferences_page_about(BongoCatPreferences *value,

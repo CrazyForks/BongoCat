@@ -159,6 +159,13 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
         &window->random_motion, 1.0f,
         &window->random_motion_interval_seconds, 3600.0f, 1.0f,
         BONGO_CAT_DEFAULT_RANDOM_MOTION_SECONDS);
+    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_RANDOM_AUDIO);
+    bongo_cat_pref_toggle_float(context, "random-audio", tr(app,
+        "pages.preference.cat.labels.randomAudio", "Random Audio"),
+        tr(app, "pages.preference.cat.labels.secondsUnit", "s"),
+        &window->random_audio, 1.0f,
+        &window->random_audio_interval_seconds, 3600.0f, 1.0f,
+        BONGO_CAT_DEFAULT_RANDOM_AUDIO_SECONDS);
 
     section_gap(context, 10);
     bongo_cat_pref_section_icon(context, tr(app,

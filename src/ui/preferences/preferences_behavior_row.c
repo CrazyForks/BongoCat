@@ -30,6 +30,61 @@ static bool hit(struct nk_context *context, struct nk_rect bounds, bool enabled)
         nk_input_is_mouse_click_in_rect(&context->input, NK_BUTTON_LEFT, bounds);
 }
 
+static bool random_enabled(BongoCatPreferences *value,
+    const BongoCatBehaviorEntry *entry) {
+    char id[BONGO_CAT_BEHAVIOR_ID_CAP];
+    snprintf(id, sizeof(id), "%s:random", entry->id);
+    for (size_t i = 0; i < value->app->settings.behavior_shortcut_count; ++i)
+        if (!strcmp(value->app->settings.behavior_shortcuts[i].id, id))
+            return value->app->settings.behavior_shortcuts[i].random_enabled;
+    return true;
+}
+
+static void toggle_random(BongoCatPreferences *value,
+    const BongoCatBehaviorEntry *entry, bool enabled) {
+    char id[BONGO_CAT_BEHAVIOR_ID_CAP];
+    snprintf(id, sizeof(id), "%s:random", entry->id);
+    for (size_t i = 0; i < value->app->settings.behavior_shortcut_count; ++i) {
+        BongoCatBehaviorShortcut *item = &value->app->settings.behavior_shortcuts[i];
+        if (!strcmp(item->id, id)) { item->random_enabled = enabled; return; }
+    }
+    if (value->app->settings.behavior_shortcut_count >= BONGO_CAT_BEHAVIOR_BINDING_CAP) return;
+    BongoCatBehaviorShortcut *item = &value->app->settings.behavior_shortcuts[
+        value->app->settings.behavior_shortcut_count++];
+    memset(item, 0, sizeof(*item));
+    snprintf(item->id, sizeof(item->id), "%s", id);
+    item->random_enabled = enabled;
+}
+
+void bongo_cat_preferences_behavior_random_set_all(BongoCatPreferences *value,
+    bool enabled) {
+    if (!value) return;
+    const BongoCatBehaviorCatalog *catalog =
+        bongo_cat_preferences_behavior_catalog(value);
+    BongoCatBehaviorKind kind = value->behavior_tab == 0 ? BONGO_CAT_BEHAVIOR_MOTION :
+        value->behavior_tab == 1 ? BONGO_CAT_BEHAVIOR_EXPRESSION : BONGO_CAT_BEHAVIOR_SOUND;
+    for (size_t i = 0; i < catalog->count; ++i)
+        if (catalog->entries[i].kind == kind)
+            toggle_random(value, &catalog->entries[i], enabled);
+    value->render_dirty = true;
+}
+
+bool bongo_cat_preferences_behavior_random_all_selected(
+    BongoCatPreferences *value) {
+    if (!value) return false;
+    const BongoCatBehaviorCatalog *catalog =
+        bongo_cat_preferences_behavior_catalog(value);
+    BongoCatBehaviorKind kind = value->behavior_tab == 0 ? BONGO_CAT_BEHAVIOR_MOTION :
+        value->behavior_tab == 1 ? BONGO_CAT_BEHAVIOR_EXPRESSION : BONGO_CAT_BEHAVIOR_SOUND;
+    bool found = false;
+    for (size_t i = 0; i < catalog->count; ++i) {
+        if (catalog->entries[i].kind != kind) continue;
+        found = true;
+        if (!random_enabled(value, &catalog->entries[i])) return false;
+    }
+    return found;
+}
+
 static BongoCatBehaviorShortcut *binding_for(BongoCatApp *app,
     const char *id) {
     BongoCatBehaviorShortcut *existing = bongo_cat_app_behavior_binding_mut(app, id);
@@ -159,13 +214,34 @@ void bongo_cat_preferences_behavior_row_draw(BongoCatPreferences *value,
     float opacity, bool enabled) {
     struct nk_rect play = nk_rect(row.x + row.w - 52, row.y + 10, 36, 36);
     struct nk_rect shortcut_bounds = nk_rect(play.x - 188, row.y + 10, 180, 36);
-    struct nk_rect name = nk_rect(row.x + 8, row.y + 9,
-        NK_MAX(48.0f, shortcut_bounds.x - row.x - 16), 38);
+    struct nk_rect random_box = nk_rect(row.x + 8, row.y + 19, 18, 18);
+    bool random_checked = random_enabled(value, entry);
+    bool random_hover = enabled && nk_input_is_mouse_hovering_rect(&context->input, random_box);
+    if (random_checked) {
+        nk_fill_rect(canvas, random_box, 5, alpha(p.accent, opacity));
+        nk_stroke_line(canvas, random_box.x + 4, random_box.y + 9,
+            random_box.x + 8, random_box.y + 13, 2.2f,
+            alpha(nk_rgb(255, 255, 255), opacity));
+        nk_stroke_line(canvas, random_box.x + 8, random_box.y + 13,
+            random_box.x + 15, random_box.y + 5, 2.2f,
+            alpha(nk_rgb(255, 255, 255), opacity));
+    } else {
+        nk_fill_rect(canvas, random_box, 5, alpha(p.field, opacity));
+        nk_stroke_rect(canvas, random_box, 5, 1, alpha(random_hover ? p.accent : p.border_subtle, opacity));
+    }
+    if (random_hover) bongo_cat_ui_cursor_hover_rect(context, random_box, BONGO_CAT_UI_CURSOR_POINTER);
+    if (hit(context, random_box, enabled)) {
+        toggle_random(value, entry, !random_checked);
+        value->render_dirty = true;
+    }
+    struct nk_rect name = nk_rect(row.x + 34, row.y + 9,
+        NK_MAX(48.0f, shortcut_bounds.x - row.x - 42), 38);
     BongoCatBehaviorShortcut *binding = binding_for(value->app,
         entry->id);
     draw_name(value, context, canvas, name, entry, binding, p, opacity, enabled);
-    bool play_enabled = enabled && (entry->kind == BONGO_CAT_BEHAVIOR_SOUND ||
-        bongo_cat_preferences_behavior_model_loaded(value));
+    /* A behavior preview may belong to a model that is not currently loaded.
+       The runtime switches to the behavior's model before playing it. */
+    bool play_enabled = enabled;
     bool play_hover = play_enabled && nk_input_is_mouse_hovering_rect(
         &context->input, play);
     nk_fill_rect(canvas, play, 10, alpha(play_hover ? p.hover : p.field, opacity));

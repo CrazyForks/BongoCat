@@ -77,6 +77,7 @@ static bool read_window(yyjson_val *object, BongoCatWindowPreferences *value,
         !read_bool(object, "randomExpression", &value->random_expression,
             error) ||
         !read_bool(object, "randomMotion", &value->random_motion, error) ||
+        !read_bool(object, "randomAudio", &value->random_audio, error) ||
         !read_bool(object, "roundedCorners", &value->rounded_corners, error) ||
         !read_float(object, "cornerRadiusPercent", &value->corner_radius_percent,
             error) ||
@@ -86,6 +87,8 @@ static bool read_window(yyjson_val *object, BongoCatWindowPreferences *value,
             error) ||
         !read_float(object, "randomMotionIntervalSeconds",
             &value->random_motion_interval_seconds, error) ||
+        !read_float(object, "randomAudioIntervalSeconds",
+            &value->random_audio_interval_seconds, error) ||
         !read_float(object, "randomExpressionIntervalSeconds",
             &value->random_expression_interval_seconds,
             error)) return false;
@@ -159,6 +162,7 @@ static bool read_behaviors(yyjson_val *array, BongoCatSettings *settings,
             settings->behavior_shortcut_count++];
         memset(entry, 0, sizeof(*entry));
         if (!read_bool(item, "shortcutDisabled", &entry->shortcut_disabled, error)) return false;
+        if (!read_bool(item, "randomEnabled", &entry->random_enabled, error)) return false;
         if (!copy_text(entry->id, sizeof(entry->id), id, id_length,
                 "behaviorId", error) ||
             !copy_text(entry->shortcut, sizeof(entry->shortcut), shortcut,

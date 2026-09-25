@@ -9,7 +9,23 @@ bool bongo_cat_windows_game_compatibility_startup(BongoCatApp *app,
     bool administrator = false;
     if (!bongo_cat_windows_game_compatibility_elevated(&administrator, error))
         return false;
-    if (administrator) return true;
+    if (administrator) {
+        /* Complete the update deferred by the ordinary instance. Only mark
+           it applied after Task Scheduler and the saved settings agree. */
+        if (app->settings.app.autostart && !app->settings.app.autostart_admin) {
+            if (bongo_cat_platform_set_autostart(true, true, error) != BONGO_CAT_OK)
+                return false;
+            app->settings.app.autostart_admin = true;
+            if (bongo_cat_settings_save(app->settings_path, &app->settings,
+                    error) != BONGO_CAT_OK) {
+                app->settings.app.autostart_admin = false;
+                BongoCatError rollback = {0};
+                (void)bongo_cat_platform_set_autostart(true, false, &rollback);
+                return false;
+            }
+        }
+        return true;
+    }
     if (!bongo_cat_windows_game_compatibility_launch(true, error)) return false;
     *restarting = true;
     return true;
@@ -37,7 +53,7 @@ bool bongo_cat_windows_game_compatibility_set(BongoCatApp *app,
         return false;
 
     app->settings.app.game_compatibility = enabled;
-    if (autostart_changed) app->settings.app.autostart_admin = enabled;
+    if (update_autostart_now) app->settings.app.autostart_admin = enabled;
     if (bongo_cat_settings_save(app->settings_path, &app->settings, error) != BONGO_CAT_OK) {
         app->settings.app = previous;
         if (update_autostart_now) {

@@ -10,6 +10,7 @@
 #include <CubismFramework.hpp>
 #include <SDL3/SDL_filesystem.h>
 #include <SDL3/SDL_log.h>
+#include <SDL3/SDL_opengl.h>
 #include <SDL3/SDL_video.h>
 #include <cstdio>
 #include <cstdlib>
@@ -79,20 +80,57 @@ void release_file(Csm::csmByte *bytes) { std::free(bytes); }
 bool start_framework(BongoCatError *error) {
     if (runtime_count++) return true;
 #if defined(CSM_TARGET_WIN_GL) || defined(CSM_TARGET_LINUX_GL) || defined(CSM_TARGET_MAC_GL)
+    const GLubyte *gl_vendor = glGetString(GL_VENDOR);
+    const GLubyte *gl_renderer = glGetString(GL_RENDERER);
+    const GLubyte *gl_version = glGetString(GL_VERSION);
+    const GLubyte *glsl_version = glGetString(GL_SHADING_LANGUAGE_VERSION);
+    const GLubyte *glew_version = glewGetString(GLEW_VERSION);
+    SDL_Log("[runtime] OpenGL diagnostics: vendor=%s renderer=%s version=%s "
+        "glsl=%s glew=%s",
+        gl_vendor ? (const char *)gl_vendor : "unknown",
+        gl_renderer ? (const char *)gl_renderer : "unknown",
+        gl_version ? (const char *)gl_version : "unknown",
+        glsl_version ? (const char *)glsl_version : "unknown",
+        glew_version ? (const char *)glew_version : "unknown");
     glewExperimental = GL_TRUE;
     GLenum glew_result = glewInit();
-    glGetError();
+    GLenum gl_error = glGetError();
+    SDL_Log("[runtime] OpenGL loader result: glew_status=0x%x gl_error=0x%x",
+        (unsigned)glew_result, (unsigned)gl_error);
     if (glew_result != GLEW_OK) {
         runtime_count = 0;
         bongo_cat_error_set(error, BONGO_CAT_ERROR_PLATFORM, "GLEW initialization failed: %s",
             reinterpret_cast<const char *>(glewGetErrorString(glew_result)));
         return false;
     }
-    if (!glCreateShader || !glShaderSource || !glCompileShader ||
-        !glGetShaderiv || !glCreateProgram || !glGenFramebuffers ||
-        !glGenBuffers || !glBindBuffer || !glBufferData || !glDeleteBuffers ||
-        !glGenVertexArrays || !glBindVertexArray || !glDeleteVertexArrays ||
-        !glEnableVertexAttribArray || !glVertexAttribPointer) {
+    char missing[512] = {0};
+    size_t missing_length = 0;
+#define BONGO_CAT_CHECK_GL_FUNCTION(name) \
+    do { if (!(name) && missing_length < sizeof(missing)) { \
+        int written = std::snprintf(missing + missing_length, \
+            sizeof(missing) - missing_length, "%s%s", \
+            missing_length ? "," : "", #name); \
+        if (written > 0) missing_length += (size_t)written; \
+    } } while (0)
+    BONGO_CAT_CHECK_GL_FUNCTION(glCreateShader);
+    BONGO_CAT_CHECK_GL_FUNCTION(glShaderSource);
+    BONGO_CAT_CHECK_GL_FUNCTION(glCompileShader);
+    BONGO_CAT_CHECK_GL_FUNCTION(glGetShaderiv);
+    BONGO_CAT_CHECK_GL_FUNCTION(glCreateProgram);
+    BONGO_CAT_CHECK_GL_FUNCTION(glGenFramebuffers);
+    BONGO_CAT_CHECK_GL_FUNCTION(glGenBuffers);
+    BONGO_CAT_CHECK_GL_FUNCTION(glBindBuffer);
+    BONGO_CAT_CHECK_GL_FUNCTION(glBufferData);
+    BONGO_CAT_CHECK_GL_FUNCTION(glDeleteBuffers);
+    BONGO_CAT_CHECK_GL_FUNCTION(glGenVertexArrays);
+    BONGO_CAT_CHECK_GL_FUNCTION(glBindVertexArray);
+    BONGO_CAT_CHECK_GL_FUNCTION(glDeleteVertexArrays);
+    BONGO_CAT_CHECK_GL_FUNCTION(glEnableVertexAttribArray);
+    BONGO_CAT_CHECK_GL_FUNCTION(glVertexAttribPointer);
+#undef BONGO_CAT_CHECK_GL_FUNCTION
+    if (missing[0]) {
+        SDL_LogError(SDL_LOG_CATEGORY_VIDEO,
+            "[runtime] OpenGL required functions missing: %s", missing);
         runtime_count = 0;
         bongo_cat_error_set(error, BONGO_CAT_ERROR_PLATFORM,
             "Required OpenGL 3.3 functions are unavailable");

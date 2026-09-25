@@ -5,8 +5,10 @@
 #include <SDL3/SDL.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <windows.h>
+#include <sddl.h>
 
 static HANDLE instance_mutex;
 static HANDLE instance_wake_event;
@@ -76,18 +78,51 @@ const wchar_t *bongo_cat_windows_instance_info_name(void) {
     initialize_identity(); return instance_info_name;
 }
 
-static void create_instance_events(void) {
+static PSECURITY_DESCRIPTOR instance_event_security(void) {
+    HANDLE token = NULL;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) return NULL;
+    DWORD size = 0;
+    GetTokenInformation(token, TokenUser, NULL, 0, &size);
+    TOKEN_USER *user = size ? malloc(size) : NULL;
+    LPWSTR sid = NULL;
+    PSECURITY_DESCRIPTOR descriptor = NULL;
+    if (user && GetTokenInformation(token, TokenUser, user, size, &size) &&
+        ConvertSidToStringSidW(user->User.Sid, &sid)) {
+        wchar_t sddl[256];
+        int length = swprintf(sddl, sizeof(sddl) / sizeof(sddl[0]),
+            L"D:P(A;;GA;;;SY)(A;;GA;;;%ls)S:(ML;;NW;;;ME)", sid);
+        if (length > 0 && length < (int)(sizeof(sddl) / sizeof(sddl[0])))
+            ConvertStringSecurityDescriptorToSecurityDescriptorW(sddl,
+                SDDL_REVISION_1, &descriptor, NULL);
+    }
+    LocalFree(sid);
+    free(user);
+    CloseHandle(token);
+    return descriptor;
+}
+
+static bool create_instance_events(void) {
+    /* The same user's ordinary launcher/installer must be able to signal
+       an elevated instance. Do not grant access to other users. */
+    PSECURITY_DESCRIPTOR descriptor = instance_event_security();
+    if (!descriptor) return false;
+    SECURITY_ATTRIBUTES security = {sizeof(security), descriptor, FALSE};
     if (!instance_wake_event)
-        instance_wake_event = CreateEventW(NULL, FALSE, FALSE, instance_wake_name);
+        instance_wake_event = CreateEventW(&security, FALSE, FALSE, instance_wake_name);
     if (!instance_settings_event)
-        instance_settings_event = CreateEventW(NULL, FALSE, FALSE,
+        instance_settings_event = CreateEventW(&security, FALSE, FALSE,
             instance_settings_name);
     if (!instance_update_shutdown_event)
-        instance_update_shutdown_event = CreateEventW(NULL, FALSE, FALSE,
+        instance_update_shutdown_event = CreateEventW(&security, FALSE, FALSE,
             instance_update_shutdown_name);
     if (!instance_stopped_event)
-        instance_stopped_event = CreateEventW(NULL, TRUE, FALSE,
+        instance_stopped_event = CreateEventW(&security, TRUE, FALSE,
             instance_stopped_name);
+    LocalFree(descriptor);
+    if (!instance_wake_event || !instance_settings_event ||
+        !instance_update_shutdown_event || !instance_stopped_event) return false;
+    /* A shutdown observer can briefly keep the previous event alive. */
+    if (!ResetEvent(instance_stopped_event)) return false;
     if (!instance_info_mapping) {
         instance_info_mapping = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL,
             PAGE_READWRITE, 0, sizeof(BongoCatWindowsInstanceInfo),
@@ -104,6 +139,15 @@ static void create_instance_events(void) {
                 "%s", BONGO_CAT_VERSION);
         }
     }
+    return true;
+}
+
+static bool begin_primary_instance(void) {
+    if (create_instance_events()) return true;
+    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+        "Cannot create Windows single-instance control events");
+    bongo_cat_platform_single_instance_end();
+    return false;
 }
 
 static void wake_existing_instance(void) {
@@ -135,17 +179,23 @@ static void request_settings_existing_instance(void) {
 bool bongo_cat_platform_single_instance_begin(void) {
     initialize_identity();
     if (SDL_getenv_unsafe("BONGO_CAT_ALLOW_TEST_INSTANCES")) return true;
-    instance_mutex = CreateMutexW(NULL, FALSE, instance_mutex_name);
-    if (!instance_mutex) return true;
+    /* This handle is an existence lock; it never needs MUTEX_ALL_ACCESS.
+       Requesting write access to an elevated instance can fail with code 5. */
+    instance_mutex = CreateMutexExW(NULL, instance_mutex_name, 0, SYNCHRONIZE);
+    if (!instance_mutex) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+            "Cannot open Windows single-instance lock: %lu", GetLastError());
+        return false;
+    }
     if (GetLastError() != ERROR_ALREADY_EXISTS) {
-        create_instance_events(); return true;
+        return begin_primary_instance();
     }
     CloseHandle(instance_mutex); instance_mutex = NULL;
     if (bongo_cat_windows_update_handoff()) {
         for (int attempt = 0; attempt < 30; ++attempt) {
-            instance_mutex = CreateMutexW(NULL, FALSE, instance_mutex_name);
+            instance_mutex = CreateMutexExW(NULL, instance_mutex_name, 0, SYNCHRONIZE);
             if (instance_mutex && GetLastError() != ERROR_ALREADY_EXISTS) {
-                create_instance_events(); return true;
+                return begin_primary_instance();
             }
             if (instance_mutex) CloseHandle(instance_mutex);
             instance_mutex = NULL;
@@ -156,9 +206,9 @@ bool bongo_cat_platform_single_instance_begin(void) {
     wake_existing_instance();
     /* The first request can race the primary instance creating its event. */
     request_settings_existing_instance();
-    instance_mutex = CreateMutexW(NULL, FALSE, instance_mutex_name);
+    instance_mutex = CreateMutexExW(NULL, instance_mutex_name, 0, SYNCHRONIZE);
     if (instance_mutex && GetLastError() != ERROR_ALREADY_EXISTS) {
-        create_instance_events(); return true;
+        return begin_primary_instance();
     }
     if (instance_mutex) CloseHandle(instance_mutex);
     instance_mutex = NULL;
@@ -175,26 +225,38 @@ bool bongo_cat_platform_single_instance_take_settings(void) {
         WaitForSingleObject(instance_settings_event, 0) == WAIT_OBJECT_0;
 }
 
-bool bongo_cat_platform_update_shutdown_argument(int argc, char **argv) {
+bool bongo_cat_platform_update_shutdown_argument(int argc, char **argv,
+    int *exit_code) {
     bool requested = false;
     for (int i = 1; i < argc; ++i)
         if (argv && argv[i] && strcmp(argv[i], "--shutdown-for-update") == 0)
             requested = true;
     if (!requested) return false;
     initialize_identity();
+    *exit_code = 0;
+    HANDLE instance = OpenMutexW(SYNCHRONIZE, FALSE, instance_mutex_name);
+    if (!instance) {
+        DWORD code = GetLastError();
+        if (code != ERROR_FILE_NOT_FOUND) *exit_code = (int)code;
+        return true;
+    }
     HANDLE stopped = OpenEventW(SYNCHRONIZE, FALSE, instance_stopped_name);
+    DWORD code = stopped ? ERROR_SUCCESS : GetLastError();
     HANDLE shutdown = OpenEventW(EVENT_MODIFY_STATE, FALSE,
         instance_update_shutdown_name);
-    if (shutdown) {
-        SetEvent(shutdown);
-        CloseHandle(shutdown);
+    if (!shutdown && code == ERROR_SUCCESS) code = GetLastError();
+    CloseHandle(instance);
+    if (code == ERROR_SUCCESS && !SetEvent(shutdown)) code = GetLastError();
+    if (code == ERROR_SUCCESS) {
+        HWND existing = FindWindowW(NULL, instance_title);
+        if (existing) PostMessageW(existing, WM_CLOSE, 0, 0);
+        DWORD wait = WaitForSingleObject(stopped, 15000);
+        if (wait != WAIT_OBJECT_0)
+            code = wait == WAIT_TIMEOUT ? ERROR_TIMEOUT : GetLastError();
     }
-    HWND existing = FindWindowW(NULL, instance_title);
-    if (existing) PostMessageW(existing, WM_CLOSE, 0, 0);
-    if (stopped) {
-        WaitForSingleObject(stopped, 15000);
-        CloseHandle(stopped);
-    }
+    if (shutdown) CloseHandle(shutdown);
+    if (stopped) CloseHandle(stopped);
+    *exit_code = (int)code;
     return true;
 }
 

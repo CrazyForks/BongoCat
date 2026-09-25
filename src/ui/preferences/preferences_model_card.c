@@ -171,7 +171,7 @@ static void draw_actions(BongoCatPreferences *value,
     action_icon(value, canvas, items[1], BONGO_CAT_UI_ICON_FOLDER,
         hover[1] ? p.pink : p.muted);
     if (deletable) action_icon(value, canvas, items[2], BONGO_CAT_UI_ICON_TRASH,
-        hover[2] ? p.danger : delete_enabled ? p.muted : p.border_subtle);
+        hover[2] ? p.danger : p.muted);
     *action_hover = region_hover[0] || region_hover[1] || region_hover[2];
     if (hover[0] && nk_input_is_mouse_click_in_rect(&context->input,
         NK_BUTTON_LEFT, items[0])) {

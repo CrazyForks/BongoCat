@@ -82,9 +82,12 @@ static void compact_behavior_overrides(BongoCatSettings *config) {
             !bongo_cat_utf8_valid(entry.shortcut) ||
             !bongo_cat_utf8_valid(entry.label)) continue;
         /* An explicit disabled flag must survive validation and a save/reload. */
-        if (!entry.id[0] || (!entry.shortcut[0] && !entry.label[0] && !entry.shortcut_disabled)) continue;
+        bool random_toggle = strstr(entry.id, ":random") != NULL;
+        if (!entry.id[0] || (!entry.shortcut[0] && !entry.label[0] &&
+                !entry.shortcut_disabled && !random_toggle)) continue;
         BongoCatBehaviorShortcut canonical = {0};
         canonical.shortcut_disabled = entry.shortcut_disabled;
+        canonical.random_enabled = entry.random_enabled;
         canonical.shortcut_external = entry.shortcut_external;
         snprintf(canonical.id, sizeof(canonical.id), "%s", entry.id);
         snprintf(canonical.shortcut, sizeof(canonical.shortcut), "%s",
@@ -98,6 +101,7 @@ static void compact_behavior_overrides(BongoCatSettings *config) {
             }
         if (existing < output_count) {
             config->behavior_shortcuts[existing].shortcut_external = canonical.shortcut_external;
+            config->behavior_shortcuts[existing].random_enabled = canonical.random_enabled;
             if (canonical.shortcut[0] || canonical.shortcut_disabled) {
                 config->behavior_shortcuts[existing].shortcut_disabled = canonical.shortcut_disabled;
                 memset(config->behavior_shortcuts[existing].shortcut, 0,
@@ -203,6 +207,8 @@ void bongo_cat_settings_defaults(BongoCatSettings *config) {
         BONGO_CAT_DEFAULT_RANDOM_EXPRESSION_SECONDS;
     config->window.random_motion_interval_seconds =
         BONGO_CAT_DEFAULT_RANDOM_MOTION_SECONDS;
+    config->window.random_audio_interval_seconds =
+        BONGO_CAT_DEFAULT_RANDOM_AUDIO_SECONDS;
     config->app.tray_visible = true;
     config->app.game_compatibility = false;
     config->app.theme = BONGO_CAT_THEME_AUTO;
@@ -236,6 +242,9 @@ void bongo_cat_settings_validate(BongoCatSettings *config) {
     config->window.random_motion_interval_seconds = clampf_or(
         config->window.random_motion_interval_seconds, 1.0f, 3600.0f,
         BONGO_CAT_DEFAULT_RANDOM_MOTION_SECONDS);
+    config->window.random_audio_interval_seconds = clampf_or(
+        config->window.random_audio_interval_seconds, 1.0f, 3600.0f,
+        BONGO_CAT_DEFAULT_RANDOM_AUDIO_SECONDS);
     if ((unsigned)config->window.obs_background_color >=
         BONGO_CAT_OBS_BACKGROUND_COLOR_COUNT)
         config->window.obs_background_color = BONGO_CAT_OBS_BACKGROUND_GREEN;

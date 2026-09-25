@@ -137,7 +137,8 @@ bool bongo_cat_platform_single_instance_begin(void);
 bool bongo_cat_platform_single_instance_take_wake(void);
 /* Returns true when a second launch requested the settings window. */
 bool bongo_cat_platform_single_instance_take_settings(void);
-bool bongo_cat_platform_update_shutdown_argument(int argc, char **argv);
+bool bongo_cat_platform_update_shutdown_argument(int argc, char **argv,
+    int *exit_code);
 bool bongo_cat_platform_single_instance_take_update_shutdown(void);
 void bongo_cat_platform_single_instance_end(void);
 BongoCatResult bongo_cat_platform_set_autostart(bool enabled, bool administrator,

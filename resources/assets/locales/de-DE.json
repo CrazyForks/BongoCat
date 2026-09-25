@@ -240,6 +240,7 @@
     "startup": {
       "failed": "BongoCat konnte nicht gestartet werden.",
       "detail": "Technische Details finden Sie im Diagnoseprotokoll.",
+      "openglUnavailable": "Ein Grafiktreiber fehlt. Installieren Sie einen Grafiktreiber und versuchen Sie es erneut.",
       "diagnosticLog": "Diagnoseprotokoll:"
     },
     "support": {

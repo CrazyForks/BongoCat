@@ -1,6 +1,7 @@
 #include "runtime.h"
 #include "runtime_state.h"
 #include "bongo_cat/file.h"
+#include "bongo_cat/i18n.h"
 #include "bongo_cat/log.h"
 #include "bongo_cat/path.h"
 #include "storage_paths.h"
@@ -111,12 +112,7 @@ static void begin_log(BongoCatApp *app) {
     /* The primary process owns the session log. Secondary pets append to it
        instead of erasing diagnostics already written by the primary. */
     if (runtime_log_path[0] && !app->secondary_pet) {
-        char previous_log[BONGO_CAT_PATH_CAP];
-        bool preserved = !bongo_cat_path_is_file(runtime_log_path) ||
-            (bongo_cat_path_join(previous_log, sizeof(previous_log),
-                app->log_root, "BongoCat.previous.log") &&
-             bongo_cat_file_replace(runtime_log_path, previous_log, false));
-        FILE *fresh_log = preserved ? bongo_cat_file_open(runtime_log_path, "wb") : NULL;
+        FILE *fresh_log = bongo_cat_file_open(runtime_log_path, "wb");
         if (fresh_log) fclose(fresh_log);
     }
     set_log_source(app);
@@ -198,6 +194,28 @@ void bongo_cat_startup_failure(BongoCatApp *app, const BongoCatError *error) {
     const char *message = error && error->message[0] ? error->message : "Initialization failed";
     if (app) bongo_cat_startup_stage(app, "failed");
     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Startup failed: %s", message);
+    /* Smoke/CI runs must remain non-interactive. Normal users need a visible
+       explanation when the window exists but the renderer cannot start. */
+    if (app && !app->smoke && app->i18n) {
+        const bool opengl_unavailable =
+            strstr(message, "Required OpenGL 3.3") != NULL ||
+            strstr(message, "GLEW initialization failed") != NULL;
+        const char *title = bongo_cat_i18n_get(app->i18n,
+            "native.startup.failed", "BongoCat could not start.");
+        const char *reason = opengl_unavailable
+            ? bongo_cat_i18n_get(app->i18n, "native.startup.openglUnavailable",
+                "OpenGL 3.3 is unavailable. Install the latest graphics driver from Intel, NVIDIA, or AMD. Remote desktop and virtual machines may also provide incomplete OpenGL support.")
+            : bongo_cat_i18n_get(app->i18n, "native.startup.detail",
+                "See the diagnostic log for technical details.");
+        const char *detail = bongo_cat_i18n_get(app->i18n,
+            "native.startup.detail", "See the diagnostic log for technical details.");
+        char body[1024];
+        if (opengl_unavailable)
+            snprintf(body, sizeof(body), "%s\n\n%s\n\n%s", title, reason, detail);
+        else snprintf(body, sizeof(body), "%s\n\n%s", title, reason);
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, BONGO_CAT_NAME,
+            body, app->window);
+    }
 }
 
 void bongo_cat_startup_ci_failure(BongoCatApp *app,

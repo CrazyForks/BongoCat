@@ -1,9 +1,11 @@
 #include "bongo_cat/platform.h"
 
 #ifndef _WIN32
-bool bongo_cat_platform_update_shutdown_argument(int argc, char **argv) {
+bool bongo_cat_platform_update_shutdown_argument(int argc, char **argv,
+    int *exit_code) {
     (void)argc;
     (void)argv;
+    (void)exit_code;
     return false;
 }
 

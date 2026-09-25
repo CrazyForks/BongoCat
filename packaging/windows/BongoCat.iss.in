@@ -42,7 +42,10 @@ Name: "{userprograms}\BongoCat\BongoCat"; Filename: "{app}\BongoCat.exe"; Parame
 Name: "{userprograms}\BongoCat\Uninstall"; Filename: "{uninstallexe}"
 
 [Run]
-Filename: "{app}\BongoCat.exe"; Description: "Launch BongoCat"; Flags: nowait postinstall skipifsilent
+; Shell launch supports UAC when Windows compatibility settings require elevation.
+; Direct CreateProcess would fail with error 740 in that case.
+Filename: "{app}\BongoCat.exe"; WorkingDir: "{app}"; Description: "Launch BongoCat"; Flags: shellexec nowait postinstall skipifsilent
 
 [Code]
+#include "uninstall-autostart.iss"
 #include "install-lifecycle.iss"

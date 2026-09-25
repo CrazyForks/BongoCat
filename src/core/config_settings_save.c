@@ -44,6 +44,8 @@ static bool write_window(yyjson_mut_doc *doc, yyjson_mut_val *object,
             value->random_expression) &&
         yyjson_mut_obj_add_bool(doc, object, "randomMotion",
             value->random_motion) &&
+        yyjson_mut_obj_add_bool(doc, object, "randomAudio",
+            value->random_audio) &&
         yyjson_mut_obj_add_bool(doc, object, "roundedCorners",
             value->rounded_corners) &&
         yyjson_mut_obj_add_real(doc, object, "cornerRadiusPercent",
@@ -59,7 +61,9 @@ static bool write_window(yyjson_mut_doc *doc, yyjson_mut_val *object,
             "randomExpressionIntervalSeconds",
             value->random_expression_interval_seconds) &&
         yyjson_mut_obj_add_real(doc, object, "randomMotionIntervalSeconds",
-            value->random_motion_interval_seconds);
+            value->random_motion_interval_seconds) &&
+        yyjson_mut_obj_add_real(doc, object, "randomAudioIntervalSeconds",
+            value->random_audio_interval_seconds);
 }
 
 static bool write_app(yyjson_mut_doc *doc, yyjson_mut_val *object,
@@ -108,6 +112,9 @@ static bool write_behaviors(yyjson_mut_doc *doc, yyjson_mut_val *root,
         yyjson_mut_val *item = yyjson_mut_obj(doc);
         if (!item || !yyjson_mut_obj_add_strcpy(
                 doc, item, "behaviorId", value->id) ||
+            (strstr(value->id, ":random") &&
+                !yyjson_mut_obj_add_bool(doc, item, "randomEnabled",
+                    value->random_enabled)) ||
             (!value->shortcut_external && value->shortcut_disabled && !yyjson_mut_obj_add_bool(
                 doc, item, "shortcutDisabled", true)) ||
             (!value->shortcut_external && value->shortcut[0] && !yyjson_mut_obj_add_strcpy(

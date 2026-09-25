@@ -382,6 +382,19 @@ if(BUILD_TESTING)
     add_test(NAME windows-presentation COMMAND bongo_cat_windows_presentation_tests)
     set_tests_properties(windows-presentation PROPERTIES
       SKIP_RETURN_CODE 77 RUN_SERIAL TRUE TIMEOUT 60 LABELS "interactive;graphics")
+    add_executable(bongo_cat_windows_game_compatibility_tests
+      tests/platform/test_windows_game_compatibility.c
+      src/platform/windows/windows_game_compatibility_app.c)
+    target_include_directories(bongo_cat_windows_game_compatibility_tests PRIVATE
+      src/platform/windows tests/support)
+    target_link_libraries(bongo_cat_windows_game_compatibility_tests PRIVATE
+      bongo_cat_core SDL3::SDL3-static bongo_cat_warnings)
+    if(MSVC)
+      target_compile_options(bongo_cat_windows_game_compatibility_tests PRIVATE
+        /experimental:c11atomics)
+    endif()
+    add_test(NAME windows-game-compatibility
+      COMMAND bongo_cat_windows_game_compatibility_tests)
     add_executable(bongo_cat_windows_gl_readback_tests
       tests/platform/test_windows_gl_readback.c)
     target_include_directories(bongo_cat_windows_gl_readback_tests PRIVATE

@@ -240,6 +240,7 @@
     "startup": {
       "failed": "Não foi possível iniciar o BongoCat.",
       "detail": "Consulte o log de diagnóstico para obter detalhes técnicos.",
+      "openglUnavailable": "O driver gr?fico est? ausente. Instale um driver gr?fico e tente novamente.",
       "diagnosticLog": "Log de diagnóstico:"
     },
     "support": {

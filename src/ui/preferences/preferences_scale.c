@@ -5,6 +5,9 @@
 #include "bongo_cat/memory_policy.h"
 #include <SDL3/SDL_opengl.h>
 #include <math.h>
+#ifdef _WIN32
+#include "windows_borderless.h"
+#endif
 
 #define PREF_WIDTH 900.0f
 #define PREF_HEIGHT 680.0f
@@ -115,6 +118,7 @@ bool bongo_cat_preferences_open_window(BongoCatPreferences *value) {
     fit_size(display, layout_scale, PREF_WIDTH, PREF_HEIGHT, &width, &height,
         &minimum_width, &minimum_height);
 #ifdef _WIN32
+    bongo_cat_windows_borderless_prepare_ui();
     SDL_SetHint(SDL_HINT_WINDOWS_ERASE_BACKGROUND_MODE, "0");
 #endif
     if (!create_window(value, width, height, flags, true)) {

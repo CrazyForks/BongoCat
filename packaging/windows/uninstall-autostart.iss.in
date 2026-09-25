@@ -1,0 +1,79 @@
+{ Remove only launch entries pointing at this installation. A portable copy
+  or another installation may have taken over the same per-user entry. }
+function IsBongoCatAutostartTask(Name: String): Boolean;
+var
+  I: Integer;
+begin
+  Result := Pos('BongoCat.Autostart.S-', Name) = 1;
+  if not Result then Exit;
+  for I := Length('BongoCat.Autostart.S-') + 1 to Length(Name) do
+    if Pos(Name[I], '0123456789-') = 0 then begin
+      Result := False;
+      Exit;
+    end;
+end;
+
+procedure RemoveInstalledAutostart;
+var
+  Shell, Link, Service, Folder, Tasks, Task, Actions, Action: Variant;
+  LinkPath, Target, TaskName: String;
+  I, ExitCode: Integer;
+begin
+  LinkPath := ExpandConstant('{userstartup}\BongoCat.lnk');
+  if FileExists(LinkPath) then begin
+    try
+      Shell := CreateOleObject('WScript.Shell');
+      Link := Shell.CreateShortcut(LinkPath);
+      Target := Link.TargetPath;
+      if CompareText(Target, ExpandConstant('{app}\BongoCat.exe')) = 0 then
+        if not DeleteFile(LinkPath) then
+          Log('Could not remove the installed BongoCat startup shortcut.');
+    except
+      Log('Could not inspect the BongoCat startup shortcut: ' + GetExceptionMessage);
+    end;
+  end;
+
+  try
+    Service := CreateOleObject('Schedule.Service');
+    Service.Connect;
+    Folder := Service.GetFolder('\');
+    Tasks := Folder.GetTasks(1);
+    for I := Tasks.Count downto 1 do begin
+      Task := Tasks.Item(I);
+      TaskName := Task.Name;
+      if IsBongoCatAutostartTask(TaskName) then begin
+        try
+          Actions := Task.Definition.Actions;
+          if Actions.Count = 1 then begin
+            { Only an executable action exposes Path. Leave customized
+              actions untouched if that property cannot be read. }
+            Action := Actions.Item(1);
+            Target := Action.Path;
+            if CompareText(Target, ExpandConstant('{app}\BongoCat.exe')) = 0 then begin
+              try
+                Folder.DeleteTask(TaskName, 0);
+              except
+                { An administrator task can require elevation for deletion.
+                  The name is restricted above before placing it in arguments.
+                  Cancellation keeps the task; it must not undo the uninstall. }
+                if UninstallSilent then
+                  Log('Administrator autostart task cleanup requires elevation: ' + TaskName)
+                else if not ShellExec('runas', ExpandConstant('{sys}\schtasks.exe'),
+                    '/Delete /TN "' + TaskName + '" /F', '', SW_HIDE,
+                    ewWaitUntilTerminated, ExitCode) then
+                  Log(Format('Could not start autostart task cleanup (code %d).', [ExitCode]))
+                else if ExitCode <> 0 then
+                  Log(Format('Autostart task cleanup failed (code %d).', [ExitCode]));
+              end;
+            end;
+          end;
+        except
+          Log('Could not inspect autostart task ' + TaskName + ': ' + GetExceptionMessage);
+        end;
+      end;
+    end;
+  except
+    { A disabled/unavailable Task Scheduler must not prevent uninstalling. }
+    Log('Could not inspect BongoCat autostart tasks: ' + GetExceptionMessage);
+  end;
+end;

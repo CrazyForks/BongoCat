@@ -125,9 +125,12 @@ static bool add_mode(BongoCatImportDiscovery *discovery, const char *source,
     BongoCatImportCandidate *candidate = &discovery->candidates[discovery->count];
     if (!find_mode_model(mode_root, candidate->directory, sizeof(candidate->directory),
         candidate->setting, sizeof(candidate->setting))) {
-        bongo_cat_error_set(error, BONGO_CAT_ERROR_FORMAT,
-            "Mver mode contains no valid Live2D model: %s", mode_root);
-        return false;
+        /* Some Mver packages declare input bindings for a mode while
+           deliberately omitting that mode's Live2D assets.  Mver's own
+           runtime falls back to the available model modes in this case.
+           Do not reject the complete package because one optional mode is
+           absent; the other complete modes remain valid import candidates. */
+        return true;
     }
     snprintf(candidate->assets, sizeof(candidate->assets), "%s", mode_root);
     snprintf(candidate->package_root, sizeof(candidate->package_root), "%s", source);

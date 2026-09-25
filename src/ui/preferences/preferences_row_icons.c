@@ -116,6 +116,19 @@ static void mouse_vertical_flip(struct nk_command_buffer *c, struct nk_rect b,
     line(c, b, 10, 13, 13, 16, color); line(c, b, 13, 16, 16, 13, color);
 }
 
+static void random_audio(struct nk_command_buffer *c, struct nk_rect b,
+    struct nk_color color) {
+    line(c, b, 2, 8, 7, 8, color);
+    line(c, b, 7, 8, 7, 4, color);
+    line(c, b, 7, 4, 11, 2, color);
+    line(c, b, 11, 2, 11, 16, color);
+    line(c, b, 11, 16, 7, 14, color);
+    line(c, b, 7, 14, 7, 10, color);
+    line(c, b, 2, 10, 7, 10, color);
+    nk_stroke_curve(c, b.x + 13, b.y + 6, b.x + 16, b.y + 8,
+        b.x + 16, b.y + 12, b.x + 13, b.y + 14, 1.5f, color);
+}
+
 static void mouse_centered(struct nk_command_buffer *c, struct nk_rect b,
     struct nk_color color) {
     nk_stroke_circle(c, nk_rect(b.x + 3, b.y + 3, 12, 12), 1.5f, color);
@@ -241,7 +254,7 @@ bool bongo_cat_pref_row_icon_draw(struct nk_command_buffer *canvas,
         struct nk_color);
     static const Draw draws[] = {multiple_models, pass_through, always_on_top,
         solid_background, window_size, window_corners, opacity,
-        random_expression, random_motion, mirror, mouse_mirror, mouse_centered,
+        random_expression, random_motion, random_audio, mirror, mouse_mirror, mouse_centered,
         ignore_mouse, texture_resolution,
         max_fps, render_quality, autostart, administrator, language, theme, shortcut_visibility,
         shortcut_preferences, shortcut_menu, hide_fade, gamepad_four_hands,

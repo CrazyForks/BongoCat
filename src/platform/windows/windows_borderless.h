@@ -6,6 +6,7 @@
 #include <windows.h>
 
 void bongo_cat_windows_borderless_install(HWND window);
+void bongo_cat_windows_borderless_prepare_ui(void);
 void bongo_cat_windows_borderless_uninstall(HWND window);
 bool bongo_cat_windows_borderless_preserve_screen(HWND window, bool enabled);
 bool bongo_cat_windows_borderless_hit_transparent(bool forced,

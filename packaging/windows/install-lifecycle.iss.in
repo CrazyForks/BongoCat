@@ -79,10 +79,34 @@ begin
   Result := (PageID = wpSelectDir) and (ExistingDir <> '');
 end;
 
-function PrepareToInstall(var NeedsRestart: Boolean): String;
+function RequestAppShutdown(Silent: Boolean): Boolean;
 var
   App, Version: String;
   ExitCode: Integer;
+  Started: Boolean;
+begin
+  Result := True;
+  App := ExpandConstant('{app}\BongoCat.exe');
+  if not GetVersionNumbersString(App, Version) then Exit;
+  { 0.1.0 treats unknown switches as a normal launch and would wait forever. }
+  if CompareVersions(Version, '0.1.1') < 0 then Exit;
+  Started := Exec(App, '--shutdown-for-update', ExpandConstant('{app}'),
+    SW_HIDE, ewWaitUntilTerminated, ExitCode);
+  { 740: the executable requires elevation. 5: an older elevated instance
+    does not grant the ordinary helper access to its shutdown event.
+    Silent installation must never open a UAC prompt. }
+  if ((not Started) or (ExitCode <> 0)) and
+     ((ExitCode = 740) or (ExitCode = 5)) and (not Silent) then
+    Started := ShellExec('runas', App, '--shutdown-for-update',
+      ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ExitCode);
+  Result := Started and (ExitCode = 0);
+  if not Result then
+    Log(Format('BongoCat shutdown failed (code %d).', [ExitCode]));
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  App, Version: String;
 begin
   Result := '';
   if (ExistingDir <> '') and
@@ -97,12 +121,8 @@ begin
       Result := 'A newer version of BongoCat is already installed in this directory.';
       Exit;
     end;
-    { 0.1.0 treats unknown switches as a normal launch and would wait forever.
-      Inno Restart Manager handles that version and any shutdown failures. }
-    if CompareVersions(Version, '0.1.1') >= 0 then
-      if not Exec(App, '--shutdown-for-update', ExpandConstant('{app}'),
-          SW_HIDE, ewWaitUntilTerminated, ExitCode) then
-        Log('Update shutdown unavailable; using Restart Manager.');
+    if not RequestAppShutdown(WizardSilent) then
+      Result := 'Please close BongoCat before continuing the installation.';
   end;
 end;
 
@@ -134,14 +154,23 @@ end;
 function InitializeUninstall: Boolean;
 begin
   RemoveUserData := False;
+  { Returning False here aborts before any files or user data are removed. }
+  Result := RequestAppShutdown(UninstallSilent);
+  if not Result then begin
+    SuppressibleMsgBox('Please close BongoCat before continuing the uninstall.',
+      mbError, MB_OK, IDOK);
+    Exit;
+  end;
   if not UninstallSilent then
     RemoveUserData := MsgBox('Also delete settings, imported models, and other BongoCat user data?'
       + #13#10 + 'Choose No to keep your data.', mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES;
-  Result := True;
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
-  if (CurUninstallStep = usPostUninstall) and RemoveUserData then
-    DelTree(ExpandConstant('{localappdata}\BongoCat'), True, True, True);
+  if CurUninstallStep = usPostUninstall then begin
+    RemoveInstalledAutostart;
+    if RemoveUserData then
+      DelTree(ExpandConstant('{localappdata}\BongoCat'), True, True, True);
+  end;
 end;

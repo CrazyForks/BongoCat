@@ -30,6 +30,7 @@
           "opacity": "不透明度",
           "randomExpression": "隨機表情",
           "randomMotion": "隨機動作",
+          "randomAudio": "隨機音訊",
           "secondsUnit": "秒",
           "obsBackground": "純色背景",
           "hideOnHover": "滑鼠游標移入隱藏",
@@ -131,7 +132,11 @@
         },
         "behaviorModal": {
           "title": "動作、表情與音訊",
+          "hints": {
+            "randomPool": "加入隨機池"
+          },
           "labels": {
+            "selectAll": "全選",
             "motion": "動作",
             "expression": "表情",
             "audio": "音訊",
@@ -240,6 +245,7 @@
     "startup": {
       "failed": "BongoCat 無法啟動。",
       "detail": "請查看診斷日誌以瞭解技術詳情。",
+      "openglUnavailable": "?????????????????????",
       "diagnosticLog": "診斷日誌："
     },
     "support": {

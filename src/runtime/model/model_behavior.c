@@ -2,7 +2,9 @@
 #include "bongo_cat/audio.h"
 #include "bongo_cat/overlay.h"
 
-bool bongo_cat_app_run_behavior(BongoCatApp *app,
+#include <string.h>
+
+static bool run_behavior_loaded(BongoCatApp *app,
     const BongoCatBehaviorEntry *behavior) {
     if (!app || !behavior) return false;
     if (behavior->kind == BONGO_CAT_BEHAVIOR_EFFECT) {
@@ -40,5 +42,36 @@ bool bongo_cat_app_run_behavior(BongoCatApp *app,
         sizeof(app->input_diagnostics.last_visual_action), "%s", behavior->id);
     app->dirty = true;
     return true;
+}
+
+bool bongo_cat_app_run_behavior(BongoCatApp *app,
+    const BongoCatBehaviorEntry *behavior) {
+    if (!app || !behavior) return false;
+    /* Behavior ids are namespaced by model (model-id:kind:index). When a
+       preferences dialog is showing another model's catalog, switch first,
+       then resolve the freshly loaded entry before touching Live2D. */
+    const char *separator = strchr(behavior->id, ':');
+    if (separator && (size_t)(separator - behavior->id) < BONGO_CAT_ID_CAP) {
+        char model_id[BONGO_CAT_ID_CAP];
+        size_t length = (size_t)(separator - behavior->id);
+        memcpy(model_id, behavior->id, length);
+        model_id[length] = '\0';
+        if (strcmp(model_id, app->loaded_model) != 0 &&
+            bongo_cat_models_find(&app->models, model_id)) {
+            BongoCatError error = {0};
+            if (!bongo_cat_app_select_model_with_error(app, model_id, &error)) {
+                SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
+                    "Cannot switch to behavior model %s: %s", model_id,
+                    error.message);
+                return false;
+            }
+            for (size_t i = 0; i < app->behaviors.count; ++i) {
+                if (!strcmp(app->behaviors.entries[i].id, behavior->id))
+                    return run_behavior_loaded(app, &app->behaviors.entries[i]);
+            }
+            return false;
+        }
+    }
+    return run_behavior_loaded(app, behavior);
 }
 

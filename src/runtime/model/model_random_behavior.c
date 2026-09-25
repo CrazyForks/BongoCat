@@ -1,4 +1,6 @@
 #include "runtime.h"
+#include <stdio.h>
+#include <string.h>
 
 #define NANOSECONDS_PER_SECOND 1000000000ull
 
@@ -23,6 +25,8 @@ void bongo_cat_random_behavior_reset(BongoCatApp *app) {
     app->random_expression_interval_seconds = 0.0f;
     app->random_motion_due_ns = 0;
     app->random_motion_interval_seconds = 0.0f;
+    app->random_audio_due_ns = 0;
+    app->random_audio_interval_seconds = 0.0f;
 }
 
 static bool random_behavior_due(bool enabled, float seconds, float fallback,
@@ -46,8 +50,16 @@ static bool random_behavior_due(bool enabled, float seconds, float fallback,
 
 static bool random_behavior_candidate(BongoCatApp *app,
     const BongoCatBehaviorEntry *entry, BongoCatBehaviorKind kind) {
-    return entry->kind == kind && (kind != BONGO_CAT_BEHAVIOR_MOTION ||
-        bongo_cat_live2d_motion_visible(app->live2d, entry->group, entry->index));
+    if (entry->kind != kind) return false;
+    char toggle_id[BONGO_CAT_BEHAVIOR_ID_CAP];
+    snprintf(toggle_id, sizeof(toggle_id), "%s:random", entry->id);
+    for (size_t i = 0; i < app->settings.behavior_shortcut_count; ++i) {
+        const BongoCatBehaviorShortcut *toggle =
+            &app->settings.behavior_shortcuts[i];
+        if (!strcmp(toggle->id, toggle_id)) return toggle->random_enabled;
+    }
+    return kind != BONGO_CAT_BEHAVIOR_MOTION ||
+        bongo_cat_live2d_motion_visible(app->live2d, entry->group, entry->index);
 }
 
 static void random_behavior_run(BongoCatApp *app, uint64_t now,
@@ -74,7 +86,7 @@ static void random_behavior_run(BongoCatApp *app, uint64_t now,
         if (!random_behavior_candidate(app, entry, kind) ||
             (choose_alternate && entry->index == current_expression)) continue;
         if (choice--) continue;
-        if (kind == BONGO_CAT_BEHAVIOR_MOTION)
+        if (kind == BONGO_CAT_BEHAVIOR_MOTION || kind == BONGO_CAT_BEHAVIOR_SOUND)
             bongo_cat_app_run_behavior(app, entry);
         else if (bongo_cat_live2d_set_expression(app->live2d, entry->index))
             app->dirty = true;
@@ -100,5 +112,10 @@ void bongo_cat_random_behavior_update(BongoCatApp *app, uint64_t now) {
             BONGO_CAT_DEFAULT_RANDOM_MOTION_SECONDS, now,
             &app->random_motion_due_ns, &app->random_motion_interval_seconds))
         random_behavior_run(app, now, BONGO_CAT_BEHAVIOR_MOTION);
+    if (random_behavior_due(window->random_audio,
+            window->random_audio_interval_seconds,
+            BONGO_CAT_DEFAULT_RANDOM_AUDIO_SECONDS, now,
+            &app->random_audio_due_ns, &app->random_audio_interval_seconds))
+        random_behavior_run(app, now, BONGO_CAT_BEHAVIOR_SOUND);
 }
 

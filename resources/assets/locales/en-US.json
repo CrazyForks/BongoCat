@@ -242,6 +242,7 @@
     "startup": {
       "failed": "BongoCat could not start.",
       "detail": "See the diagnostic log for technical details.",
+      "openglUnavailable": "A graphics driver is missing. Install a graphics driver and try again.",
       "diagnosticLog": "Diagnostic log:"
     },
     "support": {

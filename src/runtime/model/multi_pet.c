@@ -187,6 +187,7 @@ static void reload_secondary_settings(BongoCatApp *app) {
         settings.window.obs_background != app->settings.window.obs_background ||
         settings.window.random_expression != app->settings.window.random_expression ||
         settings.window.random_motion != app->settings.window.random_motion ||
+        settings.window.random_audio != app->settings.window.random_audio ||
         settings.window.rounded_corners != app->settings.window.rounded_corners ||
         settings.window.obs_background_color !=
             app->settings.window.obs_background_color ||
@@ -196,6 +197,8 @@ static void reload_secondary_settings(BongoCatApp *app) {
             app->settings.window.random_expression_interval_seconds ||
         settings.window.random_motion_interval_seconds !=
             app->settings.window.random_motion_interval_seconds ||
+        settings.window.random_audio_interval_seconds !=
+            app->settings.window.random_audio_interval_seconds ||
         settings.window.corner_radius_percent !=
             app->settings.window.corner_radius_percent;
     bool pointer_orientation_changed = settings.model.vertical_flip !=

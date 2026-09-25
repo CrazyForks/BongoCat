@@ -102,7 +102,8 @@ static bool commit_bindings(BongoCatApp *app, const char *model_id,
     size_t length = strlen(model_id);
     for (size_t i = 0; i < app->settings.behavior_shortcut_count; ++i) {
         BongoCatBehaviorShortcut *value = &app->settings.behavior_shortcuts[i];
-        if (!strncmp(value->id, model_id, length) && value->id[length] == ':')
+        if (!strstr(value->id, ":random") &&
+            !strncmp(value->id, model_id, length) && value->id[length] == ':')
             value->shortcut_external = true;
     }
     return true;

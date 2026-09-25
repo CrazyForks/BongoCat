@@ -1,5 +1,5 @@
 # Locate ISCC at package time: CI installs it after configuring the application.
-foreach(template BongoCat install-lifecycle)
+foreach(template BongoCat install-lifecycle uninstall-autostart)
   configure_file("${CMAKE_CURRENT_SOURCE_DIR}/packaging/windows/${template}.iss.in"
     "${CMAKE_CURRENT_BINARY_DIR}/${template}.iss" @ONLY)
 endforeach()

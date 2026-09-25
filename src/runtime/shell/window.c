@@ -84,6 +84,19 @@ BongoCatResult bongo_cat_window_create(BongoCatApp *app, BongoCatError *error) {
                 vendor ? (const char *)vendor : "unknown",
                 renderer ? (const char *)renderer : "unknown",
                 version ? (const char *)version : "unknown");
+            SDL_Log("[runtime] SDL video driver: %s",
+                SDL_GetCurrentVideoDriver() ? SDL_GetCurrentVideoDriver() : "unknown");
+            int context_major = 0, context_minor = 0, context_profile = 0;
+            int context_flags = 0, double_buffer = 0;
+            SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &context_major);
+            SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &context_minor);
+            SDL_GL_GetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, &context_profile);
+            SDL_GL_GetAttribute(SDL_GL_CONTEXT_FLAGS, &context_flags);
+            SDL_GL_GetAttribute(SDL_GL_DOUBLEBUFFER, &double_buffer);
+            SDL_Log("[runtime] OpenGL attributes: requested=3.3 profile=0x%x "
+                "actual=%d.%d flags=0x%x double_buffer=%d",
+                context_profile, context_major, context_minor, context_flags,
+                double_buffer);
             if (!SDL_GL_SetSwapInterval(1)) SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO,
                 "Vertical sync unavailable: %s", SDL_GetError());
             return BONGO_CAT_OK;

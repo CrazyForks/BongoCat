@@ -14,7 +14,9 @@ int bongo_cat_app_run(int argc, char **argv) {
         return autostart_exit;
     if (!bongo_cat_windows_game_compatibility_command()) return 1;
 #endif
-    if (bongo_cat_platform_update_shutdown_argument(argc, argv)) return 0;
+    int shutdown_exit = 0;
+    if (bongo_cat_platform_update_shutdown_argument(argc, argv, &shutdown_exit))
+        return shutdown_exit;
     bool secondary = bongo_cat_multi_pet_secondary_argument(argc, argv);
     if (!secondary && !bongo_cat_platform_single_instance_begin()) return 0;
     BongoCatApp *app = calloc(1, sizeof(*app));

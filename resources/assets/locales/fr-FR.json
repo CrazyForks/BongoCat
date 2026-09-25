@@ -240,6 +240,7 @@
     "startup": {
       "failed": "Impossible de démarrer BongoCat.",
       "detail": "Consultez le journal de diagnostic pour les détails techniques.",
+      "openglUnavailable": "Le pilote graphique est manquant. Installez un pilote graphique, puis r?essayez.",
       "diagnosticLog": "Journal de diagnostic :"
     },
     "support": {
