@@ -138,7 +138,13 @@
             "stopAllAudio": "Alle Audios stoppen",
             "motionIndex": "Bewegung {index}",
             "motionGroupIndex": "Bewegungsgruppe {index}",
-            "expressionIndex": "Ausdruck {index}"
+            "expressionIndex": "Ausdruck {index}",
+            "clearMotions": "Alle Bewegungen l?schen",
+            "clearExpression": "Ausdruck l?schen",
+            "selectAll": "Alle ausw?hlen"
+          },
+          "hints": {
+            "randomPool": "Zum Zufallspool hinzuf?gen"
           }
         }
       },

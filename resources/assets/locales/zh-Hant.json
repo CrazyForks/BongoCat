@@ -143,7 +143,9 @@
             "stopAllAudio": "停止所有音訊",
             "motionIndex": "動作{index}",
             "motionGroupIndex": "動作組{index}",
-            "expressionIndex": "表情{index}"
+            "expressionIndex": "表情{index}",
+            "clearMotions": "??????",
+            "clearExpression": "????"
           }
         }
       },

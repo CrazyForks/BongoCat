@@ -1,5 +1,7 @@
 #include "preferences_state.h"
 #include "runtime.h"
+#include "window_menu.h"
+#include "bongo_cat/audio.h"
 #include "preferences_overlay.h"
 #include "preferences_notice.h"
 #include "preferences_model_glyphs.h"
@@ -61,7 +63,7 @@ static bool tab_available(const BongoCatPreferences *value, int tab) {
 
 static size_t row_count(const BongoCatPreferences *value) {
     if (!tab_available(value, value->behavior_tab)) return 0;
-    size_t count = 0;
+    size_t count = 1; /* clear current category */
     const BongoCatBehaviorCatalog *catalog =
         bongo_cat_preferences_behavior_catalog(value);
     for (size_t i = 0; i < catalog->count; ++i)
@@ -75,7 +77,7 @@ static size_t row_count(const BongoCatPreferences *value) {
    how many actions are available.  Keep this in sync with row_count(): the
    motion visibility filter and the special stop-all-audio row are included. */
 static size_t tab_count(const BongoCatPreferences *value, int tab) {
-    size_t count = 0;
+    size_t count = 1; /* clear current category */
     const BongoCatBehaviorCatalog *catalog =
         bongo_cat_preferences_behavior_catalog(value);
     for (size_t i = 0; i < catalog->count; ++i)
@@ -261,6 +263,35 @@ static void draw_rows(BongoCatPreferences *value, struct nk_context *context,
     size_t shown = 0;
     const BongoCatBehaviorCatalog *catalog =
         bongo_cat_preferences_behavior_catalog(value);
+    /* The category command is always first, as a deliberate destructive
+       action separated from the model-provided entries. */
+    if (count > 0) {
+        struct nk_rect row = nk_rect(viewport.x,
+            viewport.y - render_offset, row_width, 56);
+        const char *label = value->behavior_tab == 0
+            ? tr(value, "pages.preference.model.behaviorModal.labels.clearMotions", "Clear all motions")
+            : value->behavior_tab == 1
+            ? tr(value, "pages.preference.model.behaviorModal.labels.clearExpression", "Clear expression")
+            : tr(value, "pages.preference.model.behaviorModal.labels.stopAllAudio", "Stop all audio");
+        struct nk_rect button = nk_rect(row.x + row.w - 52, row.y + 10, 36, 36);
+        bool hover = enabled && nk_input_is_mouse_hovering_rect(&context->input, button);
+        nk_fill_rect(canvas, row, 8, alpha(hover ? p.hover : p.field, content_opacity));
+        text(canvas, nk_rect(row.x + 12, row.y + 17, row.w - 78, 22), label,
+            value->ui.caption_font, alpha(p.text, content_opacity));
+        nk_fill_rect(canvas, button, 10, alpha(hover ? p.hover_pink : p.field, content_opacity));
+        nk_stroke_rect(canvas, button, 10, 1, alpha(hover ? p.pink : p.border_subtle, content_opacity));
+        nk_fill_rect(canvas, nk_rect(button.x + 12, button.y + 12, 12, 12), 2,
+            alpha(hover ? p.pink : p.text, content_opacity));
+        if (hover) bongo_cat_ui_cursor_hover_rect(context, button, BONGO_CAT_UI_CURSOR_POINTER);
+        if (hit(context, button, enabled)) {
+            BongoCatMenuAction clear = value->behavior_tab == 0 ? BONGO_CAT_MENU_MOTION_CLEAR
+                : value->behavior_tab == 1 ? BONGO_CAT_MENU_EXPRESSION_CLEAR : BONGO_CAT_MENU_AUDIO_FIRST - 1;
+            if (clear == BONGO_CAT_MENU_AUDIO_FIRST - 1) bongo_cat_audio_stop(value->app->audio);
+            else bongo_cat_window_behavior_action(value->app, clear);
+            value->render_dirty = true;
+        }
+        shown++;
+    }
     for (size_t i = 0; i < catalog->count; ++i) {
         const BongoCatBehaviorEntry *entry = &catalog->entries[i];
         if (!matches(value, entry, value->behavior_tab)) continue;

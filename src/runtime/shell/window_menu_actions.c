@@ -75,6 +75,8 @@ void bongo_cat_window_show_context_menu(BongoCatApp *app) {
             "Ctrl+Wheel: opacity"),
         tr(app, "composables.useAppMenu.labels.motion", "Motions"),
         tr(app, "composables.useAppMenu.labels.expression", "Expressions"),
+        tr(app, "pages.preference.model.behaviorModal.labels.clearMotions", "Clear all motions"),
+        tr(app, "pages.preference.model.behaviorModal.labels.clearExpression", "Clear expression"),
         model_names, motion_names, expression_names, motion_checked,
         app->models.count, current_model, motion_count, expression_count,
         current_expression, app->session.window.scale_percent,

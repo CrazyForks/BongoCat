@@ -1,4 +1,5 @@
 #include "runtime.h"
+#include "bongo_cat/shortcut.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -86,8 +87,42 @@ static void random_behavior_run(BongoCatApp *app, uint64_t now,
         if (!random_behavior_candidate(app, entry, kind) ||
             (choose_alternate && entry->index == current_expression)) continue;
         if (choice--) continue;
-        if (kind == BONGO_CAT_BEHAVIOR_MOTION || kind == BONGO_CAT_BEHAVIOR_SOUND)
+        if (kind == BONGO_CAT_BEHAVIOR_MOTION || kind == BONGO_CAT_BEHAVIOR_SOUND) {
+            if (kind == BONGO_CAT_BEHAVIOR_MOTION) {
+                /* Random motion is a single-choice mode. Clear every other
+                   selected persistent motion before starting the new one. */
+                for (size_t j = 0; j < app->behaviors.count; ++j) {
+                    const BongoCatBehaviorEntry *other = &app->behaviors.entries[j];
+                    if (other->kind == BONGO_CAT_BEHAVIOR_MOTION &&
+                        other != entry && bongo_cat_live2d_motion_persistent(
+                            app->live2d, other->group, other->index) &&
+                        bongo_cat_live2d_motion_selected(
+                            app->live2d, other->group, other->index))
+                        bongo_cat_live2d_start_motion(app->live2d,
+                            other->group, other->index);
+                }
+            }
             bongo_cat_app_run_behavior(app, entry);
+            if (kind == BONGO_CAT_BEHAVIOR_SOUND) {
+                const BongoCatBehaviorShortcut *sound_binding =
+                    bongo_cat_app_behavior_binding(app, entry->id);
+                if (sound_binding && !sound_binding->shortcut_disabled &&
+                    sound_binding->shortcut[0]) {
+                    for (size_t j = 0; j < app->behaviors.count; ++j) {
+                        const BongoCatBehaviorEntry *motion = &app->behaviors.entries[j];
+                        const BongoCatBehaviorShortcut *motion_binding;
+                        if (motion->kind != BONGO_CAT_BEHAVIOR_MOTION ||
+                            !bongo_cat_live2d_motion_visible(app->live2d,
+                                motion->group, motion->index)) continue;
+                        motion_binding = bongo_cat_app_behavior_binding(app, motion->id);
+                        if (motion_binding && !motion_binding->shortcut_disabled &&
+                            bongo_cat_shortcut_equal(sound_binding->shortcut,
+                                motion_binding->shortcut))
+                            bongo_cat_app_run_behavior(app, motion);
+                    }
+                }
+            }
+        }
         else if (bongo_cat_live2d_set_expression(app->live2d, entry->index))
             app->dirty = true;
         return;

@@ -138,7 +138,13 @@
             "stopAllAudio": "すべての音声を停止",
             "motionIndex": "モーション {index}",
             "motionGroupIndex": "モーショングループ {index}",
-            "expressionIndex": "表情 {index}"
+            "expressionIndex": "表情 {index}",
+            "clearMotions": "????????????",
+            "clearExpression": "?????",
+            "selectAll": "?????"
+          },
+          "hints": {
+            "randomPool": "??????????"
           }
         }
       },

@@ -140,7 +140,13 @@
             "stopAllAudio": "Stop all audio",
             "motionIndex": "Motion {index}",
             "motionGroupIndex": "Motion Group {index}",
-            "expressionIndex": "Expression {index}"
+            "expressionIndex": "Expression {index}",
+            "clearMotions": "Clear all motions",
+            "clearExpression": "Clear expression",
+            "selectAll": "Select all"
+          },
+          "hints": {
+            "randomPool": "Add to random pool"
           }
         }
       },

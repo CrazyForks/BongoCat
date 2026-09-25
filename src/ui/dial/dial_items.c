@@ -14,8 +14,8 @@ void dial_items(Dial *d) {
             l->always_on_top_checked, 0},
         {l->window_size, BONGO_CAT_MENU_NONE, 0xff34d399, 4, false, 16},
         {l->opacity, BONGO_CAT_MENU_NONE, 0xff818cf8, 5, false, 10},
-        {l->motion, BONGO_CAT_MENU_NONE, 0xfffbbf24, 6, false, l->motion_count},
-        {l->expression, BONGO_CAT_MENU_NONE, 0xfff472b6, 7, false, l->expression_count},
+        {l->motion, BONGO_CAT_MENU_NONE, 0xfffbbf24, 6, false, l->motion_count + 1},
+        {l->expression, BONGO_CAT_MENU_NONE, 0xfff472b6, 7, false, l->expression_count + 1},
         {l->audio, BONGO_CAT_MENU_NONE, 0xff4ade80, 8, false, l->audio_count},
         {l->model, BONGO_CAT_MENU_NONE, 0xffa78bfa, 9, false, l->model_count + 1},
         {l->exit, BONGO_CAT_MENU_EXIT, 0xffff453a, 10, false, 0},
@@ -33,14 +33,17 @@ int dial_child_count(const Dial *d) {
 
 float dial_child_step(const Dial *d) {
     int count = dial_child_count(d);
-    if (d->active == 4 || d->active == 5) return .32f;
-    return count > 0 ? 2 * DIAL_PI / (float)count : 0;
+    if (count <= 0) return 0;
+    float step = 2 * DIAL_PI / (float)count;
+    /* Expand compact submenus only as their item count grows. */
+    if (d->active >= 4 && d->active <= 8) return fminf(.32f, step);
+    return step;
 }
 
 float dial_child_angle(const Dial *d, int index) {
     int count = dial_child_count(d);
     if (count <= 0) return -DIAL_PI / 2;
-    if (d->active == 4 || d->active == 5)
+    if (d->active >= 4 && d->active <= 8)
         return -DIAL_PI / 2 + d->active * 2 * DIAL_PI / d->count +
             (index - (count - 1) / 2.0f) * dial_child_step(d);
     return -DIAL_PI / 2 + (float)index * 2 * DIAL_PI / (float)count;
@@ -67,11 +70,21 @@ DialItem dial_child_item(const Dial *d, int child, char *text, size_t capacity) 
         item.checked = fabsf(l->opacity_percent - (10 + (int)i * 10)) < .5f;
         break;
     case 6:
+        if (i == l->motion_count) {
+            item.label = l->motion_clear;
+            item.command = BONGO_CAT_MENU_MOTION_CLEAR;
+            break;
+        }
         item.label = l->motion_names[i];
         item.command = (BongoCatMenuAction)(BONGO_CAT_MENU_MOTION_FIRST + i);
         item.checked = l->motion_checked && l->motion_checked[i];
         break;
     case 7:
+        if (i == l->expression_count) {
+            item.label = l->expression_clear;
+            item.command = BONGO_CAT_MENU_EXPRESSION_CLEAR;
+            break;
+        }
         item.label = l->expression_names[i];
         item.command = (BongoCatMenuAction)(BONGO_CAT_MENU_EXPRESSION_FIRST + i);
         item.checked = i == l->current_expression;

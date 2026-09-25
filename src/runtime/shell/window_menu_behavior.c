@@ -113,8 +113,34 @@ void bongo_cat_window_behavior_labels(BongoCatApp *app,
     }
 }
 
+static bool clear_motion_selection(BongoCatApp *app) {
+    bool changed = false;
+    if (!app || !app->live2d) return false;
+    for (size_t i = 0; i < app->behaviors.count; ++i) {
+        const BongoCatBehaviorEntry *entry = &app->behaviors.entries[i];
+        if (entry->kind == BONGO_CAT_BEHAVIOR_MOTION &&
+            bongo_cat_live2d_motion_persistent(app->live2d,
+                entry->group, entry->index) &&
+            bongo_cat_live2d_motion_selected(app->live2d, entry->group, entry->index)) {
+            changed = bongo_cat_live2d_start_motion(app->live2d,
+                entry->group, entry->index) || changed;
+        }
+    }
+    if (changed) {
+        bongo_cat_app_capture_behavior_state(app);
+        app->dirty = true;
+    }
+    return changed;
+}
+
 bool bongo_cat_window_behavior_action(BongoCatApp *app,
     BongoCatMenuAction action) {
+    if (action == BONGO_CAT_MENU_MOTION_CLEAR) return clear_motion_selection(app);
+    if (action == BONGO_CAT_MENU_EXPRESSION_CLEAR) {
+        bool changed = bongo_cat_live2d_set_expression(app->live2d, -1);
+        if (changed) { bongo_cat_app_capture_behavior_state(app); app->dirty = true; }
+        return changed;
+    }
     BongoCatBehaviorKind kind;
     size_t position;
     if (action >= BONGO_CAT_MENU_MOTION_FIRST &&
@@ -194,7 +220,8 @@ bool bongo_cat_window_behavior_menu_action(BongoCatMenuAction action) {
     return (action >= BONGO_CAT_MENU_MOTION_FIRST &&
         action < BONGO_CAT_MENU_MOTION_FIRST + BONGO_CAT_BEHAVIOR_LIMIT) ||
         (action >= BONGO_CAT_MENU_EXPRESSION_FIRST &&
-            action < BONGO_CAT_MENU_EXPRESSION_FIRST + BONGO_CAT_BEHAVIOR_LIMIT);
+            action < BONGO_CAT_MENU_EXPRESSION_FIRST + BONGO_CAT_BEHAVIOR_LIMIT) ||
+        action == BONGO_CAT_MENU_MOTION_CLEAR || action == BONGO_CAT_MENU_EXPRESSION_CLEAR;
 }
 
 void bongo_cat_window_audio_labels(BongoCatApp *app,

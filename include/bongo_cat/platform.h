@@ -63,7 +63,9 @@ typedef enum BongoCatMenuAction {
     BONGO_CAT_MENU_MODEL_FIRST = 1000,
     BONGO_CAT_MENU_MOTION_FIRST = 2000,
     BONGO_CAT_MENU_EXPRESSION_FIRST = BONGO_CAT_MENU_MOTION_FIRST + BONGO_CAT_BEHAVIOR_LIMIT,
-    BONGO_CAT_MENU_AUDIO_FIRST = BONGO_CAT_MENU_EXPRESSION_FIRST + BONGO_CAT_BEHAVIOR_LIMIT
+    BONGO_CAT_MENU_MOTION_CLEAR = BONGO_CAT_MENU_MOTION_FIRST + BONGO_CAT_BEHAVIOR_LIMIT,
+    BONGO_CAT_MENU_EXPRESSION_CLEAR = BONGO_CAT_MENU_EXPRESSION_FIRST + BONGO_CAT_BEHAVIOR_LIMIT,
+    BONGO_CAT_MENU_AUDIO_FIRST = BONGO_CAT_MENU_EXPRESSION_CLEAR + 1
 } BongoCatMenuAction;
 typedef void (*BongoCatMenuPreview)(void *userdata, BongoCatMenuAction action);
 
@@ -71,6 +73,7 @@ typedef struct BongoCatMenuLabels {
     const char *preferences, *mirror, *vertical_flip, *always_on_top;
     const char *window_size, *opacity, *model, *add_model, *exit;
     const char *wheel_size_hint, *wheel_opacity_hint, *motion, *expression;
+    const char *motion_clear, *expression_clear;
     const char *const *model_names;
     const char (*motion_names)[BONGO_CAT_MENU_LABEL_CAP];
     const char (*expression_names)[BONGO_CAT_MENU_LABEL_CAP];

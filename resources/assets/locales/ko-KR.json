@@ -138,7 +138,13 @@
             "stopAllAudio": "모든 오디오 중지",
             "motionIndex": "모션 {index}",
             "motionGroupIndex": "모션 그룹 {index}",
-            "expressionIndex": "표정 {index}"
+            "expressionIndex": "표정 {index}",
+            "clearMotions": "?? ?? ???",
+            "clearExpression": "?? ???",
+            "selectAll": "?? ??"
+          },
+          "hints": {
+            "randomPool": "??? ??? ??"
           }
         }
       },
