@@ -1,4 +1,5 @@
 #include "dial_internal.h"
+#include <limits.h>
 #include <stdio.h>
 
 void dial_items(Dial *d) {
@@ -26,25 +27,30 @@ void dial_items(Dial *d) {
 
 int dial_child_count(const Dial *d) {
     if (d->active < 0) return 0;
-    int remaining = (int)d->items[d->active].children - d->page * DIAL_PAGE;
-    return remaining < 0 ? 0 : (remaining > DIAL_PAGE ? DIAL_PAGE : remaining);
+    size_t count = d->items[d->active].children;
+    return count > (size_t)INT_MAX ? INT_MAX : (int)count;
 }
 
 float dial_child_step(const Dial *d) {
-    /* Preserve HTML spacing; large real catalogs use pages to avoid overlap. */
-    return d->active == 4 || d->active == 5 || dial_child_count(d) > 11 ? .32f : .50f;
+    int count = dial_child_count(d);
+    if (d->active == 4 || d->active == 5) return .32f;
+    return count > 0 ? 2 * DIAL_PI / (float)count : 0;
 }
 
 float dial_child_angle(const Dial *d, int index) {
-    return -DIAL_PI / 2 + d->active * 2 * DIAL_PI / d->count +
-        (index - (dial_child_count(d) - 1) / 2.0f) * dial_child_step(d);
+    int count = dial_child_count(d);
+    if (count <= 0) return -DIAL_PI / 2;
+    if (d->active == 4 || d->active == 5)
+        return -DIAL_PI / 2 + d->active * 2 * DIAL_PI / d->count +
+            (index - (count - 1) / 2.0f) * dial_child_step(d);
+    return -DIAL_PI / 2 + (float)index * 2 * DIAL_PI / (float)count;
 }
 
 DialItem dial_child_item(const Dial *d, int child, char *text, size_t capacity) {
     DialItem item = {0};
     if (child < 0 || child >= dial_child_count(d)) return item;
     const BongoCatMenuLabels *l = d->labels;
-    size_t i = (size_t)d->page * DIAL_PAGE + (size_t)child;
+    size_t i = (size_t)child;
     item = d->items[d->active];
     item.children = 0;
     switch (d->active) {

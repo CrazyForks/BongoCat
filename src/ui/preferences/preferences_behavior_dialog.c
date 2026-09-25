@@ -71,6 +71,18 @@ static size_t row_count(const BongoCatPreferences *value) {
     return count;
 }
 
+/* Count the entries shown by each tab so the category label also communicates
+   how many actions are available.  Keep this in sync with row_count(): the
+   motion visibility filter and the special stop-all-audio row are included. */
+static size_t tab_count(const BongoCatPreferences *value, int tab) {
+    size_t count = 0;
+    const BongoCatBehaviorCatalog *catalog =
+        bongo_cat_preferences_behavior_catalog(value);
+    for (size_t i = 0; i < catalog->count; ++i)
+        if (matches(value, &catalog->entries[i], tab)) count++;
+    return count;
+}
+
 bool bongo_cat_preferences_behavior_dialog_active(
     const BongoCatPreferences *value) {
     return value && value->behavior_dialog;
@@ -169,10 +181,14 @@ static void draw_segments(BongoCatPreferences *value,
     struct nk_rect wrapper = nk_rect(panel.x + 20, panel.y + 85,
         panel.w - 40, 43);
     nk_fill_rect(canvas, wrapper, 10, alpha(p.field, opacity));
-    const char *labels[] = {tr(value,
+    const char *base_labels[] = {tr(value,
         "pages.preference.model.behaviorModal.labels.motion", "Motions"), tr(value,
         "pages.preference.model.behaviorModal.labels.expression", "Expressions"), tr(value,
         "pages.preference.model.behaviorModal.labels.audio", "Audio")};
+    char labels[3][64];
+    for (int i = 0; i < 3; ++i)
+        snprintf(labels[i], sizeof(labels[i]), "%s %zu", base_labels[i],
+            tab_count(value, i));
     int count = 0, position = 0;
     for (int i = 0; i < 3; ++i) count += tab_available(value, i);
     if (!count) return;

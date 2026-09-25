@@ -100,6 +100,10 @@ static bool create(Dial *d) {
         }
     }
     if (!d->window) return false;
+    /* The radial menu is a standalone window and does not run the UI cursor
+       pass. Reset the global cursor so it cannot inherit a text-entry cursor
+       left by another SDL window (for example, the preferences dialog). */
+    SDL_SetCursor(SDL_GetDefaultCursor());
     SDL_SyncWindow(d->window);
 #ifdef _WIN32
     bongo_cat_windows_prepare_transparent_ui(d->window);
@@ -250,6 +254,7 @@ BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
         if (d->paint.atlas.permanent.alloc) nk_font_atlas_clear(&d->paint.atlas);
         for (int i = 0; i < 4; ++i) free(d->paint.ranges[i]);
         free(d->paint.vertices);
+        free(d->paint.children);
     }
     bool context_destroyed = !d->context || SDL_GL_DestroyContext(d->context);
     if (d->window_id && SDL_GetWindowFromID(d->window_id)) SDL_DestroyWindow(d->window);

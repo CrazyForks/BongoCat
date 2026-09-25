@@ -138,11 +138,6 @@ static void center(Dial *d) {
     if (!child_hovered)
         dial_icon(d, item_icon(item), 0, -5, 38, item.checked ? 0xfff77daa : item.color);
     text(d, label, 0, child_hovered ? 0.0f : 30.0f, 140, true, color);
-    if (item.children > DIAL_PAGE) {
-        snprintf(buffer, sizeof(buffer), "%d / %d", d->page + 1,
-            ((int)item.children + DIAL_PAGE - 1) / DIAL_PAGE);
-        text(d, buffer, 0, 58, 80, false, color);
-    }
 }
 
 static void children(Dial *d, uint64_t now) {
@@ -161,7 +156,9 @@ static void children(Dial *d, uint64_t now) {
             item.checked ? 2 : (hover ? 1 : 0), ease);
         uint32_t color = hover || item.checked || d->dark ? 0xffffffff : 0xff181c28;
         if (!dial_cover_draw(d, i, x, y, ease))
-            text(d, item.label, x, y, dial_child_step(d) > .4f ? 92.0f : 62.0f,
+            text(d, item.label, x, y,
+                (d->active == 4 || d->active == 5) ? 62.0f :
+                fmaxf(42.0f, fminf(92.0f, 230.0f * dial_child_step(d) * .78f)),
                 false, alpha(color, ease));
     }
 }

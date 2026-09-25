@@ -6,7 +6,6 @@
 #include <SDL3/SDL.h>
 #include <math.h>
 #define DIAL_PI 3.14159265358979323846f
-#define DIAL_PAGE 16
 #define DIAL_ROOTS 12
 #define DIAL_REVEAL_DELAY_MS 22
 #define DIAL_REVEAL_DURATION_MS 360
@@ -43,7 +42,8 @@ typedef struct DialPaint {
     struct nk_font_atlas atlas;
     struct nk_font *font;
     nk_rune *ranges[4];
-    DialPath roots[DIAL_ROOTS], children[DIAL_PAGE];
+    DialPath roots[DIAL_ROOTS], *children;
+    size_t child_capacity;
     int child_path_count, child_path_active, child_path_roots;
     float child_path_step;
     float zoom, offset_x, offset_y, alpha;

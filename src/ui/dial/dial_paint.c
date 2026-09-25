@@ -91,4 +91,5 @@ void dial_paint_free(Dial *d) {
     if (p->vao) p->gl.delete_vertex_arrays(1,&p->vao);
     if (p->program) p->gl.delete_program(p->program);
     free(p->vertices);
+    free(p->children);
 }

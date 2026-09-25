@@ -22,14 +22,7 @@ static void activate(Dial *d) {
 }
 
 static void page(Dial *d, int direction) {
-    if (d->active < 0 || d->items[d->active].children <= DIAL_PAGE) return;
-    int pages = ((int)d->items[d->active].children+DIAL_PAGE-1)/DIAL_PAGE;
-    d->page = (d->page+direction+pages)%pages;
-    d->child = -1;
-    if (d->preview != BONGO_CAT_MENU_NONE) dial_preview(d,BONGO_CAT_MENU_NONE);
-    d->preview = BONGO_CAT_MENU_NONE;
-    d->changed_at = SDL_GetTicks();
-    dial_child_paths(d); d->dirty = true;
+    (void)d; (void)direction;
 }
 
 static void key(Dial *d, const SDL_KeyboardEvent *event) {
