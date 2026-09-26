@@ -76,6 +76,8 @@ bool bongo_cat_preferences_chrome_drag_allowed(
 typedef struct BongoCatImportDialog BongoCatImportDialog;
 BongoCatImportDialog *bongo_cat_preferences_import_create(void);
 void bongo_cat_preferences_import_destroy(BongoCatImportDialog *dialog);
+void bongo_cat_preferences_import_poll(BongoCatImportDialog *dialog,
+    BongoCatApp *app);
 bool bongo_cat_preferences_import_open(BongoCatImportDialog *dialog,
     SDL_Window *window);
 bool bongo_cat_preferences_import_is_open(const BongoCatImportDialog *dialog);

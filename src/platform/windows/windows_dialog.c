@@ -195,6 +195,8 @@ void bongo_cat_windows_show_open_folder_dialog(
             return;
         }
     }
+    /* The worker may finish and free args before SDL_CreateThread returns. */
+    HWND owner = args->owner;
     SDL_Thread *thread = SDL_CreateThread(folder_dialog_thread,
         "BongoCat_WindowsFolderDialog", args);
     if (!thread) {
@@ -205,7 +207,7 @@ void bongo_cat_windows_show_open_folder_dialog(
         return;
     }
     SDL_Log("[runtime] Folder dialog: stage=opened owner=%p allow_many=%d",
-        (void *)args->owner, allow_many);
+        (void *)owner, allow_many);
     SDL_DetachThread(thread);
 }
 

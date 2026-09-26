@@ -41,11 +41,9 @@ static void release_window(BongoCatPreferences *value) {
     bongo_cat_preferences_resource_note(value, "before-release");
     uint64_t release_started = SDL_GetTicksNS();
     bongo_cat_preferences_live_resize_uninstall(value);
-    bool context_ready = !value->gl_context ||
-        SDL_GL_MakeCurrent(value->window, value->gl_context);
-    if (!context_ready) SDL_LogError(SDL_LOG_CATEGORY_VIDEO,
-        "Preferences GL cleanup skipped because its context could not be "
-        "activated: %s", SDL_GetError());
+    bool context_ready = bongo_cat_preferences_gl_cleanup_current(value);
+    bool own_context = context_ready && value->gl_context &&
+        SDL_GL_GetCurrentContext() == value->gl_context;
     if (value->ui_initialized && value->input_active)
         bongo_cat_preferences_input_end(value);
     SDL_StopTextInput(value->window);
@@ -60,13 +58,14 @@ static void release_window(BongoCatPreferences *value) {
     else bongo_cat_preferences_assets_abandon(value);
     if (value->ui_initialized) {
         bongo_cat_ui_cursor_destroy(&value->ui);
-        if (context_ready) bongo_cat_ui_destroy(&value->ui);
+        if (own_context) bongo_cat_ui_destroy(&value->ui);
+        else if (context_ready) bongo_cat_ui_destroy_shared(&value->ui);
         else bongo_cat_ui_abandon(&value->ui);
     }
     if (value->chrome_dragging) SDL_CaptureMouse(false);
     /* This window will never swap again. Submit its deletion commands before
        detaching the shared context, without waiting on the GPU here. */
-    if (context_ready && value->gl_context) glFlush();
+    if (context_ready) glFlush();
     bool context_destroyed = bongo_cat_preferences_gl_destroy(value);
     SDL_DestroyWindow(value->window);
     value->window = NULL;
@@ -168,7 +167,7 @@ void bongo_cat_preferences_close(BongoCatPreferences *value) {
     value->chrome_dragging = false;
     SDL_Window *previous_window = SDL_GL_GetCurrentWindow();
     SDL_GLContext previous_context = SDL_GL_GetCurrentContext();
-    bool about_gl_ready = SDL_GL_MakeCurrent(value->window, value->gl_context);
+    bool about_gl_ready = bongo_cat_preferences_gl_cleanup_current(value);
     bongo_cat_about_clear(value, about_gl_ready);
     SDL_GL_MakeCurrent(previous_window, previous_context);
     bongo_cat_preferences_release_idle_window(value);

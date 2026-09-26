@@ -48,11 +48,15 @@ TextureResolution texture_resolution_for(bool enabled,
             source_height, texture_limit);
     }
     if (texture_quality_valid(quality_percent) && quality_percent < 100.0f) {
+        /* Apply quality to the atlas that 100% would actually upload. A cap
+           based on the source leaves most choices identical when dynamic
+           resolution has already reduced the atlas for a small window.
+           Fit first so independently rounded display bounds do not distort
+           the area budget, then round only to whole pixels. */
+        const auto baseline = texture_fitted_size(source_width, source_height, result);
         const double scale = std::sqrt((double)quality_percent / 100.0);
-        result.max_width = std::min(result.max_width,
-            std::max(1, (int)std::ceil(source_width * scale)));
-        result.max_height = std::min(result.max_height,
-            std::max(1, (int)std::ceil(source_height * scale)));
+        result.max_width = std::max(1, (int)std::ceil(baseline.first * scale));
+        result.max_height = std::max(1, (int)std::ceil(baseline.second * scale));
         if (texture_limit > 0) {
             result.max_width = std::min(result.max_width, texture_limit);
             result.max_height = std::min(result.max_height, texture_limit);

@@ -64,6 +64,9 @@ static int SDLCALL update_worker(void *userdata) {
     BongoCatUpdateFetchResult fetched = bongo_cat_update_http_fetch(service,
         &response, message, sizeof(message));
     if (fetched != BONGO_CAT_UPDATE_FETCH_OK) {
+        /* Cancellation can race with the Windows reader returning a complete
+           response. The worker owns that buffer even when fetch is cancelled. */
+        free(response);
         if (fetched != BONGO_CAT_UPDATE_FETCH_CANCELLED)
             complete(service, BONGO_CAT_UPDATE_ERROR, NULL, message);
         return 0;

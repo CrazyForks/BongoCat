@@ -15,16 +15,14 @@ void bongo_cat_preferences_import_job_free(BongoCatImportJob *job) {
     SDL_free(job);
 }
 
-static void free_import_event(const SDL_Event *event, bool *release_worker) {
+static void free_import_event(const SDL_Event *event) {
     if (!event) return;
     if (event->user.code == BONGO_CAT_IMPORT_PROGRESS_CODE) {
         SDL_free(event->user.data1);
         return;
     }
-    BongoCatImportJob *job = (BongoCatImportJob *)event->user.data1;
-    if (release_worker && event->user.code == BONGO_CAT_IMPORT_COMPLETE_CODE)
-        *release_worker = true;
-    bongo_cat_preferences_import_job_free(job);
+    if (event->user.code == BONGO_CAT_IMPORT_EVENT_CODE)
+        bongo_cat_preferences_import_job_free(event->user.data1);
 }
 void bongo_cat_preferences_import_dialog_release(
     BongoCatImportDialog *dialog) {
@@ -45,16 +43,21 @@ void bongo_cat_preferences_import_destroy(BongoCatImportDialog *dialog) {
     SDL_Thread *worker = dialog->worker;
     SDL_UnlockMutex(dialog->mutex);
     if (worker) SDL_WaitThread(worker, NULL);
-    bool release_worker = false;
     SDL_LockMutex(dialog->mutex);
     dialog->worker = NULL;
     SDL_Event event;
     while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, dialog->event_type,
         dialog->event_type) > 0) {
         if (event.user.data2 != dialog) continue;
-        free_import_event(&event, &release_worker);
+        free_import_event(&event);
+    }
+    /* This also covers completion events that could not enter the queue. */
+    if (dialog->worker_job) {
+        bongo_cat_preferences_import_job_free(dialog->worker_job);
+        --dialog->references;
     }
     dialog->worker_job = NULL;
+    dialog->worker_done = false;
     while (dialog->pending_head) {
         BongoCatImportJob *job = dialog->pending_head;
         dialog->pending_head = job->next;
@@ -64,8 +67,6 @@ void bongo_cat_preferences_import_destroy(BongoCatImportDialog *dialog) {
     dialog->busy = false;
     dialog->started_ns = 0;
     dialog->completed = dialog->total = 0;
-    /* Drop the queued worker reference while the owner still holds dialog. */
-    if (release_worker) --dialog->references;
     SDL_UnlockMutex(dialog->mutex);
     bongo_cat_preferences_import_dialog_release(dialog);
 }
@@ -111,6 +112,7 @@ static bool start_job(BongoCatImportDialog *dialog, BongoCatApp *app,
         return true;
     }
     dialog->busy = true;
+    dialog->worker_done = false;
     dialog->worker_job = job;
     dialog->started_ns = SDL_GetTicksNS();
     dialog->completed = 0;
@@ -200,14 +202,17 @@ static void complete_job(BongoCatImportDialog *dialog, BongoCatApp *app,
     BongoCatImportJob *job) {
     SDL_Thread *worker = NULL;
     SDL_LockMutex(dialog->mutex);
-    if (dialog->worker_job == job) {
-        worker = dialog->worker;
-        dialog->worker = NULL;
-        dialog->worker_job = NULL;
-        dialog->busy = false;
-        dialog->started_ns = 0;
-        dialog->completed = dialog->total = 0;
+    if (dialog->worker_job != job || !dialog->worker_done) {
+        SDL_UnlockMutex(dialog->mutex);
+        return;
     }
+    worker = dialog->worker;
+    dialog->worker = NULL;
+    dialog->worker_job = NULL;
+    dialog->worker_done = false;
+    dialog->busy = false;
+    dialog->started_ns = 0;
+    dialog->completed = dialog->total = 0;
     SDL_UnlockMutex(dialog->mutex);
     if (worker) SDL_WaitThread(worker, NULL);
     size_t restored_count = job->restored_count;
@@ -232,6 +237,21 @@ static void complete_job(BongoCatImportDialog *dialog, BongoCatApp *app,
     }
     bongo_cat_preferences_import_job_free(job);
     bongo_cat_preferences_import_dialog_release(dialog);
+}
+
+void bongo_cat_preferences_import_poll(BongoCatImportDialog *dialog,
+    BongoCatApp *app) {
+    if (!dialog || !app) return;
+    SDL_LockMutex(dialog->mutex);
+    BongoCatImportJob *job = dialog->active && dialog->worker_done
+        ? dialog->worker_job : NULL;
+    SDL_UnlockMutex(dialog->mutex);
+    /* Progress events borrow job. Let queued events drain before reclaiming
+       it; the main loop deliberately dispatches only a bounded batch. */
+    if (job && !SDL_HasEvent(dialog->event_type)) {
+        complete_job(dialog, app, job);
+        if (app->preferences) app->preferences->render_dirty = true;
+    }
 }
 
 bool bongo_cat_preferences_import_event(BongoCatImportDialog *dialog,

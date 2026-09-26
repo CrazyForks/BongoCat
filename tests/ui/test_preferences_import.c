@@ -113,6 +113,7 @@ static BongoCatImportJob *completed_job(BongoCatImportDialog *dialog,
     SDL_strlcpy(job->package_ids[0], name, BONGO_CAT_ID_CAP);
     dialog->worker_job = job;
     dialog->busy = true;
+    dialog->worker_done = true;
     dialog->references++;
     return job;
 }
@@ -169,12 +170,105 @@ static void queued_completion(BongoCatApp *app) {
     SDL_QuitSubSystem(SDL_INIT_EVENTS);
 }
 
+static bool SDLCALL reject_completion(void *userdata, SDL_Event *event) {
+    const BongoCatImportDialog *dialog = userdata;
+    return event->type != dialog->event_type ||
+        event->user.code != BONGO_CAT_IMPORT_COMPLETE_CODE;
+}
+
+static void missing_completion(BongoCatApp *app) {
+    CHECK(SDL_InitSubSystem(SDL_INIT_EVENTS));
+    BongoCatPreferences *preferences = calloc(1, sizeof(*preferences));
+    CHECK(preferences != NULL);
+    if (!preferences) { SDL_QuitSubSystem(SDL_INIT_EVENTS); return; }
+    app->preferences = preferences;
+    preferences->app = app;
+    for (int shutdown = 0; shutdown < 3; ++shutdown) {
+        BongoCatImportDialog *dialog = bongo_cat_preferences_import_create();
+        CHECK(dialog != NULL);
+        if (!dialog) break;
+        preferences->import_dialog = dialog;
+        BongoCatImportJob *job = completed_job(dialog, "Lost Wake Cat");
+        CHECK(job != NULL);
+        if (!job) { bongo_cat_preferences_import_destroy(dialog); break; }
+        dialog->worker_done = false;
+        SDL_EventFilter previous_filter = NULL;
+        void *previous_userdata = NULL;
+        SDL_GetEventFilter(&previous_filter, &previous_userdata);
+        SDL_SetEventFilter(shutdown == 2 ? NULL : reject_completion, dialog);
+        /* An empty models root fails before importing anything. Exercise the
+           real worker, including failure to deliver its completion event. */
+        dialog->worker = SDL_CreateThread(bongo_cat_preferences_import_worker,
+            "test-import-completion", job);
+        CHECK(dialog->worker != NULL);
+        bool done = false;
+        uint64_t deadline = SDL_GetTicks() + 5000;
+        while (dialog->worker && SDL_GetTicks() < deadline) {
+            SDL_LockMutex(dialog->mutex);
+            done = dialog->worker_done;
+            SDL_UnlockMutex(dialog->mutex);
+            if (done) break;
+            SDL_Delay(1);
+        }
+        CHECK(done && dialog->worker && dialog->busy);
+        CHECK(SDL_HasEvent(dialog->event_type) == (shutdown == 2));
+        if (done && !shutdown) {
+            BongoCatImportJob *pending = SDL_calloc(1, sizeof(*pending));
+            CHECK(pending != NULL);
+            dialog->pending_head = dialog->pending_tail = pending;
+            BongoCatImportProgress *progress = SDL_calloc(1, sizeof(*progress));
+            CHECK(progress != NULL);
+            if (progress) {
+                progress->job = job;
+                SDL_Event event = {0};
+                event.type = dialog->event_type;
+                event.user.code = BONGO_CAT_IMPORT_PROGRESS_CODE;
+                event.user.data1 = progress;
+                event.user.data2 = dialog;
+                bool pushed = SDL_PushEvent(&event);
+                CHECK(pushed);
+                if (pushed) {
+                    /* A bounded event batch may leave progress queued. Its
+                       borrowed job must stay alive until dispatch completes. */
+                    bongo_cat_preferences_update(preferences);
+                    CHECK(dialog->worker_job == job && dialog->busy);
+                    CHECK(SDL_PeepEvents(&event, 1, SDL_GETEVENT,
+                        dialog->event_type, dialog->event_type) == 1);
+                    CHECK(bongo_cat_preferences_import_event(dialog, app, &event));
+                } else SDL_free(progress);
+            }
+            bongo_cat_preferences_update(preferences);
+            CHECK(!dialog->worker && !dialog->worker_job && !dialog->worker_done);
+            CHECK(!dialog->busy && !dialog->pending_head && !dialog->pending_tail);
+            CHECK(dialog->references == 1);
+            /* Repeated polling must not release the same job twice. */
+            bongo_cat_preferences_update(preferences);
+            CHECK(dialog->references == 1);
+        }
+        /* Keep one observer reference so shutdown ownership is inspectable. */
+        SDL_LockMutex(dialog->mutex);
+        ++dialog->references;
+        SDL_UnlockMutex(dialog->mutex);
+        bongo_cat_preferences_import_destroy(dialog);
+        SDL_SetEventFilter(previous_filter, previous_userdata);
+        CHECK(dialog->references == 1);
+        CHECK(!dialog->worker && !dialog->worker_job && !dialog->busy);
+        CHECK(!SDL_HasEvent(dialog->event_type));
+        bongo_cat_preferences_import_dialog_release(dialog);
+        preferences->import_dialog = NULL;
+    }
+    app->preferences = NULL;
+    free(preferences);
+    SDL_QuitSubSystem(SDL_INIT_EVENTS);
+}
+
 int test_preferences_import(void) {
     BongoCatApp *app = calloc(1, sizeof(*app));
     CHECK(app != NULL);
     if (!app) return failures;
     summary_messages(app);
     queued_completion(app);
+    missing_completion(app);
     free(app);
     return failures;
 }

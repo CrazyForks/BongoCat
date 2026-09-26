@@ -172,6 +172,92 @@ static void about_unchanged_contributors(BongoCatApp *app) {
     free(value);
 }
 
+static void hidden_about_completion(BongoCatApp *app) {
+    BongoCatPreferences *value = calloc(1, sizeof(*value));
+    CHECK(value != NULL);
+    if (!value) return;
+    value->app = app;
+    BongoCatAboutRequest *job = calloc(1, sizeof(*job));
+    CHECK(job != NULL);
+    if (job) {
+        job->kind = BONGO_ABOUT_WECHAT;
+        job->qr_pixels = calloc(240 * 240, 4);
+        job->status = 200;
+        SDL_SetAtomicInt(&job->cancel, 1);
+        SDL_SetAtomicInt(&job->done, 1);
+        value->about.qr_request = job;
+        /* No event or settings window: the normal loop must still reap it. */
+        bongo_cat_preferences_update(value);
+        CHECK(!value->about.qr_request && !value->about.contributors_request);
+        CHECK(!value->about.qr_pixels && !value->about.contributors);
+        CHECK(!value->about.qr_attempted && !value->about.contributors_attempted);
+    }
+    bongo_cat_about_shutdown(value);
+    free(value);
+}
+
+static void shared_context_cleanup(BongoCatPreferences *value) {
+    BongoCatUIBackend ui = {0};
+    ui.gl = value->ui.gl;
+    BongoCatGL gl = ui.gl;
+    PFNGLISVERTEXARRAYPROC is_vao =
+        (PFNGLISVERTEXARRAYPROC)SDL_GL_GetProcAddress("glIsVertexArray");
+    PFNGLISBUFFERPROC is_buffer =
+        (PFNGLISBUFFERPROC)SDL_GL_GetProcAddress("glIsBuffer");
+    PFNGLISPROGRAMPROC is_program =
+        (PFNGLISPROGRAMPROC)SDL_GL_GetProcAddress("glIsProgram");
+    CHECK(is_vao && is_buffer && is_program);
+    if (!is_vao || !is_buffer || !is_program) return;
+    CHECK(SDL_GL_MakeCurrent(value->window, value->gl_context));
+    CHECK(nk_init_default(&ui.context, NULL));
+    nk_buffer_init_default(&ui.commands);
+    glGenTextures(1, &ui.font_texture);
+    glBindTexture(GL_TEXTURE_2D, ui.font_texture);
+    gl.gen_buffers(1, &ui.vbo);
+    gl.bind_buffer(GL_ARRAY_BUFFER, ui.vbo);
+    ui.program = gl.create_program();
+    GLuint texture = ui.font_texture, buffer = ui.vbo, program = ui.program;
+    glFlush();
+    CHECK(SDL_GL_MakeCurrent(value->app->window, value->app->gl_context));
+    GLint previous_vao = 0;
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &previous_vao);
+    GLuint main_vao = 0;
+    gl.gen_vertex_arrays(1, &main_vao);
+    gl.bind_vertex_array(main_vao);
+    /* Context-local VAO names can collide. The fallback must leave the main
+       context's object alive while deleting the shared textures/buffers. */
+    ui.vao = main_vao;
+    CHECK(glIsTexture(texture) && is_buffer(buffer) && is_program(program));
+    bongo_cat_ui_destroy_shared(&ui);
+    CHECK(!glIsTexture(texture) && !is_buffer(buffer) && !is_program(program));
+    CHECK(is_vao(main_vao));
+    gl.bind_vertex_array((GLuint)previous_vao);
+    gl.delete_vertex_arrays(1, &main_vao);
+}
+
+static void asset_retry_keeps_hidpi(BongoCatPreferences *value) {
+    CHECK(SDL_GL_MakeCurrent(value->window, value->gl_context));
+    struct nk_context context;
+    bool initialized = nk_init_default(&context, value->ui.body_font);
+    CHECK(initialized);
+    if (!initialized) return;
+    nk_begin(&context, "asset-retry", nk_rect(0, 0, 128, 128), 0);
+    struct nk_command_buffer *canvas = nk_window_get_canvas(&context);
+    bongo_cat_preferences_icon_draw(value, canvas, 0,
+        nk_rect(0, 0, 32, 32), nk_rgb(255, 255, 255));
+    GLuint texture = value->icon_texture_hidpi;
+    CHECK(texture != 0);
+    bongo_cat_preferences_assets_load(value);
+    bongo_cat_preferences_icon_draw(value, canvas, 0,
+        nk_rect(0, 0, 32, 32), nk_rgb(255, 255, 255));
+    CHECK(value->icon_texture_hidpi == texture);
+    CHECK(glIsTexture(texture));
+    if (texture != value->icon_texture_hidpi) glDeleteTextures(1, &texture);
+    nk_end(&context);
+    nk_free(&context);
+    CHECK(SDL_GL_MakeCurrent(value->app->window, value->app->gl_context));
+}
+
 static void about_session_cache(BongoCatPreferences *value) {
     BongoCatAboutState *s = &value->about;
     CHECK(s->contributors_attempted || (s->contributors_request &&
@@ -400,13 +486,18 @@ int main(int argc, char **argv) {
     about_disk_cache(app);
     about_refresh_failure(app);
     about_unchanged_contributors(app);
+    hidden_about_completion(app);
     CHECK(value != NULL);
     if (value) {
         shortcut_chord_capture(value);
         for (int cycle = 0; cycle < 3; ++cycle) {
             bongo_cat_preferences_show(value);
             CHECK(value->window && value->gl_context && value->ui_initialized);
-            if (!cycle) about_render_cost_regressions(value);
+            if (!cycle) {
+                about_render_cost_regressions(value);
+                shared_context_cleanup(value);
+                asset_retry_keeps_hidpi(value);
+            }
             about_session_cache(value);
             if (!cycle) inactive_model_behaviors(value);
             bongo_cat_preferences_close(value);

@@ -60,6 +60,20 @@ bool bongo_cat_preferences_gl_create(BongoCatPreferences *value) {
     return true;
 }
 
+bool bongo_cat_preferences_gl_cleanup_current(BongoCatPreferences *value) {
+    if (!value || !value->app) return false;
+    if (value->gl_context &&
+        SDL_GL_MakeCurrent(value->window, value->gl_context)) return true;
+    /* Textures, buffers and programs outlive one shared context. Release
+       them through the main context if the settings context cannot bind. */
+    if (value->app->gl_context &&
+        SDL_GL_MakeCurrent(value->app->window, value->app->gl_context)) return true;
+    SDL_LogError(SDL_LOG_CATEGORY_VIDEO,
+        "Preferences GL cleanup could not activate either shared context: %s",
+        SDL_GetError());
+    return false;
+}
+
 bool bongo_cat_preferences_gl_destroy(BongoCatPreferences *value) {
     if (!value || !value->gl_context) return true;
     SDL_Log("[runtime] Preferences OpenGL context release: "

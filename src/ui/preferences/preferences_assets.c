@@ -42,7 +42,7 @@ void bongo_cat_preferences_assets_load(BongoCatPreferences *value) {
     int width = 0, height = 0;
     if (!value->icon_texture)
         value->icon_texture = load(value, "ui-symbols.png", 0, &width, &height);
-    value->icon_hidpi_attempted = false;
+    value->icon_hidpi_attempted = value->icon_texture_hidpi != 0;
 }
 
 void bongo_cat_preferences_icon_draw(BongoCatPreferences *value,
@@ -52,7 +52,7 @@ void bongo_cat_preferences_icon_draw(BongoCatPreferences *value,
         icon >= BONGO_CAT_UI_ICON_COUNT) return;
     bool large = bounds.w > 24.0f || bounds.h > 24.0f;
     bool needs_hidpi = large || value->ui.raster_scale > 1.05f;
-    if (needs_hidpi && !value->icon_hidpi_attempted) {
+    if (needs_hidpi && !value->icon_texture_hidpi && !value->icon_hidpi_attempted) {
         int width = 0, height = 0;
         value->icon_hidpi_attempted = true;
         value->icon_texture_hidpi = load(value, "ui-symbols@4x.png", 0,

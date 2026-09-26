@@ -109,7 +109,8 @@ bool bongo_cat_ui_init(BongoCatUIBackend *ui, SDL_Window *window,
     return true;
 }
 
-static void release(BongoCatUIBackend *ui, bool release_gl) {
+static void release(BongoCatUIBackend *ui, bool release_gl,
+    bool release_context_objects) {
     if (!ui) return;
     if (context_backend == ui) context_backend = NULL;
     if (release_gl) {
@@ -127,7 +128,8 @@ static void release(BongoCatUIBackend *ui, bool release_gl) {
         if (ui->font_texture) glDeleteTextures(1, &ui->font_texture);
         if (ui->vbo) ui->gl.delete_buffers(1, &ui->vbo);
         if (ui->ebo) ui->gl.delete_buffers(1, &ui->ebo);
-        if (ui->vao) ui->gl.delete_vertex_arrays(1, &ui->vao);
+        if (release_context_objects && ui->vao)
+            ui->gl.delete_vertex_arrays(1, &ui->vao);
         if (ui->program) ui->gl.delete_program(ui->program);
     }
     free(ui->vertices);
@@ -135,9 +137,15 @@ static void release(BongoCatUIBackend *ui, bool release_gl) {
     memset(ui, 0, sizeof(*ui));
 }
 
-void bongo_cat_ui_destroy(BongoCatUIBackend *ui) { release(ui, true); }
+void bongo_cat_ui_destroy(BongoCatUIBackend *ui) { release(ui, true, true); }
 
-void bongo_cat_ui_abandon(BongoCatUIBackend *ui) { release(ui, false); }
+void bongo_cat_ui_destroy_shared(BongoCatUIBackend *ui) {
+    /* VAOs belong to the original context and die with it. Deleting their
+       names here could delete an unrelated VAO in the fallback context. */
+    release(ui, true, false);
+}
+
+void bongo_cat_ui_abandon(BongoCatUIBackend *ui) { release(ui, false, false); }
 
 static bool grow_buffer(void **data, size_t *capacity, size_t limit) {
     if (*capacity >= limit) return false;

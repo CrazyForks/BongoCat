@@ -38,7 +38,7 @@
           "maxFPS": "Max Frame Rate"
         },
         "hints": {
-          "dynamicTextureResolution": "Dynamically adjusts texture resolution to the actual display size, preserving visual detail while optimizing video memory usage. Enabling this option is generally not recommended.",
+          "dynamicTextureResolution": "Dynamically adjusts texture resolution to the actual display size, preserving visual detail while optimizing video memory usage. Enabling this option is generally not recommended. It is fine to leave the switch at its default setting.",
           "renderQuality": "Try different levels to find the best visual balance and save memory.",
           "hoverRequires": "Requires both [Pass Through] and [Always on Top] above to be enabled.",
           "hoverUnavailable": "Hover hiding is unavailable in the current desktop environment.",

@@ -24,13 +24,27 @@ int main() {
             4096, 2048, 16384, quality), 4096, 2048);
     }
 
-    // Preserve the existing display budget; quality is an additional cap.
+    // A small window must still respond to quality changes. Previously the
+    // source-relative cap left every choice from 10 through 100 identical.
     expect_size(texture_resolution_for(true, 250, 125, 1000, 500,
         4096, 2048, 16384, 100), 1024, 512);
     expect_size(texture_resolution_for(true, 250, 125, 1000, 500,
-        4096, 2048, 16384, 10), 1024, 512);
+        4096, 2048, 16384, 90), 972, 486);
     expect_size(texture_resolution_for(true, 250, 125, 1000, 500,
-        4096, 2048, 16384, 1), 410, 205);
+        4096, 2048, 16384, 50), 725, 363);
+    expect_size(texture_resolution_for(true, 250, 125, 1000, 500,
+        4096, 2048, 16384, 10), 324, 162);
+    expect_size(texture_resolution_for(true, 250, 125, 1000, 500,
+        4096, 2048, 16384, 1), 103, 52);
+    expect_size(texture_resolution_for(true, 250, 125, 1000, 500,
+        4096, 2048, 16384, 0.1f), 33, 17);
+    // Without a usable display budget, the source remains the baseline.
+    expect_size(texture_resolution_for(false, 250, 125, 1000, 500,
+        4096, 2048, 16384, 10), 1296, 648);
+    expect_size(texture_resolution_for(true, 0, 0, 1000, 500,
+        4096, 2048, 16384, 10), 1296, 648);
+    expect_size(texture_resolution_for(true, 250, 125, 0, 0,
+        4096, 2048, 16384, 10), 1296, 648);
     expect_size(texture_resolution_for(false, 0, 0, 0, 0,
         4096, 2048, 16384, 0.1f), 130, 65);
     expect_size(texture_resolution_for(true, 0, 0, 0, 0,
@@ -49,6 +63,30 @@ int main() {
     CHECK((texture_fitted_size(INT_MAX, INT_MAX, {4096, 4096, true}) ==
         std::make_pair(4096, 4096)));
     CHECK((texture_fitted_size(0, 131, {64, 64, true}) == std::make_pair(0, 0)));
+
+    // Check actual uploaded pixel area, including aspect fitting and display
+    // rounding. Each step must save storage relative to the previous one,
+    // and track the requested fraction of the 100% atlas within pixel rounding.
+    for (const auto &source : {std::make_pair(4096, 2048),
+            std::make_pair(2048, 4096), std::make_pair(193, 131)}) {
+        const auto baseline = texture_fitted_size(source.first, source.second,
+            texture_resolution_for(true, 250, 125, 1000, 500,
+                source.first, source.second, 16384, 100));
+        const double baseline_area = (double)baseline.first * baseline.second;
+        double previous_area = baseline_area;
+        for (float quality : {90.0f, 80.0f, 70.0f, 60.0f, 50.0f, 40.0f,
+                30.0f, 20.0f, 10.0f, 1.0f, 0.1f}) {
+            const auto size = texture_fitted_size(source.first, source.second,
+                texture_resolution_for(true, 250, 125, 1000, 500,
+                    source.first, source.second, 16384, quality));
+            const double area = (double)size.first * size.second;
+            const double expected = baseline_area * quality / 100.0;
+            const double rounding = baseline.first + baseline.second + 1.0;
+            CHECK(area < previous_area);
+            CHECK(area >= expected - rounding && area <= expected + rounding);
+            previous_area = area;
+        }
+    }
 
     // Every supported quality must be monotonic and fit the GPU/source bounds,
     // including portrait atlases, one-pixel axes and large input dimensions.

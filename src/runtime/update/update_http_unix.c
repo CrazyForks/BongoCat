@@ -112,8 +112,25 @@ BongoCatUpdateFetchResult bongo_cat_update_http_fetch(
     }
     buffer.data[0] = '\0';
     struct curl_slist *headers = NULL;
-    headers = curl_slist_append(headers, "Accept: application/vnd.github+json");
-    headers = curl_slist_append(headers, "X-GitHub-Api-Version: 2022-11-28");
+    const char *request_headers[] = {
+        "Accept: application/vnd.github+json",
+        "X-GitHub-Api-Version: 2022-11-28"
+    };
+    for (size_t i = 0; i < sizeof(request_headers) / sizeof(request_headers[0]); ++i) {
+        struct curl_slist *next = curl_slist_append(headers, request_headers[i]);
+        if (!next) {
+            /* A failed append leaves the existing list owned by the caller. */
+            curl_slist_free_all(headers);
+            free(buffer.data);
+            SDL_LockMutex(service->http_mutex);
+            service->http_request = NULL;
+            SDL_UnlockMutex(service->http_mutex);
+            curl_easy_cleanup(curl);
+            snprintf(error, error_capacity, "Cannot allocate the GitHub request headers");
+            return BONGO_CAT_UPDATE_FETCH_MEMORY;
+        }
+        headers = next;
+    }
     curl_easy_setopt(curl, CURLOPT_URL,
         "https://api.github.com/repos/vladelaina/BongoCat/releases/latest");
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "BongoCat Update Checker/1.0");

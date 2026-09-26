@@ -70,6 +70,7 @@ struct BongoCatImportDialog {
     bool active;
     bool open;
     bool busy;
+    bool worker_done;
 };
 
 void bongo_cat_preferences_import_report_progress(BongoCatImportJob *job,

@@ -83,6 +83,9 @@ bool bongo_cat_ui_init(BongoCatUIBackend *ui, SDL_Window *window,
     const nk_rune *glyph_ranges, float layout_scale, float raster_scale,
     BongoCatError *error);
 void bongo_cat_ui_destroy(BongoCatUIBackend *ui);
+/* Release through another context in the same share group. The owning
+   context must then be destroyed to release its context-local objects. */
+void bongo_cat_ui_destroy_shared(BongoCatUIBackend *ui);
 void bongo_cat_ui_abandon(BongoCatUIBackend *ui);
 void bongo_cat_ui_input_begin(BongoCatUIBackend *ui);
 void bongo_cat_ui_input_end(BongoCatUIBackend *ui);

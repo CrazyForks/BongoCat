@@ -67,26 +67,17 @@ int SDLCALL bongo_cat_preferences_import_worker(void *userdata) {
         (unsigned long long)job->failed_count, (int)job->result);
     SDL_Event event = {0};
     SDL_LockMutex(job->dialog->mutex);
-    bool notify = job->dialog->active;
-    if (notify) {
+    /* The dialog owns the result until the main thread joins this worker.
+       The event only wakes it; a full/filtered queue must not lose ownership. */
+    job->dialog->worker_done = true;
+    if (job->dialog->active) {
         event.type = job->dialog->event_type;
         event.user.windowID = job->window_id;
         event.user.code = BONGO_CAT_IMPORT_COMPLETE_CODE;
         event.user.data1 = job;
         event.user.data2 = job->dialog;
-        notify = SDL_PushEvent(&event);
-    }
-    if (!notify) {
-        job->dialog->worker_job = NULL;
-        job->dialog->busy = false;
-        job->dialog->started_ns = 0;
-        job->dialog->completed = job->dialog->total = 0;
+        SDL_PushEvent(&event);
     }
     SDL_UnlockMutex(job->dialog->mutex);
-    if (!notify) {
-        BongoCatImportDialog *dialog = job->dialog;
-        bongo_cat_preferences_import_job_free(job);
-        bongo_cat_preferences_import_dialog_release(dialog);
-    }
     return 0;
 }

@@ -215,6 +215,7 @@ void bongo_cat_app_loop(BongoCatApp *app) {
             bongo_cat_window_resize_end(app);
         bongo_cat_diagnostics_phase("model-watch-and-refresh");
         uint64_t now = SDL_GetTicksNS();
+        bongo_cat_preferences_update(app->preferences);
         bongo_cat_preferences_model_watch(app->preferences, now);
         bongo_cat_model_refresh_update(app);
         take_instance_wake(app);

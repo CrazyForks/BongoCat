@@ -145,7 +145,8 @@ typedef bool (*BongoCatLive2DTextureDisplaySize)(void *userdata,
     int canvas_height, int *display_width, int *display_height);
 typedef struct BongoCatLive2DTextureOptions {
     bool dynamic_resolution;
-    /* Approximate texture-memory budget: 0.1, 1, then 10 to 100 percent. */
+    /* Approximate texture-memory budget relative to the 100% atlas at the
+       current display size: 0.1, 1, then 10 to 100 percent. */
     float render_quality_percent;
     /* Synchronous planner, called after reading the incoming canvas and before
        allocating its atlases. Returns content pixels, excluding transparent

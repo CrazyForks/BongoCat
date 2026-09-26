@@ -61,6 +61,12 @@ bool bongo_cat_preferences_open_model_import(BongoCatPreferences *value,
 bool bongo_cat_preferences_visible(const BongoCatPreferences *value) {
     return value && value->window && value->visible;
 }
+void bongo_cat_preferences_update(BongoCatPreferences *value) {
+    if (!value) return;
+    /* Reap background work even with settings closed or a lost wake event. */
+    bongo_cat_preferences_import_poll(value->import_dialog, value->app);
+    bongo_cat_about_refresh(value);
+}
 bool bongo_cat_preferences_needs_frame(BongoCatPreferences *value) {
     if (!value) return false;
     uint64_t now = SDL_GetTicksNS();

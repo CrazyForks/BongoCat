@@ -39,7 +39,7 @@
           "maxFPS": "最大帧率"
         },
         "hints": {
-          "dynamicTextureResolution": "根据实际显示尺寸自适应调整纹理精度，在维持画面细节的同时，优化显存资源占用。一般情况下不建议开启",
+          "dynamicTextureResolution": "根据实际显示尺寸自适应调整纹理精度，在维持画面细节的同时，优化显存资源占用。一般情况下不建议开启，默认保持开关开闭即可",
           "renderQuality": "寻找视觉平衡点从而节约内存",
           "hoverRequires": "需要同时开启上面的[鼠标穿透]和[置顶]选项",
           "hoverUnavailable": "当前桌面环境暂不支持鼠标移入隐藏。",

@@ -13,8 +13,8 @@ struct TextureResolution {
 
 /* Pick an atlas size from the physical content display/reference ratio at
    1x, rounding bounds upward. The atlas is a parts sheet, not a window-sized
-   portrait. Quality additionally caps the area relative to the original atlas;
-   it does not multiply an already reduced display budget. */
+   portrait. Quality scales the area relative to the aspect-fitted 100% atlas
+   after applying the display budget, or the source when it is disabled. */
 TextureResolution texture_resolution_for(bool enabled,
     int display_width, int display_height, int reference_width,
     int reference_height, int source_width, int source_height,

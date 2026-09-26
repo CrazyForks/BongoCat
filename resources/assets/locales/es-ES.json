@@ -37,7 +37,7 @@
           "maxFPS": "Frecuencia máxima de fotogramas"
         },
         "hints": {
-          "dynamicTextureResolution": "Ajusta automáticamente la resolución de las texturas al tamaño real de visualización, conservando los detalles de la imagen y optimizando el uso de la memoria de vídeo. Por lo general, no se recomienda activar esta opción.",
+          "dynamicTextureResolution": "Ajusta automáticamente la resolución de las texturas al tamaño real de visualización, conservando los detalles de la imagen y optimizando el uso de la memoria de vídeo. Por lo general, no se recomienda activar esta opción. Puedes dejar el interruptor en su configuración predeterminada.",
           "hoverRequires": "Requiere activar las opciones [Paso de clics] y [Siempre visible] de arriba.",
           "hoverUnavailable": "Ocultar al pasar el cursor no está disponible en el entorno de escritorio actual.",
           "gamepadFourHands": "Muestra siempre dos manos adicionales en el modo mando. El aspecto depende del modelo",
