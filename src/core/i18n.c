@@ -171,6 +171,9 @@ size_t bongo_cat_i18n_glyph_ranges(const BongoCatI18n *value, uint32_t *ranges,
     if (!value || !ranges || capacity < 3) return 0;
     uint32_t points[4096]; size_t count = 0;
     collect_value(yyjson_doc_get_root(value->active), points, &count);
+    /* Missing translations are rendered from the fallback document too. */
+    if (value->fallback != value->active)
+        collect_value(yyjson_doc_get_root(value->fallback), points, &count);
     return build_ranges(points, count, ranges, capacity);
 }
 

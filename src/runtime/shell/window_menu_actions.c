@@ -2,6 +2,7 @@
 #include "window_menu.h"
 #include "bongo_cat/i18n.h"
 #include "bongo_cat/preferences.h"
+#include "bongo_cat/shortcut.h"
 #include "preferences_notice.h"
 
 #include <stdio.h>
@@ -25,6 +26,18 @@ static bool select_model(BongoCatApp *app, const char *id) {
     else SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, BONGO_CAT_NAME,
         message, app->window);
     return false;
+}
+
+static void clear_label(BongoCatApp *app, int tab, const char *label,
+    char output[BONGO_CAT_MENU_LABEL_CAP]) {
+    char id[BONGO_CAT_BEHAVIOR_ID_CAP];
+    bongo_cat_behavior_clear_id(id, app->loaded_model, tab);
+    const BongoCatBehaviorShortcut *binding = bongo_cat_app_behavior_binding(app, id);
+    if (binding && !binding->shortcut_disabled && binding->shortcut[0]) {
+        char shortcut[BONGO_CAT_SHORTCUT_CAP * 2];
+        bongo_cat_shortcut_format(binding->shortcut, shortcut, sizeof(shortcut));
+        snprintf(output, BONGO_CAT_MENU_LABEL_CAP, "%s - %s", label, shortcut);
+    } else snprintf(output, BONGO_CAT_MENU_LABEL_CAP, "%s", label);
 }
 
 void bongo_cat_window_show_context_menu(BongoCatApp *app) {
@@ -57,6 +70,13 @@ void bongo_cat_window_show_context_menu(BongoCatApp *app) {
     bongo_cat_window_behavior_labels(app, motion_names, motion_checked,
         &motion_count, expression_names, &expression_count,
         &current_expression);
+    char clear_motions[BONGO_CAT_MENU_LABEL_CAP], clear_expression[BONGO_CAT_MENU_LABEL_CAP];
+    clear_label(app, 0, tr(app,
+        "pages.preference.model.behaviorModal.labels.clearMotions", "Clear all motions"),
+        clear_motions);
+    clear_label(app, 1, tr(app,
+        "pages.preference.model.behaviorModal.labels.clearExpression", "Clear expression"),
+        clear_expression);
     BongoCatMenuLabels labels = {
         tr(app, "composables.useAppMenu.labels.preference", "Preferences"),
         tr(app, "pages.preference.cat.labels.mirrorMode", "Mirror Mode"),
@@ -75,8 +95,8 @@ void bongo_cat_window_show_context_menu(BongoCatApp *app) {
             "Ctrl+Wheel: opacity"),
         tr(app, "composables.useAppMenu.labels.motion", "Motions"),
         tr(app, "composables.useAppMenu.labels.expression", "Expressions"),
-        tr(app, "pages.preference.model.behaviorModal.labels.clearMotions", "Clear all motions"),
-        tr(app, "pages.preference.model.behaviorModal.labels.clearExpression", "Clear expression"),
+        clear_motions,
+        clear_expression,
         model_names, motion_names, expression_names, motion_checked,
         app->models.count, current_model, motion_count, expression_count,
         current_expression, app->session.window.scale_percent,

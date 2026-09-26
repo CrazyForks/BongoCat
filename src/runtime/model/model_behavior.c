@@ -1,8 +1,24 @@
 #include "runtime.h"
 #include "bongo_cat/audio.h"
 #include "bongo_cat/overlay.h"
+#include "window_menu.h"
 
 #include <string.h>
+
+void bongo_cat_behavior_clear_id(char id[BONGO_CAT_BEHAVIOR_ID_CAP],
+    const char *model_id, int tab) {
+    SDL_snprintf(id, BONGO_CAT_BEHAVIOR_ID_CAP, "@clear:%d:%s", tab, model_id);
+}
+
+bool bongo_cat_behavior_clear(BongoCatApp *app, int tab) {
+    if (!app || tab < 0 || tab > 2) return false;
+    if (tab == 2) {
+        bongo_cat_audio_stop(app->audio);
+        return true;
+    }
+    return bongo_cat_window_behavior_action(app, tab == 0
+        ? BONGO_CAT_MENU_MOTION_CLEAR : BONGO_CAT_MENU_EXPRESSION_CLEAR);
+}
 
 static bool run_behavior_loaded(BongoCatApp *app,
     const BongoCatBehaviorEntry *behavior) {

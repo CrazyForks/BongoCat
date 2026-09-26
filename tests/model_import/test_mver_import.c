@@ -179,6 +179,19 @@ static void behavior_labels_add_font_glyphs(void) {
             sizeof(preferences->glyph_ranges) / sizeof(preferences->glyph_ranges[0]));
         CHECK(bongo_cat_preferences_behavior_glyphs_ready(preferences));
         CHECK(range_has(preferences->glyph_ranges, 0x4e02 + 599 * 4));
+        /* New names must be covered while editing, before saving overrides. */
+        app->preferences = preferences;
+        snprintf(preferences->model_rename.id, sizeof(preferences->model_rename.id), "model");
+        snprintf(preferences->behavior_rename.id, sizeof(preferences->behavior_rename.id), "behavior");
+        snprintf(preferences->model_rename.text, sizeof(preferences->model_rename.text), "\xE9\xBE\x99");
+        snprintf(preferences->behavior_rename.text, sizeof(preferences->behavior_rename.text), "\xE9\x9B\xAA");
+        CHECK(!bongo_cat_preferences_model_glyphs_ready(preferences, preferences->model_rename.text));
+        CHECK(!bongo_cat_preferences_model_glyphs_ready(preferences, preferences->behavior_rename.text));
+        bongo_cat_preferences_model_glyphs(app, preferences->glyph_ranges,
+            sizeof(preferences->glyph_ranges) / sizeof(preferences->glyph_ranges[0]));
+        CHECK(bongo_cat_preferences_model_glyphs_ready(preferences, preferences->model_rename.text));
+        CHECK(bongo_cat_preferences_model_glyphs_ready(preferences, preferences->behavior_rename.text));
+        app->preferences = NULL;
         free(preferences);
     }
     bongo_cat_behaviors_clear(&app->behaviors); free(app);

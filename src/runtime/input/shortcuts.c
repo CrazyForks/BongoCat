@@ -38,6 +38,19 @@ static bool behavior_shortcut(BongoCatApp *app, const BongoCatInputEvent *event,
     const BongoCatModelEntry *model = bongo_cat_models_find(&app->models, app->loaded_model);
     bool mver = model && (model->source_format == BONGO_CAT_MODEL_SOURCE_MVER ||
         model->source_format == BONGO_CAT_MODEL_SOURCE_MVER_PATCH);
+    bool cleared = false;
+    for (int tab = 0; tab < 3; ++tab) {
+        char id[BONGO_CAT_BEHAVIOR_ID_CAP];
+        bongo_cat_behavior_clear_id(id, app->loaded_model, tab);
+        const BongoCatBehaviorShortcut *binding = bongo_cat_app_behavior_binding(app, id);
+        if (binding && !binding->shortcut_disabled &&
+            bongo_cat_shortcut_matches(&app->shortcut_state, event, binding->shortcut)) {
+            bongo_cat_behavior_clear(app, tab);
+            cleared = true;
+        }
+    }
+    /* All matching stop commands run; do not restart a behavior on the same key. */
+    if (cleared) return true;
     for (size_t i = 0; i < app->behaviors.count; ++i) {
         BongoCatBehaviorEntry *behavior = &app->behaviors.entries[i];
         if (behavior->kind == BONGO_CAT_BEHAVIOR_SOUND) continue;

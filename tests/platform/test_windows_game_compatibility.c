@@ -71,8 +71,15 @@ static void test_deferred_autostart(BongoCatApp *app) {
     CHECK(bongo_cat_windows_game_compatibility_startup(app, &restarting, &error));
     CHECK(!restarting && configurations == 1 && configured_admin[0]);
     CHECK(persisted.app.autostart_admin);
+
+    app->settings = persisted;
+    app->autostart_launch = true;
+    launches = saves = configurations = 0;
+    launch_ok = configure_ok = save_ok = false;
+    restarting = true;
     CHECK(bongo_cat_windows_game_compatibility_startup(app, &restarting, &error));
-    CHECK(configurations == 1); /* Ordinary starts do not rewrite the task. */
+    CHECK(!restarting);
+    CHECK(launches == 0 && configurations == 0 && saves == 0);
 }
 
 static void test_cancelled_elevation(BongoCatApp *app) {

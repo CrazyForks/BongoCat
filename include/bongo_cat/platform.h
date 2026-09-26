@@ -126,6 +126,8 @@ void bongo_cat_platform_raise_window(SDL_Window *window);
 /* Configure platform-native chrome for the preferences window when available. */
 void bongo_cat_platform_configure_preferences_window(SDL_Window *window);
 bool bongo_cat_platform_open_directory(const char *path);
+/* Show the parent directory and select the item when supported. */
+bool bongo_cat_platform_reveal_path(const char *path);
 bool bongo_cat_platform_set_geometry(BongoCatPlatform *platform,
     int x, int y, int width, int height);
 void bongo_cat_platform_begin_drag(BongoCatPlatform *platform,

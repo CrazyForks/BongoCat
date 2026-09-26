@@ -140,11 +140,11 @@
             "motionGroupIndex": "Grupo de Movimento {index}",
             "expressionIndex": "Expressão {index}",
             "clearMotions": "Limpar todos os movimentos",
-            "clearExpression": "Limpar express?o",
+            "clearExpression": "Limpar expressão",
             "selectAll": "Selecionar tudo"
           },
           "hints": {
-            "randomPool": "Adicionar ao grupo aleat?rio"
+            "randomPool": "Adicionar ao grupo aleatório"
           }
         }
       },
@@ -246,7 +246,7 @@
     "startup": {
       "failed": "Não foi possível iniciar o BongoCat.",
       "detail": "Consulte o log de diagnóstico para obter detalhes técnicos.",
-      "openglUnavailable": "O driver gr?fico est? ausente. Instale um driver gr?fico e tente novamente.",
+      "openglUnavailable": "O BongoCat precisa de um driver gráfico para funcionar. Parece que ele está ausente no seu computador; instale um driver gráfico e tente novamente.",
       "diagnosticLog": "Log de diagnóstico:"
     },
     "support": {

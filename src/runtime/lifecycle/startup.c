@@ -204,14 +204,12 @@ void bongo_cat_startup_failure(BongoCatApp *app, const BongoCatError *error) {
             "native.startup.failed", "BongoCat could not start.");
         const char *reason = opengl_unavailable
             ? bongo_cat_i18n_get(app->i18n, "native.startup.openglUnavailable",
-                "OpenGL 3.3 is unavailable. Install the latest graphics driver from Intel, NVIDIA, or AMD. Remote desktop and virtual machines may also provide incomplete OpenGL support.")
+                "BongoCat needs a graphics driver to run. Your computer seems to be missing one. Please install a graphics driver and try again.")
             : bongo_cat_i18n_get(app->i18n, "native.startup.detail",
                 "See the diagnostic log for technical details.");
-        const char *detail = bongo_cat_i18n_get(app->i18n,
-            "native.startup.detail", "See the diagnostic log for technical details.");
         char body[1024];
         if (opengl_unavailable)
-            snprintf(body, sizeof(body), "%s\n\n%s\n\n%s", title, reason, detail);
+            snprintf(body, sizeof(body), "%s", reason);
         else snprintf(body, sizeof(body), "%s\n\n%s", title, reason);
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, BONGO_CAT_NAME,
             body, app->window);

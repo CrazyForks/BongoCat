@@ -115,7 +115,7 @@ static void open_model_directory(BongoCatPreferences *value,
     const char *directory = entry->storage_directory[0] ?
         entry->storage_directory : entry->directory;
     if (bongo_cat_path_is_dir(directory) &&
-        bongo_cat_platform_open_directory(directory)) return;
+        bongo_cat_platform_reveal_path(directory)) return;
     bongo_cat_preferences_notice_show(value->app, tr(value->app,
         "pages.preference.model.hints.openDirectoryFailed",
         "Unable to open model directory"), true);

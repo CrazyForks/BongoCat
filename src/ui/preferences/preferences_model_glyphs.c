@@ -146,6 +146,11 @@ void bongo_cat_preferences_model_glyphs(const BongoCatApp *app,
             add_text(ranges, capacity, &used, node->binding.label);
     if (app->preferences) {
         const BongoCatPreferences *preferences = app->preferences;
+        /* Unsaved names can contain characters absent from every model/locale. */
+        if (preferences->model_rename.id[0])
+            add_text(ranges, capacity, &used, preferences->model_rename.text);
+        if (preferences->behavior_rename.id[0])
+            add_text(ranges, capacity, &used, preferences->behavior_rename.text);
         const BongoCatBehaviorCatalog *catalog =
             bongo_cat_preferences_behavior_catalog(preferences);
         for (size_t i = 0; i < catalog->count; ++i)

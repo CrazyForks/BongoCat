@@ -251,6 +251,20 @@ bool bongo_cat_platform_open_directory(const char *path) {
         WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
 
+bool bongo_cat_platform_reveal_path(const char *path) {
+    if (!path || !path[0]) return false;
+    char *parent = strdup(path);
+    if (!parent) return false;
+    /* xdg-open has no portable item-selection option. */
+    size_t length = strlen(parent);
+    while (length > 1 && parent[length - 1] == '/') parent[--length] = '\0';
+    char *separator = strrchr(parent, '/');
+    if (separator) separator[separator == parent ? 1 : 0] = '\0';
+    bool opened = bongo_cat_platform_open_directory(separator ? parent : ".");
+    free(parent);
+    return opened;
+}
+
 void bongo_cat_platform_set_tray_callbacks(void *tray,
     BongoCatTrayClick left_click, BongoCatModalTick modal_tick,
     BongoCatTrayRestore restore, void *userdata) {

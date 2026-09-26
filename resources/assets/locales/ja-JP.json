@@ -139,12 +139,12 @@
             "motionIndex": "モーション {index}",
             "motionGroupIndex": "モーショングループ {index}",
             "expressionIndex": "表情 {index}",
-            "clearMotions": "????????????",
-            "clearExpression": "?????",
-            "selectAll": "?????"
+            "clearMotions": "すべてのモーションを停止",
+            "clearExpression": "すべての表情を解除",
+            "selectAll": "すべて選択"
           },
           "hints": {
-            "randomPool": "??????????"
+            "randomPool": "ランダム再生の対象に追加"
           }
         }
       },
@@ -246,7 +246,7 @@
     "startup": {
       "failed": "BongoCat を起動できませんでした。",
       "detail": "技術的な詳細は診断ログを確認してください。",
-      "openglUnavailable": "?????????????????????????????????????????????",
+      "openglUnavailable": "BongoCat の実行にはグラフィックスドライバーが必要です。お使いのパソコンにドライバーがないようです。インストールしてから、もう一度お試しください。",
       "diagnosticLog": "診断ログ："
     },
     "support": {

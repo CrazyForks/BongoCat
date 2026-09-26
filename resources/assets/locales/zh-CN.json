@@ -146,8 +146,8 @@
             "motionIndex": "动作{index}",
             "motionGroupIndex": "动作组{index}",
             "expressionIndex": "表情{index}",
-            "clearMotions": "??????",
-            "clearExpression": "????"
+            "clearMotions": "停止所有动作",
+            "clearExpression": "停止所有表情"
           }
         }
       },
@@ -249,7 +249,7 @@
     "startup": {
       "failed": "BongoCat 无法启动。",
       "detail": "请查看诊断日志了解技术详情。",
-      "openglUnavailable": "??????????????????????",
+      "openglUnavailable": "BongoCat 需要显卡驱动才能运行，您的电脑似乎缺少显卡驱动，请安装显卡驱动后重试",
       "diagnosticLog": "诊断日志："
     },
     "support": {

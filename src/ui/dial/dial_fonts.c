@@ -28,6 +28,10 @@ static nk_rune *ranges(Dial *d) {
         used[i >> 3] |= (uint8_t)(1u << (i & 7));
     for (int i = 0; i < d->count; ++i) collect(used,d->items[i].label);
     collect(used,d->labels->add_model);
+    /* These built-in children are not part of the model's behavior arrays.
+       Include them explicitly so their glyphs never depend on model names. */
+    collect(used,d->labels->motion_clear);
+    collect(used,d->labels->expression_clear);
     for (size_t i = 0; i < d->labels->model_count; ++i) collect(used,d->labels->model_names[i]);
     for (size_t i = 0; i < d->labels->motion_count; ++i) collect(used,d->labels->motion_names[i]);
     for (size_t i = 0; i < d->labels->expression_count; ++i) collect(used,d->labels->expression_names[i]);

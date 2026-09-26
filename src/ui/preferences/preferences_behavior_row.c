@@ -167,6 +167,18 @@ static bool shortcut_editor(BongoCatPreferences *value,
     return hit(context, bounds, enabled);
 }
 
+void bongo_cat_preferences_behavior_clear_shortcut_draw(BongoCatPreferences *value,
+    struct nk_context *context, struct nk_command_buffer *canvas,
+    struct nk_rect bounds, BongoCatUIPalette palette, float opacity, bool enabled) {
+    char id[BONGO_CAT_BEHAVIOR_ID_CAP];
+    bongo_cat_behavior_clear_id(id, value->behavior_model_id, value->behavior_tab);
+    BongoCatBehaviorShortcut *binding = binding_for(value->app, id);
+    if (binding && shortcut_editor(value, context, canvas, bounds, id, binding,
+            palette, opacity, enabled))
+        bongo_cat_preferences_shortcut_begin(value, id, binding->shortcut,
+            sizeof(binding->shortcut));
+}
+
 static void draw_name(BongoCatPreferences *value, struct nk_context *context,
     struct nk_command_buffer *canvas, struct nk_rect bounds,
     const BongoCatBehaviorEntry *entry, BongoCatBehaviorShortcut *binding,

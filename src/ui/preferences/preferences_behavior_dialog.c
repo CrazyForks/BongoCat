@@ -77,6 +77,7 @@ static size_t row_count(const BongoCatPreferences *value) {
    how many actions are available.  Keep this in sync with row_count(): the
    motion visibility filter and the special stop-all-audio row are included. */
 static size_t tab_count(const BongoCatPreferences *value, int tab) {
+    if (!tab_available(value, tab)) return 0;
     size_t count = 1; /* clear current category */
     const BongoCatBehaviorCatalog *catalog =
         bongo_cat_preferences_behavior_catalog(value);
@@ -268,26 +269,40 @@ static void draw_rows(BongoCatPreferences *value, struct nk_context *context,
     if (count > 0) {
         struct nk_rect row = nk_rect(viewport.x,
             viewport.y - render_offset, row_width, 56);
+        bool row_enabled = enabled &&
+            nk_input_is_mouse_hovering_rect(&context->input, viewport);
         const char *label = value->behavior_tab == 0
             ? tr(value, "pages.preference.model.behaviorModal.labels.clearMotions", "Clear all motions")
             : value->behavior_tab == 1
             ? tr(value, "pages.preference.model.behaviorModal.labels.clearExpression", "Clear expression")
             : tr(value, "pages.preference.model.behaviorModal.labels.stopAllAudio", "Stop all audio");
         struct nk_rect button = nk_rect(row.x + row.w - 52, row.y + 10, 36, 36);
-        bool hover = enabled && nk_input_is_mouse_hovering_rect(&context->input, button);
+        struct nk_rect shortcut = nk_rect(button.x - 188, row.y + 10, 180, 36);
+        bool hover = row_enabled && nk_input_is_mouse_hovering_rect(&context->input, button);
         nk_fill_rect(canvas, row, 8, alpha(hover ? p.hover : p.field, content_opacity));
-        text(canvas, nk_rect(row.x + 12, row.y + 17, row.w - 78, 22), label,
+        text(canvas, nk_rect(row.x + 12, row.y + 17, shortcut.x - row.x - 20, 22), label,
             value->ui.caption_font, alpha(p.text, content_opacity));
+        bongo_cat_preferences_behavior_clear_shortcut_draw(value, context, canvas,
+            shortcut, p, content_opacity, row_enabled);
         nk_fill_rect(canvas, button, 10, alpha(hover ? p.hover_pink : p.field, content_opacity));
         nk_stroke_rect(canvas, button, 10, 1, alpha(hover ? p.pink : p.border_subtle, content_opacity));
-        nk_fill_rect(canvas, nk_rect(button.x + 12, button.y + 12, 12, 12), 2,
+        bongo_cat_preferences_icon_draw(value, canvas, BONGO_CAT_UI_ICON_PLAY,
+            nk_rect(button.x + 10, button.y + 10, 16, 16),
             alpha(hover ? p.pink : p.text, content_opacity));
         if (hover) bongo_cat_ui_cursor_hover_rect(context, button, BONGO_CAT_UI_CURSOR_POINTER);
-        if (hit(context, button, enabled)) {
-            BongoCatMenuAction clear = value->behavior_tab == 0 ? BONGO_CAT_MENU_MOTION_CLEAR
-                : value->behavior_tab == 1 ? BONGO_CAT_MENU_EXPRESSION_CLEAR : BONGO_CAT_MENU_AUDIO_FIRST - 1;
-            if (clear == BONGO_CAT_MENU_AUDIO_FIRST - 1) bongo_cat_audio_stop(value->app->audio);
-            else bongo_cat_window_behavior_action(value->app, clear);
+        if (hit(context, button, row_enabled)) {
+            BongoCatError error = {0};
+            if (bongo_cat_preferences_behavior_model_loaded(value) ||
+                bongo_cat_app_select_model_with_error(value->app,
+                    value->behavior_model_id, &error)) {
+                bongo_cat_behavior_clear(value->app, value->behavior_tab);
+            } else {
+                SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
+                    "Cannot switch to behavior model %s: %s",
+                    value->behavior_model_id, error.message);
+                bongo_cat_preferences_notice_show(value->app, tr(value,
+                    "native.modelLoadFailed", "Unable to display this model"), true);
+            }
             value->render_dirty = true;
         }
         shown++;
@@ -300,7 +315,8 @@ static void draw_rows(BongoCatPreferences *value, struct nk_context *context,
         if (row.y + row.h >= viewport.y && row.y <= viewport.y + viewport.h)
             bongo_cat_preferences_behavior_row_draw(value, context, canvas,
                 row, entry, p,
-                content_opacity, enabled);
+                content_opacity, enabled &&
+                    nk_input_is_mouse_hovering_rect(&context->input, viewport));
     }
     nk_push_scissor(canvas, nk_window_get_content_region(context));
 }
@@ -308,6 +324,7 @@ static void draw_rows(BongoCatPreferences *value, struct nk_context *context,
 static void draw_random_pool_controls(BongoCatPreferences *value,
     struct nk_context *context, struct nk_command_buffer *canvas,
     struct nk_rect panel, BongoCatUIPalette p, float opacity, bool enabled) {
+    if (!tab_available(value, value->behavior_tab)) return;
     const char *title = tr(value,
         "pages.preference.model.behaviorModal.hints.randomPool", "加入随机池");
     text(canvas, nk_rect(panel.x + 20, panel.y + 135, panel.w - 180, 24),

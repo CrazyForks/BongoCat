@@ -8,6 +8,11 @@
 #include "window_snapshot.h"
 #include <SDL3/SDL.h>
 
+/* Built-in category commands use private settings, including for Mver models. */
+void bongo_cat_behavior_clear_id(char id[BONGO_CAT_BEHAVIOR_ID_CAP],
+    const char *model_id, int tab);
+bool bongo_cat_behavior_clear(BongoCatApp *app, int tab);
+
 BongoCatResult bongo_cat_window_create(BongoCatApp *app, BongoCatError *error);
 bool bongo_cat_app_initialize(BongoCatApp *app, int argc,
     char **argv, BongoCatError *error);

@@ -144,8 +144,8 @@
             "motionIndex": "動作{index}",
             "motionGroupIndex": "動作組{index}",
             "expressionIndex": "表情{index}",
-            "clearMotions": "??????",
-            "clearExpression": "????"
+            "clearMotions": "停止所有動作",
+            "clearExpression": "停止所有表情"
           }
         }
       },
@@ -247,7 +247,7 @@
     "startup": {
       "failed": "BongoCat 無法啟動。",
       "detail": "請查看診斷日誌以瞭解技術詳情。",
-      "openglUnavailable": "?????????????????????",
+      "openglUnavailable": "BongoCat 需要顯示卡驅動程式才能執行，您的電腦似乎缺少顯示卡驅動程式，請安裝後再試。",
       "diagnosticLog": "診斷日誌："
     },
     "support": {

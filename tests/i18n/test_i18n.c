@@ -161,6 +161,7 @@ int main(void) {
         "native.preferencesWindowTitle",
         "native.startup.failed",
         "native.startup.detail",
+        "native.startup.openglUnavailable",
         "native.startup.diagnosticLog",
         "native.support.website",
         "native.support.openLogs",
@@ -186,16 +187,21 @@ int main(void) {
         uint32_t ranges[2048];
         if (!i18n || bongo_cat_i18n_glyph_ranges(i18n, ranges, 2048) < 3 ||
             ranges[0] != 0x20 || !includes(ranges, expected[language]) ||
-            !covers_value(ranges, yyjson_doc_get_root(document))) {
+            !covers_value(ranges, yyjson_doc_get_root(document)) ||
+            !covers_value(ranges, yyjson_doc_get_root(reference))) {
             fprintf(stderr, "Missing U+%04X for %s\n", expected[language], name);
             return 3;
         }
         for (size_t i = 0; i < sizeof(required_ui_keys) /
             sizeof(required_ui_keys[0]); ++i) {
             const char *missing = "__missing_translation__";
-            if (!strcmp(bongo_cat_i18n_get(i18n, required_ui_keys[i], missing),
-                missing)) {
-                fprintf(stderr, "Missing required translation %s for %s\n",
+            const char *translation = bongo_cat_i18n_get(i18n,
+                required_ui_keys[i], missing);
+            /* Lossy encoding can produce ASCII question marks that remain
+               valid UTF-8, so encoding validation alone cannot catch it. */
+            if (!strcmp(translation, missing) || !translation[0] ||
+                strstr(translation, "??")) {
+                fprintf(stderr, "Missing or corrupt required translation %s for %s\n",
                     required_ui_keys[i], name);
                 return 7;
             }

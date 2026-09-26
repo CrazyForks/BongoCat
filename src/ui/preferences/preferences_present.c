@@ -67,6 +67,16 @@ void bongo_cat_preferences_render(BongoCatPreferences *value) {
         bongo_cat_preferences_reload_language(value);
     }
     bool notice_font_reload = false;
+    const BongoCatPreferencesTextSession *sessions[] = {
+        &value->model_rename, &value->behavior_rename};
+    for (size_t i = 0; i < sizeof(sessions) / sizeof(sessions[0]); ++i) {
+        if (sessions[i]->id[0] && sessions[i]->text[0] &&
+            !bongo_cat_preferences_model_glyphs_ready(value, sessions[i]->text)) {
+            /* Rebuild before drawing newly typed or pasted characters. */
+            value->font_reload_pending = true;
+            value->font_reload_defer_once = false;
+        }
+    }
     for (size_t i = 0; i < sizeof(value->notices) / sizeof(value->notices[0]); ++i)
         if (value->notices[i].message[0] && value->notices[i].until_ns > now &&
             !bongo_cat_preferences_model_glyphs_ready(value, value->notices[i].message))

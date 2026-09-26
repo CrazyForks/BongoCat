@@ -139,12 +139,12 @@
             "motionIndex": "모션 {index}",
             "motionGroupIndex": "모션 그룹 {index}",
             "expressionIndex": "표정 {index}",
-            "clearMotions": "?? ?? ???",
-            "clearExpression": "?? ???",
-            "selectAll": "?? ??"
+            "clearMotions": "모든 모션 중지",
+            "clearExpression": "모든 표정 해제",
+            "selectAll": "모두 선택"
           },
           "hints": {
-            "randomPool": "??? ??? ??"
+            "randomPool": "무작위 재생 목록에 추가"
           }
         }
       },
@@ -246,7 +246,7 @@
     "startup": {
       "failed": "BongoCat을 시작할 수 없습니다.",
       "detail": "기술적인 세부 정보는 진단 로그를 확인하세요.",
-      "openglUnavailable": "??? ????? ????. ??? ????? ??? ? ?? ?????.",
+      "openglUnavailable": "BongoCat을 실행하려면 그래픽 드라이버가 필요합니다. 컴퓨터에 그래픽 드라이버가 없는 것 같습니다. 설치한 후 다시 시도하세요.",
       "diagnosticLog": "진단 로그:"
     },
     "support": {
