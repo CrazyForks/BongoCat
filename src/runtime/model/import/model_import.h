@@ -127,7 +127,7 @@ bool bongo_cat_import_render_options(const char *directory,
 /* Recursive source scanning. */
 BongoCatResult bongo_cat_import_scan(const char *root,
     BongoCatImportVisitor visitor, void *userdata, BongoCatError *error);
-BongoCatResult bongo_cat_import_scan_diagnostic(const char *root,
+BongoCatResult bongo_cat_import_scan_packages(const char *root,
     BongoCatImportVisitor visitor, void *userdata, BongoCatError *error);
 BongoCatResult bongo_cat_import_scan_budget(const char *root,
     BongoCatImportVisitor visitor, void *userdata, uint64_t budget_ns,

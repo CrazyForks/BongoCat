@@ -90,6 +90,39 @@ void test_model_import_archive(void) {
         CHECK(receipt.count > 0 && receipt.installed_count == 0);
         bongo_cat_import_session_destroy(session);
     }
+    {
+        char collection[BONGO_CAT_PATH_CAP], first[BONGO_CAT_PATH_CAP];
+        char second[BONGO_CAT_PATH_CAP], bundle[BONGO_CAT_PATH_CAP];
+        CHECK(child(collection, sizeof(collection), root, "collection", true));
+        CHECK(child(first, sizeof(first), collection, "first.zip", false));
+        CHECK(child(second, sizeof(second), collection, "second.ZIP", false));
+        CHECK(child(bundle, sizeof(bundle), root, "bundle.zip", false));
+        CHECK(SDL_CopyFile(archive, first));
+        CHECK(SDL_CopyFile(archive, second));
+        mz_zip_archive zip = {0};
+        CHECK(mz_zip_writer_init_heap(&zip, 0, 0));
+        ZipTree tree = {&zip, collection, "collection/", 0};
+        CHECK(bongo_cat_path_enumerate(collection, zip_item, &tree));
+        CHECK(save_zip(&zip, bundle));
+        BongoCatImportSession *session = bongo_cat_import_session_create(models,
+            &error);
+        CHECK(session != NULL);
+        const char *sources[] = {collection, bundle};
+        for (size_t i = 0; i < SDL_arraysize(sources); ++i) {
+            BongoCatImportBatchStats stats = {0};
+            CHECK(bongo_cat_import_session_install_progressive(session,
+                sources[i], NULL, NULL, &stats, &error) == BONGO_CAT_OK);
+            CHECK(stats.succeeded_count == 2 && stats.failed_count == 0);
+        }
+        CHECK(write_text(second, "not a zip"));
+        BongoCatImportBatchStats stats = {0};
+        CHECK(bongo_cat_import_session_install_progressive(session, collection,
+            NULL, NULL, &stats, &error) == BONGO_CAT_ERROR_FORMAT);
+        CHECK(stats.succeeded_count == 1 && stats.failed_count == 1);
+        CHECK(stats.failure_name_count == 1 &&
+            strcmp(stats.failure_names[0], "second.ZIP") == 0);
+        bongo_cat_import_session_destroy(session);
+    }
     /* Miniz writes the UTF-8 flag by default. Legacy bytes must explicitly
        omit it, just like ZIPs produced by older Chinese archivers. */
     const struct {

@@ -24,9 +24,8 @@ void test_model_import_source(void) {
     CHECK(child(moc, sizeof(moc), package,
         "img/standard/cat_model/cat.moc3", false));
     CHECK(bongo_cat_import_source_directory(moc, normalized,
-        sizeof(normalized), &error) == BONGO_CAT_OK);
-    CHECK(strcmp(normalized, package) == 0);
-    CHECK(bongo_cat_import_source_directory(moc, normalized, 2,
+        sizeof(normalized), &error) == BONGO_CAT_ERROR_FORMAT);
+    CHECK(bongo_cat_import_source_directory(root, normalized, 2,
         &error) == BONGO_CAT_ERROR_ARGUMENT);
     CHECK(bongo_cat_import_source_directory(NULL, normalized,
         sizeof(normalized), &error) == BONGO_CAT_ERROR_ARGUMENT);
@@ -36,13 +35,12 @@ void test_model_import_source(void) {
     CHECK(child(directory, sizeof(directory), package,
         BONGO_CAT_SKIN_CONFIG_FILE, false));
     CHECK(SDL_RenamePath(config, directory));
-    CHECK(bongo_cat_import_source_directory(moc, normalized,
+    CHECK(bongo_cat_import_source_directory(directory, normalized,
         sizeof(normalized), &error) == BONGO_CAT_OK);
     CHECK(strcmp(normalized, package) == 0);
     CHECK(write_text(directory, "invalid json"));
-    CHECK(bongo_cat_import_source_directory(moc, normalized,
-        sizeof(normalized), &error) == BONGO_CAT_ERROR_FORMAT);
-    CHECK(strstr(error.message, "Mver configuration") != NULL);
+    CHECK(bongo_cat_import_source_directory(directory, normalized,
+        sizeof(normalized), &error) == BONGO_CAT_OK);
 
     CHECK(child(package, sizeof(package), root, "tauri", true));
     CHECK(child(directory, sizeof(directory), package, "nested", true));
@@ -58,8 +56,7 @@ void test_model_import_source(void) {
     CHECK(SDL_CopyFile(texture, directory));
     error = (BongoCatError){0};
     CHECK(bongo_cat_import_source_directory(moc, normalized,
-        sizeof(normalized), &error) == BONGO_CAT_OK);
-    CHECK(strcmp(normalized, package) == 0 && error.code == BONGO_CAT_OK);
+        sizeof(normalized), &error) == BONGO_CAT_ERROR_FORMAT);
     CHECK(bongo_cat_import_source_directory(config, normalized,
         sizeof(normalized), &error) == BONGO_CAT_OK);
     CHECK(strcmp(normalized, package) == 0);

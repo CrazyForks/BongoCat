@@ -1,4 +1,5 @@
 #include "model_import.h"
+#include "model_import_archive.h"
 #include "model_import_probe.h"
 #include "bongo_cat/path.h"
 
@@ -17,6 +18,7 @@ typedef struct ChildList {
     char paths[IMPORT_CHILD_CAP][BONGO_CAT_PATH_CAP];
     size_t count, entries;
     bool limited;
+    bool archives;
 } ChildList;
 
 typedef struct ImportWorkspace {
@@ -32,6 +34,7 @@ typedef struct ImportScan {
     uint64_t deadline;
     bool limited;
     bool diagnostic;
+    bool archives;
 } ImportScan;
 
 typedef struct ImportQueue {
@@ -49,7 +52,8 @@ static BongoCatPathVisit collect_child(void *userdata,
     if (name[0] == '.') return BONGO_CAT_PATH_CONTINUE;
     char path[BONGO_CAT_PATH_CAP];
     if (bongo_cat_path_join(path, sizeof(path), dirname, name) &&
-        bongo_cat_path_is_dir(path))
+        (bongo_cat_path_is_dir(path) || (list->archives &&
+            bongo_cat_import_is_archive(path) && bongo_cat_path_is_file(path))))
         snprintf(list->paths[list->count++], BONGO_CAT_PATH_CAP, "%s", path);
     return BONGO_CAT_PATH_CONTINUE;
 }
@@ -95,6 +99,12 @@ static BongoCatResult scan_node(ImportScan *scan, ImportQueue *queue,
         return BONGO_CAT_ERROR_MEMORY;
     }
     BongoCatError local = {0};
+    if (scan->archives && bongo_cat_import_is_archive(source)) {
+        BongoCatResult result = scan->visitor(scan->userdata, source,
+            &work->discovery, scan->error);
+        free(work);
+        return result;
+    }
     BongoCatImportFormat format = BONGO_CAT_IMPORT_MVER;
     int found = bongo_cat_import_probe_exact(source, &work->discovery,
         &format, BONGO_CAT_IMPORT_PROBE_FALLBACK, scan->diagnostic, &local);
@@ -119,6 +129,7 @@ static BongoCatResult scan_node(ImportScan *scan, ImportQueue *queue,
         free(work); return result;
     }
     if (depth < IMPORT_SCAN_DEPTH) {
+        work->children.archives = scan->archives;
         bool enumerated = bongo_cat_path_enumerate(source, collect_child,
             &work->children);
         if (!enumerated) {
@@ -145,7 +156,7 @@ static BongoCatResult scan_node(ImportScan *scan, ImportQueue *queue,
 
 static BongoCatResult scan_with_budget(const char *root,
     BongoCatImportVisitor visitor, void *userdata, uint64_t budget_ns,
-    bool diagnostic, BongoCatError *error) {
+    bool diagnostic, bool archives, BongoCatError *error) {
     if (!root || !visitor) return BONGO_CAT_ERROR_ARGUMENT;
     ImportWorkspace *work = calloc(1, sizeof(*work));
     ImportQueue *queue = calloc(1, sizeof(*queue));
@@ -160,12 +171,13 @@ static BongoCatResult scan_with_budget(const char *root,
     uint64_t deadline = budget_ns <= UINT64_MAX - now
         ? now + budget_ns : UINT64_MAX;
     ImportScan scan = {
-        visitor, userdata, error, 0, deadline, false, diagnostic
+        visitor, userdata, error, 0, deadline, false, diagnostic, archives
     };
     BongoCatResult result = BONGO_CAT_OK;
     if (diagnostic) SDL_Log(
         "[runtime] Model import scan started: budget_ms=%.1f path=%s",
         budget_ns / 1000000.0, root);
+    work->children.archives = archives;
     if (bongo_cat_path_enumerate(root, collect_child, &work->children)) {
         if (work->children.limited) scan.limited = true;
         qsort(work->children.paths, work->children.count,
@@ -195,17 +207,17 @@ static BongoCatResult scan_with_budget(const char *root,
 BongoCatResult bongo_cat_import_scan_budget(const char *root,
     BongoCatImportVisitor visitor, void *userdata, uint64_t budget_ns,
     BongoCatError *error) {
-    return scan_with_budget(root, visitor, userdata, budget_ns, false, error);
+    return scan_with_budget(root, visitor, userdata, budget_ns, false, false, error);
 }
 
 BongoCatResult bongo_cat_import_scan(const char *root,
     BongoCatImportVisitor visitor, void *userdata, BongoCatError *error) {
     return scan_with_budget(root, visitor, userdata,
-        IMPORT_SCAN_BUDGET_NS, false, error);
+        IMPORT_SCAN_BUDGET_NS, false, false, error);
 }
 
-BongoCatResult bongo_cat_import_scan_diagnostic(const char *root,
+BongoCatResult bongo_cat_import_scan_packages(const char *root,
     BongoCatImportVisitor visitor, void *userdata, BongoCatError *error) {
     return scan_with_budget(root, visitor, userdata,
-        IMPORT_SCAN_BUDGET_NS, true, error);
+        IMPORT_SCAN_BUDGET_NS, true, true, error);
 }

@@ -27,6 +27,12 @@ typedef struct ProgressiveScan {
     size_t model_count;
 } ProgressiveScan;
 
+static BongoCatResult install_progressive_source(
+    BongoCatImportSession *session, const char *source,
+    BongoCatImportReceiptCallback callback, void *userdata,
+    BongoCatImportBatchStats *stats, unsigned depth, size_t *remaining,
+    BongoCatError *error);
+
 static BongoCatResult collect_unit(void *userdata, const char *source,
     BongoCatImportDiscovery *discovery, BongoCatError *error) {
     ProgressiveScan *scan = userdata;
@@ -129,7 +135,8 @@ static BongoCatResult fail_source(BongoCatImportBatchStats *stats,
 static BongoCatResult install_progressive_directory(
     BongoCatImportSession *session, const char *source,
     BongoCatImportReceiptCallback callback, void *userdata,
-    BongoCatImportBatchStats *stats, BongoCatError *error) {
+    BongoCatImportBatchStats *stats, unsigned depth, size_t *remaining,
+    BongoCatError *error) {
     if (!stats) return BONGO_CAT_ERROR_ARGUMENT;
     *stats = (BongoCatImportBatchStats){0};
     if (!session || !source)
@@ -173,7 +180,7 @@ static BongoCatResult install_progressive_directory(
     uint64_t scan_started = SDL_GetTicksNS();
     SDL_Log("[runtime] Model import container scan started: path=%s",
         directory);
-    BongoCatResult scanned = bongo_cat_import_scan_diagnostic(directory,
+    BongoCatResult scanned = bongo_cat_import_scan_packages(directory,
         collect_unit, scan, error);
     SDL_Log("[runtime] Model import container scan completed: result=%d "
         "units=%llu variants=%llu elapsed_ms=%.1f path=%s", (int)scanned,
@@ -191,8 +198,19 @@ static BongoCatResult install_progressive_directory(
     for (size_t i = 0; i < scan->unit_count; ++i) {
         if (redundant_patch(scan, &scan->units[i])) continue;
         BongoCatError local = {0};
-        BongoCatResult result = install_one(session, scan->units[i].source,
-            callback, userdata, stats, &local);
+        BongoCatResult result;
+        if (bongo_cat_import_is_archive(scan->units[i].source)) {
+            BongoCatImportBatchStats nested = {0};
+            result = install_progressive_source(session, scan->units[i].source,
+                callback, userdata, &nested, depth + 1, remaining, &local);
+            stats->succeeded_count += nested.succeeded_count;
+            stats->failed_count += nested.failed_count;
+            for (size_t j = 0; j < nested.failure_name_count; ++j)
+                record_failure_name(stats, nested.failure_names[j]);
+        } else {
+            result = install_one(session, scan->units[i].source,
+                callback, userdata, stats, &local);
+        }
         if (result != BONGO_CAT_OK && first_failure == BONGO_CAT_OK) {
             first_failure = result;
             first_error = local;
@@ -203,21 +221,38 @@ static BongoCatResult install_progressive_directory(
     return first_failure;
 }
 
-BongoCatResult bongo_cat_import_session_install_progressive(
+static BongoCatResult install_progressive_source(
     BongoCatImportSession *session, const char *source,
     BongoCatImportReceiptCallback callback, void *userdata,
-    BongoCatImportBatchStats *stats, BongoCatError *error) {
+    BongoCatImportBatchStats *stats, unsigned depth, size_t *remaining,
+    BongoCatError *error) {
     if (!stats) return BONGO_CAT_ERROR_ARGUMENT;
+    *stats = (BongoCatImportBatchStats){0};
+    if (depth > 4 || !*remaining) {
+        bongo_cat_error_set(error, BONGO_CAT_ERROR_FORMAT,
+            "Model collection exceeds the nested archive import limit: %s",
+            source ? source : "");
+        return fail_source(stats, source, BONGO_CAT_ERROR_FORMAT);
+    }
+    --*remaining;
     if (!session || !source || !bongo_cat_import_is_archive(source))
         return install_progressive_directory(session, source, callback,
-            userdata, stats, error);
-    *stats = (BongoCatImportBatchStats){0};
+            userdata, stats, depth, remaining, error);
     char directory[BONGO_CAT_PATH_CAP], temporary[BONGO_CAT_PATH_CAP];
     BongoCatResult result = bongo_cat_import_archive_extract(source,
         directory, temporary, error);
     if (result != BONGO_CAT_OK) return fail_source(stats, source, result);
     result = install_progressive_directory(session, directory, callback,
-        userdata, stats, error);
+        userdata, stats, depth, remaining, error);
     bongo_cat_import_archive_cleanup(temporary);
     return result;
+}
+
+BongoCatResult bongo_cat_import_session_install_progressive(
+    BongoCatImportSession *session, const char *source,
+    BongoCatImportReceiptCallback callback, void *userdata,
+    BongoCatImportBatchStats *stats, BongoCatError *error) {
+    size_t remaining = BONGO_CAT_MODEL_CAP;
+    return install_progressive_source(session, source, callback, userdata,
+        stats, 0, &remaining, error);
 }
