@@ -100,13 +100,9 @@ bool bongo_cat_import_discover(const char *source,
     if (error) *error = (BongoCatError){0};
     int recursive = bongo_cat_import_tauri_discover_recursive(source,
         discovery, error);
+    if (recursive > 0) return true;
     if (recursive < 0) return false;
-    if (!recursive) {
-        bongo_cat_error_set(error, BONGO_CAT_ERROR_FORMAT,
-            "Selected directory contains no valid Live2D model3 JSON");
-        return false;
-    }
-    qsort(discovery->candidates, discovery->count,
-        sizeof(discovery->candidates[0]), compare_candidates);
-    return true;
+    bongo_cat_error_set(error, BONGO_CAT_ERROR_FORMAT,
+        "Selected directory contains no valid BongoCat model package");
+    return false;
 }

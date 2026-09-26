@@ -238,18 +238,6 @@ bool bongo_cat_platform_open_directory(const char *path) {
     }
 }
 
-bool bongo_cat_platform_reveal_path(const char *path) {
-    if (!path || !path[0]) return false;
-    @autoreleasepool {
-        NSString *target = [NSString stringWithUTF8String:path];
-        if (!target || ![[NSFileManager defaultManager] fileExistsAtPath:target])
-            return false;
-        [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:
-            @[[NSURL fileURLWithPath:target]]];
-        return true;
-    }
-}
-
 bool bongo_cat_platform_single_instance_begin(void) {
     char path[96]; snprintf(path, sizeof(path),
         "/tmp/" BONGO_CAT_SLUG "-%lu.lock",

@@ -7,58 +7,6 @@
 #include <strings.h>
 #endif
 
-static bool ascii_contains_ci(const char *value, const char *needle) {
-    if (!value || !needle || !needle[0]) return false;
-    size_t length = strlen(needle);
-    for (const char *cursor = value; *cursor; ++cursor)
-        if (SDL_strncasecmp(cursor, needle, length) == 0) return true;
-    return false;
-}
-
-static bool utf8_contains(const char *value, const unsigned char *needle,
-    size_t length) {
-    if (!value || !needle || !length) return false;
-    for (const unsigned char *cursor = (const unsigned char *)value; *cursor;
-        ++cursor) {
-        size_t remaining = strlen((const char *)cursor);
-        if (remaining >= length && memcmp(cursor, needle, length) == 0)
-            return true;
-    }
-    return false;
-}
-
-static BongoCatModelMode import_mode(const char *path) {
-    const char *cursor = path;
-    BongoCatModelMode mode = BONGO_CAT_MODE_STANDARD;
-    while (cursor && *cursor) {
-        while (*cursor == '/' || *cursor == '\\') cursor++;
-        const char *end = strpbrk(cursor, "/\\");
-        size_t length = end ? (size_t)(end - cursor) : strlen(cursor);
-        if (length == 8 && SDL_strncasecmp(cursor, "keyboard", length) == 0)
-            mode = BONGO_CAT_MODE_KEYBOARD;
-        else if (length == 7 && SDL_strncasecmp(cursor, "gamepad", length) == 0)
-            mode = BONGO_CAT_MODE_GAMEPAD;
-        else if (length == 8 && SDL_strncasecmp(cursor, "standard", length) == 0)
-            mode = BONGO_CAT_MODE_STANDARD;
-        if (!end) break;
-        cursor = end + 1;
-    }
-    const char *name = bongo_cat_path_name(path);
-    static const unsigned char keyboard_cn[] = {0xe9,0x94,0xae,0xe7,0x9b,0x98};
-    static const unsigned char gamepad_cn[] = {0xe6,0x89,0x8b,0xe6,0x9f,0x84};
-    static const unsigned char standard_cn[] = {0xe6,0xa0,0x87,0xe5,0x87,0x86};
-    if (name && (ascii_contains_ci(name, "keyboard") ||
-            utf8_contains(name, keyboard_cn, sizeof(keyboard_cn))))
-        return BONGO_CAT_MODE_KEYBOARD;
-    if (name && (ascii_contains_ci(name, "gamepad") ||
-            utf8_contains(name, gamepad_cn, sizeof(gamepad_cn))))
-        return BONGO_CAT_MODE_GAMEPAD;
-    if (name && (ascii_contains_ci(name, "standard") ||
-            utf8_contains(name, standard_cn, sizeof(standard_cn))))
-        return BONGO_CAT_MODE_STANDARD;
-    return mode;
-}
-
 static bool has_preview_assets(const char *directory) {
     const char *names[] = {"resources", "cover.png", "cat.png", "bg.png",
         "mousebg.png", "tabletbg.png"};
@@ -179,8 +127,8 @@ bool bongo_cat_import_tauri_add_candidate(BongoCatImportDiscovery *discovery,
         snprintf(candidate->assets, sizeof(candidate->assets), "%s", parent);
     if (!tauri_resource_mode(candidate->directory, candidate->assets,
             &candidate->mode, &candidate->gamepad_buttons)) {
-        candidate->mode = import_mode(candidate->directory);
-        candidate->gamepad_buttons = candidate->mode == BONGO_CAT_MODE_GAMEPAD;
+        discovery->count--;
+        return false;
     }
     return true;
 }

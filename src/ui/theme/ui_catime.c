@@ -62,9 +62,10 @@ void bongo_cat_ui_shell_draw(struct nk_context *context, float width,
         nk_fill_rect(canvas, nk_rect(0, 0, sidebar_right, height), 0,
             p.surface);
     } else {
-        nk_fill_rect(canvas, surface, rounding, p.surface_glass);
+        bongo_cat_ui_paint_rounded_surface(context, surface, rounding,
+            p.surface_glass);
         nk_push_scissor(canvas, nk_rect(0, 0, sidebar_right, height));
-        nk_fill_rect(canvas, surface, rounding, p.surface);
+        bongo_cat_ui_paint_rounded_surface(context, surface, rounding, p.surface);
         nk_push_scissor(canvas, surface);
     }
     if (p.effects && !fast && !dark)
@@ -131,7 +132,7 @@ bool bongo_cat_ui_content_header(struct nk_context *context,
     if (nk_widget(&bounds, context) == NK_WIDGET_INVALID) return false;
     BongoCatUIPalette p = bongo_cat_ui_palette(dark);
     struct nk_command_buffer *canvas = nk_window_get_canvas(context);
-    nk_fill_rect(canvas, bounds, 0,
+    nk_fill_rect(canvas, bounds, 24,
         bongo_cat_ui_color_mix(p.surface_glass, p.surface, .2f));
     struct nk_rect icon_bounds = nk_rect(bounds.x + 20, bounds.y + 16, 22, 22);
     if (external_icon_draw) external_icon_draw(external_icon_userdata, canvas,
