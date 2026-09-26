@@ -264,7 +264,8 @@ if(BUILD_TESTING)
     --import-notice)
 
   add_executable(bongo_cat_preferences_lifecycle_tests
-    tests/ui/test_preferences_lifecycle.c)
+    tests/ui/test_preferences_lifecycle.c
+    tests/ui/test_preferences_lifecycle_about.c)
   target_include_directories(bongo_cat_preferences_lifecycle_tests PRIVATE
     ${BONGO_CAT_RUNTIME_INTERNAL_INCLUDE_DIRS})
   target_include_directories(bongo_cat_preferences_lifecycle_tests SYSTEM PRIVATE

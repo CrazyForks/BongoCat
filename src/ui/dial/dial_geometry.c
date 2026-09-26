@@ -1,4 +1,5 @@
 #include "dial_internal.h"
+#include <stdlib.h>
 #include <string.h>
 
 static DialPoint polar(float r, float a) {
