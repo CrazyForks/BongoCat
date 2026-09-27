@@ -62,10 +62,11 @@ bool NativeModel::update(float delta_seconds) {
     else if (!_motionManager->IsFinished())
         motion_updated_ = _motionManager->UpdateMotion(_model, delta_seconds);
     expire_motion_runs();
+    update_motion_fades(delta_seconds);
     save_parameters();
     _updateScheduler.OnLateUpdate(_model, delta_seconds);
     expression_frame_pending_ = false;
-    expire_expression_fade();
+    update_expression_fade(delta_seconds);
     apply_parameter_overrides();
     _opacity = _model->GetModelOpacity();
     update_geometry();

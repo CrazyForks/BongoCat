@@ -1,4 +1,5 @@
 if(BUILD_TESTING)
+  include(${CMAKE_CURRENT_LIST_DIR}/UpdateTests.cmake)
   add_executable(bongo_cat_window_corner_tests tests/platform/test_window_corners.c)
   target_include_directories(bongo_cat_window_corner_tests PRIVATE
     src/runtime/shell tests/support)

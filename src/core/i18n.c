@@ -54,6 +54,10 @@ void bongo_cat_i18n_destroy(BongoCatI18n *value) {
     free(value);
 }
 
+BongoCatLanguage bongo_cat_i18n_language(const BongoCatI18n *value) {
+    return value ? value->language : BONGO_CAT_LANG_EN_US;
+}
+
 BongoCatResult bongo_cat_i18n_reload(BongoCatI18n *value, BongoCatLanguage language,
     BongoCatError *error) {
     if (!value) return BONGO_CAT_ERROR_ARGUMENT;

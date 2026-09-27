@@ -22,6 +22,8 @@ void bongo_cat_preferences_input_end(BongoCatPreferences *preferences);
 bool bongo_cat_preferences_event(BongoCatPreferences *preferences, const SDL_Event *event);
 bool bongo_cat_preferences_shortcuts_blocked(
     const BongoCatPreferences *preferences);
+/* Restore the original binding before a forced configuration flush. */
+void bongo_cat_preferences_shortcut_cancel(BongoCatPreferences *preferences);
 void bongo_cat_preferences_render(BongoCatPreferences *preferences);
 void bongo_cat_preferences_invalidate(BongoCatPreferences *preferences);
 void bongo_cat_preferences_process_model_selection(

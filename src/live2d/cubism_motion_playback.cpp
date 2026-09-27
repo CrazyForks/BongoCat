@@ -30,6 +30,8 @@ bool NativeModel::start_motion(const char *group, int index) {
     Csm::CubismMotionQueueEntryHandle handle =
         _motionManager->StartMotionPriority(found->second, false, priority);
     if (handle == Csm::InvalidMotionQueueEntryHandleValue) return false;
+    auto owner = motion_toggle_owners_.find(key);
+    cancel_motion_fade(owner == motion_toggle_owners_.end() ? key : owner->second);
     select_motion(key, selected);
     record_motion_run(handle, key, selected, true);
     return true;
@@ -117,6 +119,7 @@ void NativeModel::clear_motion_runs() {
     for (const MotionRun &run : motion_runs_)
         if (run.committed && run.one_shot) select_motion(run.key, false);
     motion_runs_.clear();
+    motion_fades_.clear();
 }
 
 bool NativeModel::motion_selected(const char *group, int index) const {

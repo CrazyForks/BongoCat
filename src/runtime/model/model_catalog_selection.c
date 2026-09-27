@@ -69,7 +69,9 @@ bool bongo_cat_model_catalog_reconcile(BongoCatApp *app) {
         app->loaded_model);
     bool changed = false;
     if (!active) {
-        active = loaded ? loaded : fallback_model(&app->models);
+        active = loaded;
+        if (!active && (!app->running || app->loaded_model[0]))
+            active = fallback_model(&app->models);
         if (active) {
             if (strcmp(app->session.active_model_id, active->id) != 0) {
                 snprintf(app->session.active_model_id,

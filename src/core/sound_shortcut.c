@@ -16,6 +16,16 @@ static const char *canonical(const char *key) {
         char prefix[4] = {key[0], key[1], key[2], '\0'};
         if (equal(prefix, "Key") || equal(prefix, "Num")) return key + 3;
     }
+    /* Shortcuts identify the digit or symbol, independent of keypad location.
+       Keep physical names in held state so releasing one of two equivalent
+       keys does not clear the other. */
+    if (strlen(key) == 3 && tolower((unsigned char)key[0]) == 'k' &&
+        tolower((unsigned char)key[1]) == 'p' &&
+        key[2] >= '0' && key[2] <= '9') return key + 2;
+    if (equal(key, "KpMultiply")) return "*";
+    if (equal(key, "KpMinus")) return "-";
+    if (equal(key, "KpDivide") || equal(key, "Slash")) return "/";
+    if (equal(key, "KpDecimal") || equal(key, "Period")) return ".";
     if (equal(key, "UpArrow")) return "ArrowUp";
     if (equal(key, "DownArrow")) return "ArrowDown";
     if (equal(key, "LeftArrow")) return "ArrowLeft";

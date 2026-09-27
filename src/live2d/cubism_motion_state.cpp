@@ -3,6 +3,9 @@
 #include <CubismFramework.hpp>
 #include <Id/CubismIdManager.hpp>
 #include <Model/CubismModel.hpp>
+#include <Motion/CubismMotionManager.hpp>
+#include <Motion/CubismMotion.hpp>
+#include <Motion/CubismMotionQueueEntry.hpp>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -19,6 +22,94 @@ static bool curve_endpoints(yyjson_val *segments, float *start, float *end) {
     *start = (float)yyjson_get_num(first);
     *end = (float)yyjson_get_num(last);
     return true;
+}
+
+static bool read_motion_segments(yyjson_val *items,
+    std::vector<NativeModel::MotionSegment> *segments) {
+    if (!yyjson_is_arr(items) || yyjson_arr_size(items) < 5 ||
+        !yyjson_is_num(yyjson_arr_get(items, 0)) ||
+        !yyjson_is_num(yyjson_arr_get(items, 1))) return false;
+    size_t count = yyjson_arr_size(items), cursor = 2;
+    NativeModel::MotionPoint first{
+        (float)yyjson_get_num(yyjson_arr_get(items, 0)),
+        (float)yyjson_get_num(yyjson_arr_get(items, 1))};
+    if (!std::isfinite(first.time) || !std::isfinite(first.value)) return false;
+    while (cursor < count) {
+        yyjson_val *kind_value = yyjson_arr_get(items, cursor++);
+        if (!yyjson_is_int(kind_value) && !yyjson_is_uint(kind_value)) return false;
+        int kind = (int)yyjson_get_int(kind_value);
+        size_t points = kind == 1 ? 3 :
+            (kind == 0 || kind == 2 || kind == 3 ? 1 : 0);
+        if (!points || count - cursor < points * 2) return false;
+        NativeModel::MotionSegment segment;
+        segment.kind = kind;
+        segment.points[0] = first;
+        segment.count = (int)points + 1;
+        for (size_t i = 0; i < points; ++i) {
+            yyjson_val *time = yyjson_arr_get(items, cursor++);
+            yyjson_val *value = yyjson_arr_get(items, cursor++);
+            if (!yyjson_is_num(time) || !yyjson_is_num(value)) return false;
+            NativeModel::MotionPoint point{(float)yyjson_get_num(time),
+                (float)yyjson_get_num(value)};
+            if (!std::isfinite(point.time) || !std::isfinite(point.value))
+                return false;
+            segment.points[i + 1] = point;
+        }
+        const auto &last = segment.points[(size_t)segment.count - 1];
+        // The reverse cursor relies on chronological segment endpoints.
+        if (last.time < first.time) return false;
+        first = last;
+        segments->push_back(std::move(segment));
+    }
+    return !segments->empty();
+}
+
+static float sample_motion_curve(const NativeModel::MotionStateCurve &curve,
+    float time, size_t *reverse_segment = nullptr) {
+    size_t begin = 0;
+    if (reverse_segment) {
+        // Reverse playback only moves toward earlier segments. Keep its cursor
+        // instead of searching the entire curve again on each frame.
+        begin = std::min(*reverse_segment, curve.segments.size());
+        while (begin > 0) {
+            const auto &previous = curve.segments[begin - 1];
+            if (time >= previous.points[(size_t)previous.count - 1].time) break;
+            --begin;
+        }
+        *reverse_segment = begin;
+    }
+    for (size_t i = begin; i < curve.segments.size(); ++i) {
+        const auto &segment = curve.segments[i];
+        const auto &points = segment.points;
+        const auto &last = points[(size_t)segment.count - 1];
+        if (time >= last.time) continue;
+        if (segment.kind == 2) return points[0].value;
+        if (segment.kind == 3) return last.value;
+        float span = last.time - points[0].time;
+        float t = span > 0.0f ?
+            std::clamp((time - points[0].time) / span, 0.0f, 1.0f) : 0.0f;
+        if (segment.kind == 0) return points[0].value +
+            (last.value - points[0].value) * t;
+        if (!curve.restricted_bezier) {
+            float low = 0.0f, high = 1.0f;
+            for (int iteration = 0; iteration < 24; ++iteration) {
+                float u = (low + high) * .5f, v = 1.0f - u;
+                float x = v * v * v * points[0].time +
+                    3.0f * v * v * u * points[1].time +
+                    3.0f * v * u * u * points[2].time +
+                    u * u * u * points[3].time;
+                if (x < time) low = u; else high = u;
+            }
+            t = (low + high) * .5f;
+        }
+        float v = 1.0f - t;
+        return v * v * v * points[0].value +
+            3.0f * v * v * t * points[1].value +
+            3.0f * v * t * t * points[2].value +
+            t * t * t * points[3].value;
+    }
+    return curve.segments.empty() ? curve.normal :
+        curve.segments.back().points[(size_t)curve.segments.back().count - 1].value;
 }
 
 static bool curve_returns_to_default(yyjson_val *segments, float normal) {
@@ -60,6 +151,15 @@ void NativeModel::load_motion_state(const std::string &key, const char *group,
     yyjson_val *curves = yyjson_is_obj(root) ? yyjson_obj_get(root, "Curves") : nullptr;
     MotionState state; state.group = group ? group : "";
     state.index = motion_index;
+    yyjson_val *meta = yyjson_obj_get(root, "Meta");
+    yyjson_val *duration = yyjson_obj_get(meta, "Duration");
+    yyjson_val *fps = yyjson_obj_get(meta, "Fps");
+    bool restricted_bezier = yyjson_is_true(
+        yyjson_obj_get(meta, "AreBeziersRestricted"));
+    if (yyjson_is_num(duration) && std::isfinite(yyjson_get_num(duration)))
+        state.duration = std::max(0.0f, (float)yyjson_get_num(duration));
+    if (yyjson_is_num(fps) && std::isfinite(yyjson_get_num(fps)))
+        state.fps = std::max(0.0f, (float)yyjson_get_num(fps));
     std::vector<std::string> targets;
     size_t index, count; yyjson_val *curve;
     if (yyjson_is_arr(curves)) yyjson_arr_foreach(curves, index, count, curve) {
@@ -68,6 +168,7 @@ void NativeModel::load_motion_state(const std::string &key, const char *group,
         if (!target || !id) continue;
         targets.push_back(std::string(target) + ":" + id);
         MotionStateCurve value{target, id};
+        value.restricted_bezier = restricted_bezier;
         yyjson_val *segments = yyjson_obj_get(curve, "Segments");
         if (std::strcmp(target, "Parameter") == 0) {
             auto handle = Csm::CubismFramework::GetIdManager()->GetId(id);
@@ -90,8 +191,11 @@ void NativeModel::load_motion_state(const std::string &key, const char *group,
         if (curve_has_state_target(value) &&
             curve_returns_to_default(segments, value.normal))
             state.self_contained = true;
-        if (curve_endpoints(segments, &value.start, &value.end))
-            state.curves.push_back(value);
+        if (curve_endpoints(segments, &value.start, &value.end)) {
+            if (!read_motion_segments(segments, &value.segments))
+                value.segments.clear();
+            state.curves.push_back(std::move(value));
+        }
     }
     if (document) yyjson_doc_free(document);
     std::sort(targets.begin(), targets.end());
@@ -223,14 +327,110 @@ bool NativeModel::restore_motion_defaults(const std::string &key) {
     bool had_run = false;
     for (const MotionRun &run : motion_runs_)
         if (run.key == key) { had_run = true; break; }
-    bool restored = false;
-    stop_motion_runs(key);
-    for (const auto &curve : state->second.curves) {
-        restored = apply_motion_curve(curve, curve.normal) || restored;
+    float source_time = state->second.duration;
+    auto motion = motions_.find(key);
+    for (const MotionRun &run : motion_runs_) {
+        if (run.key != key) continue;
+        auto *entry = _motionManager->GetCubismMotionQueueEntry(run.handle);
+        if (!entry || !entry->IsStarted() || entry->IsFinished()) continue;
+        float elapsed = std::max(0.0f,
+            entry->GetStateTime() - entry->GetStartTime());
+        if (motion != motions_.end()) {
+            auto *cubism_motion = static_cast<Csm::CubismMotion *>(motion->second);
+            if (cubism_motion->GetDuration() < 0.0f) {
+                float period = source_time;
+                if (cubism_motion->GetMotionBehavior() ==
+                    Csm::CubismMotion::MotionBehavior_V2 && state->second.fps > 0.0f)
+                    period += 1.0f / state->second.fps;
+                if (period > 0.0f) elapsed = std::fmod(elapsed, period);
+            }
+        }
+        source_time = std::clamp(elapsed, 0.0f, source_time);
     }
-    if (!restored) return had_run;
-    save_parameters();
+    for (const MotionFade &previous : motion_fades_)
+        if (previous.key == key && previous.reverse)
+            source_time = std::max(0.0f, previous.source_time - previous.elapsed);
+    cancel_motion_fade(key);
+    stop_motion_runs(key);
+    MotionFade fade;
+    fade.key = key;
+    fade.source_time = source_time;
+    fade.reverse = source_time > 0.0f;
+    if (fade.reverse) fade.duration = source_time;
+    fade.curves.reserve(state->second.curves.size());
+    for (size_t i = 0; i < state->second.curves.size(); ++i) {
+        const auto &curve = state->second.curves[i];
+        float current = curve.normal;
+        if (curve.parameter >= 0 && curve.parameter < _model->GetParameterCount())
+            current = parameter_baseline_values_[(size_t)curve.parameter];
+        else if (curve.part >= 0 && curve.part < _model->GetPartCount())
+            current = _model->GetPartOpacity(curve.part);
+        else if (curve.model_opacity)
+            current = _model->GetModelOpacity();
+        else continue;
+        if (!fade.reverse && std::fabs(current - curve.normal) <= .0001f)
+            continue;
+        if (curve.segments.empty()) fade.reverse = false;
+        MotionFade::Curve playback;
+        playback.index = i;
+        playback.initial = current;
+        fade.curves.push_back(playback);
+    }
+    if (!fade.reverse) {
+        fade.duration = 0.35f;
+        if (motion != motions_.end()) {
+            float fade_in = motion->second->GetFadeInTime();
+            if (std::isfinite(fade_in) && fade_in > 0.0f)
+                fade.duration = fade_in;
+        }
+    }
+    if (fade.curves.empty()) return had_run;
+    if (fade.reverse) {
+        for (auto &playback : fade.curves) {
+            const auto &curve = state->second.curves[playback.index];
+            playback.segment = curve.segments.size();
+            /* Apply the first reverse sample immediately. Waiting for the next
+               update frame makes a toggle look delayed, while jumping straight
+               to the default makes it look like an instant disappearance. */
+            apply_motion_curve(curve,
+                sample_motion_curve(curve, fade.source_time,
+                    &playback.segment));
+        }
+    }
+    motion_fades_.push_back(std::move(fade));
     return true;
+}
+
+void NativeModel::cancel_motion_fade(const std::string &key) {
+    motion_fades_.erase(std::remove_if(motion_fades_.begin(), motion_fades_.end(),
+        [&key](const MotionFade &fade) { return fade.key == key; }),
+        motion_fades_.end());
+}
+
+void NativeModel::update_motion_fades(float delta_seconds) {
+    if (motion_fades_.empty()) return;
+    for (auto &fade : motion_fades_) {
+        auto state = motion_states_.find(fade.key);
+        if (state == motion_states_.end()) {
+            fade.elapsed = fade.duration;
+            continue;
+        }
+        fade.elapsed = std::min(fade.elapsed + delta_seconds, fade.duration);
+        float remaining = 1.0f - fade.elapsed / fade.duration;
+        float time = std::max(0.0f, fade.source_time - fade.elapsed);
+        for (auto &playback : fade.curves) {
+            const auto &curve = state->second.curves[playback.index];
+            float value = curve.normal +
+                (playback.initial - curve.normal) * remaining;
+            if (fade.reverse) {
+                value = sample_motion_curve(curve, time, &playback.segment);
+            }
+            apply_motion_curve(curve, value);
+        }
+    }
+    motion_fades_.erase(std::remove_if(motion_fades_.begin(), motion_fades_.end(),
+        [](const MotionFade &fade) { return fade.elapsed >= fade.duration; }),
+        motion_fades_.end());
 }
 
 bool NativeModel::apply_motion_curve(const MotionStateCurve &curve,

@@ -5,6 +5,7 @@
 #include "test_mver_import_internal.h"
 #include "bongo_cat/json.h"
 #include "bongo_cat/path.h"
+#include "bongo_cat/utf8.h"
 #include "../../src/runtime/model/mver/mver_render.h"
 #include "../../src/runtime/model/mver/mver_config_text.h"
 
@@ -174,6 +175,57 @@ static void large_model_bindings(const char *root, const BongoCatImportCandidate
     CHECK(!app->model_shortcuts);
     bongo_cat_behaviors_clear(&app->behaviors);
     free(app);
+}
+
+static void display_names(const char *path) {
+    static const char source[] =
+        "{standard:{face:[\n"
+        "[65,// Inside\n],\n"
+        "[66], // Outside\n"
+        "[67] /* Block */,\n"
+        "[68,/* Inner block */],\n"
+        "[69],\n// Section heading\n"
+        "[70], // Last\n"
+        "[71, //   \n/* Nonempty */],\n"
+        "[72,/* Explanation */ // Original\n], // Trailing\n"
+        "[73,/* Explanation */], // Authored\n"
+        "],sounds:[[65], // Sound\n[66]],l2d_motion:[[65] // Motion\n]}}";
+    CHECK(write_text(path, source));
+    BongoCatMverLabels labels = {0};
+    CHECK(bongo_cat_mver_labels_load(path, "standard", &labels));
+    static const char *expected[] = {
+        "Inside", "Outside", "Block", "Inner block", NULL, "Last", "Nonempty",
+        "Original", "Authored"
+    };
+    for (size_t i = 0; i < sizeof(expected) / sizeof(expected[0]); ++i) {
+        const char *label = bongo_cat_mver_label(&labels, "face", i);
+        CHECK(expected[i] ? label && !strcmp(label, expected[i]) : !label);
+    }
+    const char *sound = bongo_cat_mver_label(&labels, "sounds", 0);
+    const char *motion = bongo_cat_mver_label(&labels, "l2d_motion", 0);
+    CHECK(sound && !strcmp(sound, "Sound"));
+    CHECK(motion && !strcmp(motion, "Motion"));
+    CHECK(!bongo_cat_mver_label(&labels, "sounds", 1));
+    bongo_cat_mver_labels_clear(&labels);
+    CHECK(bongo_cat_mver_config_write_row(path, "standard", "face", 1, "[72]", NULL));
+    CHECK(bongo_cat_mver_labels_load(path, "standard", &labels));
+    const char *preserved = bongo_cat_mver_label(&labels, "face", 1);
+    CHECK(preserved && !strcmp(preserved, "Outside"));
+    bongo_cat_mver_labels_clear(&labels);
+    static const char utf8[] = "A\xe5\x96\xb7\xf0\x9f\x90\xb3Z";
+    char copied[16];
+    for (size_t capacity = 1; capacity <= sizeof(copied); ++capacity) {
+        bongo_cat_utf8_copy(copied, capacity, utf8);
+        CHECK(bongo_cat_utf8_valid(copied));
+        CHECK(strlen(copied) < capacity);
+        CHECK(!strncmp(copied, utf8, strlen(copied)));
+    }
+    bongo_cat_utf8_copy(copied, 4, utf8);
+    CHECK(!strcmp(copied, "A"));
+    bongo_cat_utf8_copy(copied, 5, utf8);
+    CHECK(!strcmp(copied, "A\xe5\x96\xb7"));
+    bongo_cat_utf8_copy(copied, sizeof(copied), NULL);
+    CHECK(!copied[0]);
 }
 
 void test_mver_config(void) {
@@ -463,6 +515,7 @@ void test_mver_config(void) {
     }
     free(settings); free(loaded);
     large_model_bindings(root, &candidate);
+    display_names(path);
     CHECK(bongo_cat_model_remove_tree(root, NULL));
     SDL_free(temporary);
 }

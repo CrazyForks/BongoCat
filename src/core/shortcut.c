@@ -65,11 +65,11 @@ static const char *display_key(const char *token, size_t length) {
         {"BracketLeft", "["}, {"BracketRight", "]"},
         {"Backslash", "\\"}, {"Semicolon", ";"}, {"Quote", "'"},
         {"Comma", ","}, {"Period", "."}, {"Slash", "/"},
-        {"Kp0", "Num 0"}, {"Kp1", "Num 1"}, {"Kp2", "Num 2"},
-        {"Kp3", "Num 3"}, {"Kp4", "Num 4"}, {"Kp5", "Num 5"},
-        {"Kp6", "Num 6"}, {"Kp7", "Num 7"}, {"Kp8", "Num 8"},
-        {"Kp9", "Num 9"}, {"KpMultiply", "Num *"}, {"KpPlus", "Num +"},
-        {"KpMinus", "Num -"}, {"KpDecimal", "Num ."}, {"KpDivide", "Num /"}
+        {"Kp0", "0"}, {"Kp1", "1"}, {"Kp2", "2"},
+        {"Kp3", "3"}, {"Kp4", "4"}, {"Kp5", "5"},
+        {"Kp6", "6"}, {"Kp7", "7"}, {"Kp8", "8"},
+        {"Kp9", "9"}, {"KpMultiply", "*"}, {"KpPlus", "+"},
+        {"KpMinus", "-"}, {"KpDecimal", "."}, {"KpDivide", "/"}
     };
     for (size_t i = 0; i < sizeof(names) / sizeof(names[0]); ++i) {
         if (strlen(names[i].name) != length) continue;
@@ -93,6 +93,14 @@ void bongo_cat_shortcut_format(const char *shortcut, char *output, size_t capaci
     while (*shortcut && used < capacity - 1) {
         const char *plus = strchr(shortcut, '+');
         size_t length = plus ? (size_t)(plus - shortcut) : strlen(shortcut);
+        /* Imported Num3 / Num* labels use the same plain display as Kp keys. */
+        if ((length == 4 || (length == 5 && shortcut[3] == ' ')) &&
+            tolower((unsigned char)shortcut[0]) == 'n' &&
+            tolower((unsigned char)shortcut[1]) == 'u' &&
+            tolower((unsigned char)shortcut[2]) == 'm') {
+            shortcut += length - 1;
+            length = 1;
+        }
         const char *label = display_key(shortcut, length);
         const char *shown = label ? label : shortcut;
         size_t count = label ? strlen(label) : length;

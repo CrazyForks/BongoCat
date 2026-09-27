@@ -132,7 +132,8 @@ void bongo_cat_preferences_render(BongoCatPreferences *value) {
             "Preferences frame presentation failed: %s", SDL_GetError());
     } else if (!loading_model) bongo_cat_memory_policy_ui_frame_presented();
     bongo_cat_preferences_record_frame(value);
-    if (value->shortcut_recording || value->model_load_visual_active ||
+    if (value->font_language != value->app->settings.app.language ||
+        value->shortcut_recording || value->model_load_visual_active ||
         importing || bongo_cat_pref_controls_animating(&value->ui.context) ||
         bongo_cat_ui_animations_active(&value->ui.context))
         value->render_dirty = true;

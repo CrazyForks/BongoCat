@@ -16,6 +16,7 @@
 #include <Math/CubismMatrix44.hpp>
 #include <Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp>
 #include <SDL3/SDL_opengl.h>
+#include <array>
 #include <map>
 #include <memory>
 #include <set>
@@ -95,6 +96,12 @@ public:
 public:
     using MotionMap = std::map<std::string, Csm::ACubismMotion *>;
     using MotionSignatures = std::map<std::string, std::string>;
+    struct MotionPoint { float time = 0.0f, value = 0.0f; };
+    struct MotionSegment {
+        int kind = 0;
+        int count = 0;
+        std::array<MotionPoint, 4> points{};
+    };
     struct MotionStateCurve {
         std::string target, id;
         float start = 0.0f, end = 0.0f;
@@ -102,12 +109,16 @@ public:
         int parameter = -1;
         int part = -1;
         bool model_opacity = false;
+        bool restricted_bezier = false;
+        std::vector<MotionSegment> segments;
     };
     struct MotionState {
         std::string group;
         int index = -1;
         std::vector<MotionStateCurve> curves;
         bool self_contained = false;
+        float duration = 0.0f;
+        float fps = 0.0f;
     };
 private:
     friend class ParameterOverrideUpdater;
@@ -118,6 +129,25 @@ private:
         bool one_shot = false;
         bool selected = false;
         bool committed = false;
+    };
+    struct MotionFade {
+        struct Curve {
+            size_t index = 0;
+            size_t segment = 0;
+            float initial = 0.0f;
+        };
+        std::string key;
+        std::vector<Curve> curves;
+        float elapsed = 0.0f;
+        float duration = 0.35f;
+        float source_time = 0.0f;
+        bool reverse = false;
+    };
+    struct ExpressionFade {
+        std::vector<int> parameters;
+        std::vector<float> initial;
+        float elapsed = 0.0f;
+        float duration = 0.35f;
     };
     struct ModelBounds {
         float min_x = 0.0f;
@@ -159,7 +189,9 @@ private:
     void stop_motion_runs(const std::string &key);
     void expire_motion_runs();
     void clear_motion_runs();
-    void expire_expression_fade();
+    void update_motion_fades(float delta_seconds);
+    void cancel_motion_fade(const std::string &key);
+    void update_expression_fade(float delta_seconds);
     void settle_pending_expression_for_cover();
     void capture_parameter_baseline();
     void save_parameters();
@@ -227,6 +259,7 @@ private:
     int expression_index_ = -1;
     bool expression_clearing_ = false;
     bool expression_frame_pending_ = false;
+    ExpressionFade expression_fade_;
     BongoCatLive2DFrame frame_{};
     BongoCatLive2DFrame required_frame_{};
     float frame_fit_scale_ = 1.0f;
@@ -256,6 +289,7 @@ private:
     int builtin_accessory_part_ = -1;
     std::vector<std::string> idle_motion_keys_;
     std::vector<MotionRun> motion_runs_;
+    std::vector<MotionFade> motion_fades_;
     std::vector<unsigned char> motion_finished_scratch_;
     ViewerLookUpdater *viewer_look_ = nullptr;
     int last_idle_motion_ = -1;
