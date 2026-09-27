@@ -46,6 +46,8 @@ typedef struct WindowsInputState {
     unsigned long long diagnostic_device_drops, diagnostic_read_failures;
     unsigned long long diagnostic_queued_keys, diagnostic_queue_failures;
     unsigned long long diagnostic_wake_failures, diagnostic_device_changes;
+    unsigned long long diagnostic_alt_raw, diagnostic_alt_filtered;
+    unsigned long long diagnostic_alt_duplicate, diagnostic_alt_transitions;
     ULONGLONG diagnostic_ms;
     DWORD mouse_registration_flags, keyboard_registration_flags;
     DWORD test_start_delay_ms;

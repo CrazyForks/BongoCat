@@ -132,7 +132,8 @@ static const char *primary_name(SDL_Keycode key, char output[24]) {
     case SDLK_KP_6: return "Kp6"; case SDLK_KP_7: return "Kp7";
     case SDLK_KP_8: return "Kp8"; case SDLK_KP_9: return "Kp9";
     case SDLK_KP_MULTIPLY: return "KpMultiply"; case SDLK_KP_PLUS: return "KpPlus";
-    case SDLK_KP_MINUS: return "KpMinus"; case SDLK_KP_DECIMAL: return "KpDecimal";
+    case SDLK_KP_MINUS: return "KpMinus";
+    case SDLK_KP_PERIOD: case SDLK_KP_DECIMAL: return "KpDecimal";
     case SDLK_KP_DIVIDE: return "KpDivide"; default: return NULL;
     }
 }
@@ -146,6 +147,14 @@ static void append(char *output, size_t capacity, const char *token) {
 static bool capture_key(BongoCatPreferences *value,
     const SDL_KeyboardEvent *event) {
     if (event->repeat) return true;
+    /* Record the unshifted key, as the native listeners do. Otherwise
+       Shift+1 / Shift+= can arrive as unsupported '!' / '+' characters. */
+    SDL_KeyboardEvent normalized = *event;
+    if (event->scancode != SDL_SCANCODE_UNKNOWN) {
+        SDL_Keycode base = SDL_GetKeyFromScancode(event->scancode, SDL_KMOD_NONE, false);
+        if (base != SDLK_UNKNOWN) normalized.key = base;
+    }
+    event = &normalized;
     if (!event->down) {
         if (value->shortcut_key != SDLK_UNKNOWN)
             finish(value);

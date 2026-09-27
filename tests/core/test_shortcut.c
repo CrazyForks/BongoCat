@@ -65,7 +65,7 @@ void test_shortcut(void) {
         {"ArrowRight", "\xE2\x86\x92"},
         {"UpArrow", "\xE2\x86\x91"}, {"DownArrow", "\xE2\x86\x93"},
         {"LeftArrow", "\xE2\x86\x90"}, {"RightArrow", "\xE2\x86\x92"},
-        {"Shift+KpPlus", "Shift+Num +"},
+        {"Shift+KpPlus", "Shift++"},
         {"F12", "F12"}, {"UnknownKey", "UnknownKey"},
         {"Gamepad:South", "Gamepad:South"}, {"", ""}, {NULL, ""},
 #if defined(_WIN32)

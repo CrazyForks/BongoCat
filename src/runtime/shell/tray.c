@@ -200,15 +200,17 @@ static bool restore_native_tray(BongoCatTray *tray) {
 void bongo_cat_tray_sync(BongoCatTray *tray) {
     if (!tray || !restore_native_tray(tray)) return;
     BongoCatApp *app = tray->app;
+    /* Settings change during drawing, before the next frame loads the locale. */
+    BongoCatLanguage language = bongo_cat_i18n_language(app->i18n);
     if (tray->state_valid && tray->last_visible == app->session.window.visible &&
         tray->last_pass_through == app->settings.window.pass_through &&
         tray->last_always_on_top == app->settings.window.always_on_top &&
-        tray->last_language == app->settings.app.language) return;
+        tray->last_language == language) return;
     tray->state_valid = true;
     tray->last_visible = app->session.window.visible;
     tray->last_pass_through = app->settings.window.pass_through;
     tray->last_always_on_top = app->settings.window.always_on_top;
-    tray->last_language = app->settings.app.language;
+    tray->last_language = language;
     SDL_SetTrayEntryChecked(tray->visible, tray->app->session.window.visible);
     SDL_SetTrayEntryChecked(tray->pass_through, tray->app->settings.window.pass_through);
     SDL_SetTrayEntryChecked(tray->always_on_top, tray->app->settings.window.always_on_top);
@@ -227,6 +229,38 @@ void bongo_cat_tray_sync(BongoCatTray *tray) {
     SDL_UpdateTrays();
 }
 
+static bool language_self_test(BongoCatTray *tray) {
+    BongoCatApp *app = tray->app;
+    BongoCatLanguage previous = bongo_cat_i18n_language(app->i18n);
+    BongoCatLanguage requested = app->settings.app.language;
+    BongoCatLanguage next = previous == BONGO_CAT_LANG_EN_US ?
+        BONGO_CAT_LANG_ZH_CN : BONGO_CAT_LANG_EN_US;
+    BongoCatError error = {0};
+    /* Reproduce selection during drawing, then tray sync before locale load. */
+    app->settings.app.language = next;
+    bongo_cat_tray_sync(tray);
+    bool result = bongo_cat_i18n_reload(app->i18n, next, &error) == BONGO_CAT_OK;
+    bongo_cat_tray_sync(tray);
+    SDL_TrayEntry *entries[] = {tray->preferences, tray->visible,
+        tray->pass_through, tray->always_on_top, tray->exit};
+    const char *keys[] = {
+        "composables.useAppMenu.labels.preference",
+        "composables.useAppMenu.labels.showCat",
+        "composables.useAppMenu.labels.passThrough",
+        "composables.useAppMenu.labels.alwaysOnTop",
+        "composables.useAppMenu.labels.quitApp"};
+    for (size_t i = 0; i < SDL_arraysize(entries); ++i) {
+        const char *label = SDL_GetTrayEntryLabel(entries[i]);
+        if (!label || SDL_strcmp(label,
+            bongo_cat_i18n_get(app->i18n, keys[i], ""))) result = false;
+    }
+    if (bongo_cat_i18n_reload(app->i18n, previous, &error) != BONGO_CAT_OK)
+        result = false;
+    app->settings.app.language = requested;
+    bongo_cat_tray_sync(tray);
+    return result;
+}
+
 bool bongo_cat_tray_self_test(BongoCatTray *tray) {
     if (!tray || !tray->handle || !tray->visible || !tray->pass_through ||
         !tray->always_on_top || !tray->preferences || !tray->exit) return false;
@@ -235,6 +269,7 @@ bool bongo_cat_tray_self_test(BongoCatTray *tray) {
     const SDL_TrayEntry **entries = SDL_GetTrayEntries(
         SDL_GetTrayEntryParent(tray->preferences), &count);
     if (!entries || count < 1 || entries[0] != tray->preferences) return false;
+    if (!language_self_test(tray)) return false;
 #ifdef _WIN32
     on_tray_restore(tray);
     bongo_cat_tray_sync(tray);

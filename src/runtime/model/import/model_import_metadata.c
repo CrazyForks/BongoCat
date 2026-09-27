@@ -2,6 +2,7 @@
 #include "runtime.h"
 #include "bongo_cat/json.h"
 #include "bongo_cat/path.h"
+#include "bongo_cat/utf8.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -96,7 +97,7 @@ void bongo_cat_import_apply_metadata(BongoCatApp *app, const char *model_id,
         BongoCatBehaviorShortcut *existing = shortcut_for(app, id);
         if (existing) {
             if (label && !existing->label[0])
-                snprintf(existing->label, sizeof(existing->label), "%s", label);
+                bongo_cat_utf8_copy(existing->label, sizeof(existing->label), label);
             continue;
         }
         if (app->settings.behavior_shortcut_count >= BONGO_CAT_BEHAVIOR_BINDING_CAP) break;
@@ -111,7 +112,7 @@ void bongo_cat_import_apply_metadata(BongoCatApp *app, const char *model_id,
         } else {
             snprintf(value->shortcut, sizeof(value->shortcut), "%s", shortcut);
         }
-        if (label) snprintf(value->label, sizeof(value->label), "%s", label);
+        if (label) bongo_cat_utf8_copy(value->label, sizeof(value->label), label);
     }
     yyjson_doc_free(document);
 }

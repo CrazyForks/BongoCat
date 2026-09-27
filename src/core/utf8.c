@@ -11,6 +11,18 @@ static bool continuation(unsigned char value) {
     return (value & 0xc0u) == 0x80u;
 }
 
+void bongo_cat_utf8_copy(char *output, size_t capacity, const char *text) {
+    if (!output || !capacity) return;
+    if (!text) { output[0] = '\0'; return; }
+    size_t length = strlen(text);
+    if (length >= capacity) {
+        length = capacity - 1;
+        while (length && continuation((unsigned char)text[length])) length--;
+    }
+    memmove(output, text, length);
+    output[length] = '\0';
+}
+
 bool bongo_cat_utf8_valid(const char *text) {
     if (!text) return false;
     const unsigned char *value = (const unsigned char *)text;

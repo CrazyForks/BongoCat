@@ -30,6 +30,7 @@ void NativeModel::capture_motion_preview() {
 
 void NativeModel::restore_motion_preview_state() {
     if (!_model || !motion_preview_active_) return;
+    cancel_motion_fade(motion_preview_key_);
     _motionManager->StopAllMotions();
     clear_motion_runs();
     parameter_overrides_applied_ = false;
@@ -79,6 +80,7 @@ bool NativeModel::preview_motion(const char *group, int index) {
         restore_motion_preview();
         return false;
     }
+    cancel_motion_fade(motion_preview_key_);
     record_motion_run(handle, motion_preview_key_,
         motion_preview_selected_, false);
     return true;

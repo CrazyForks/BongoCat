@@ -1,5 +1,6 @@
 #include "runtime.h"
 #include "bongo_cat/path.h"
+#include "bongo_cat/preferences.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -211,6 +212,7 @@ void bongo_cat_config_store_update(BongoCatApp *app, uint64_t now) {
             app->session_save_due_ns = now + SAVE_DELAY_NS;
     }
     if (!app->secondary_pet && !app->settings_store_blocked &&
+        !bongo_cat_preferences_shortcuts_blocked(app->preferences) &&
         app->settings_save_due_ns &&
         now >= app->settings_save_due_ns)
         app->settings_save_due_ns = save_settings(app)
@@ -223,6 +225,9 @@ void bongo_cat_config_store_update(BongoCatApp *app, uint64_t now) {
 
 void bongo_cat_config_store_flush(BongoCatApp *app) {
     if (!app || app->smoke || !app->settings_path[0] || !app->session_path[0]) return;
+    /* Recording edits the live binding for its preview. Do not serialize an
+       unconfirmed chord, or compact the array that owns the editor's target. */
+    bongo_cat_preferences_shortcut_cancel(app->preferences);
     bongo_cat_window_store_content_origin(app);
     uint64_t settings = settings_hash(&app->settings);
     uint64_t session = session_hash(&app->session);

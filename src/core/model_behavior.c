@@ -2,11 +2,19 @@
 #include "bongo_cat/json.h"
 #include "bongo_cat/model.h"
 #include "bongo_cat/path.h"
+#include "bongo_cat/utf8.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <yyjson.h>
+
+static bool has_label(const char *text) {
+    if (!text) return false;
+    while (*text && isspace((unsigned char)*text)) text++;
+    return *text != '\0';
+}
 
 bool bongo_cat_behaviors_reserve(BongoCatBehaviorCatalog *catalog, size_t capacity,
     BongoCatError *error) {
@@ -70,7 +78,7 @@ static bool add_behavior(BongoCatBehaviorCatalog *catalog, const BongoCatModelEn
     entry->kind = kind;
     entry->index = index;
     snprintf(entry->group, sizeof(entry->group), "%s", group ? group : "");
-    snprintf(entry->label, sizeof(entry->label), "%s", label ? label : "");
+    bongo_cat_utf8_copy(entry->label, sizeof(entry->label), label);
     if (kind == BONGO_CAT_BEHAVIOR_MOTION)
         snprintf(entry->id, sizeof(entry->id), "%s:motion:%s:%d",
             model->id, group ? group : "", index);
@@ -101,9 +109,11 @@ static bool read_motions(BongoCatBehaviorCatalog *catalog, const BongoCatModelEn
         const char *group = yyjson_get_str(group_key);
         size_t index, count; yyjson_val *item;
         yyjson_arr_foreach(items, index, count, item) {
+            const char *name = yyjson_get_str(yyjson_obj_get(item, "Name"));
             const char *sound = yyjson_get_str(yyjson_obj_get(item, "Sound"));
             char label[BONGO_CAT_ID_CAP];
-            snprintf(label, sizeof(label), "%s %zu", group, index + 1);
+            if (has_label(name)) bongo_cat_utf8_copy(label, sizeof(label), name);
+            else snprintf(label, sizeof(label), "%s %zu", group, index + 1);
             if (!add_behavior(catalog, model, BONGO_CAT_BEHAVIOR_MOTION, group,
                 (int)index, label, sound, NULL, error)) return false;
         }
@@ -118,7 +128,7 @@ static bool read_expressions(BongoCatBehaviorCatalog *catalog,
     yyjson_arr_foreach(expressions, index, count, item) {
         const char *name = yyjson_get_str(yyjson_obj_get(item, "Name"));
         char label[BONGO_CAT_ID_CAP];
-        snprintf(label, sizeof(label), "%s", name ? name : "Expression");
+        bongo_cat_utf8_copy(label, sizeof(label), has_label(name) ? name : "Expression");
         if (!add_behavior(catalog, model, BONGO_CAT_BEHAVIOR_EXPRESSION, NULL,
             (int)index, label, NULL, NULL, error)) return false;
     }
@@ -159,7 +169,8 @@ static bool read_adapter_assets(BongoCatBehaviorCatalog *catalog,
         const char *configured_label = yyjson_get_str(yyjson_obj_get(item, "label"));
         char label[BONGO_CAT_ID_CAP];
         int current = effect ? effect_index++ : sound_index++;
-        if (configured_label) snprintf(label, sizeof(label), "%s", configured_label);
+        if (has_label(configured_label))
+            bongo_cat_utf8_copy(label, sizeof(label), configured_label);
         else snprintf(label, sizeof(label), "%s %d",
             effect ? "Effect" : "Sound", current + 1);
         if (!add_behavior(catalog, model, effect ? BONGO_CAT_BEHAVIOR_EFFECT :

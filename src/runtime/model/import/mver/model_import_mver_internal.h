@@ -10,7 +10,8 @@ bool bongo_cat_mver_add_audio(void *output, void *items, void *config, void *row
     const BongoCatImportCandidate *candidate, const BongoCatMverLabels *labels,
     const char *target);
 bool bongo_cat_mver_effects(void *output, void *items, void *root, void *mode,
-    const BongoCatImportCandidate *candidate, const char *target);
+    const BongoCatImportCandidate *candidate, const BongoCatMverLabels *labels,
+    const char *target);
 bool bongo_cat_mver_add_behaviors(void *output, void *items, void *config,
     const BongoCatImportCandidate *candidate, const BongoCatMverLabels *labels,
     BongoCatError *error);

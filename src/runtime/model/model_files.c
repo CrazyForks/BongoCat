@@ -134,6 +134,7 @@ static bool select_model_with_error(BongoCatApp *app, const char *id,
     if (!force_reload && app->loaded_model[0] &&
         strcmp(app->loaded_model, entry->id) == 0) {
         commit_model(app, entry, false, false);
+        request_model_frame(app, app->running);
         return true;
     }
     bongo_cat_app_capture_behavior_state(app);
@@ -301,7 +302,7 @@ static bool select_model_with_error(BongoCatApp *app, const char *id,
     bongo_cat_audio_reset(app->audio);
     memset(&app->sound_shortcut_state, 0, sizeof(app->sound_shortcut_state));
     bongo_cat_app_reset_sound_bindings(app);
-    commit_model(app, entry, true, replacing_model);
+    commit_model(app, entry, true, replacing_model || app->running);
     bongo_cat_preferences_invalidate(app->preferences);
     bongo_cat_app_reapply_input(app);
     bongo_cat_app_apply_mouse(app);

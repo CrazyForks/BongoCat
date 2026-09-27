@@ -3,6 +3,7 @@
 #include "preferences_render_internal.h"
 #include "ui_catime.h"
 #include "runtime.h"
+#include "model_catalog_selection.h"
 #include "about/preferences_about_internal.h"
 
 #include <stdio.h>
@@ -138,6 +139,36 @@ static void inactive_model_behaviors(BongoCatPreferences *value) {
 }
 
 static void shortcut_chord_capture(BongoCatPreferences *value) {
+    /* Real SDL events may expose shifted characters or keypad navigation.
+       Recording must use the native listener's unshifted/keypad identity. */
+    static const struct {
+        SDL_Scancode scan;
+        SDL_Keycode key;
+        SDL_Keymod mod;
+        const char *binding;
+    } native_keys[] = {
+        {SDL_SCANCODE_1, SDLK_EXCLAIM, SDL_KMOD_SHIFT, "Shift+1"},
+        {SDL_SCANCODE_EQUALS, SDLK_PLUS, SDL_KMOD_SHIFT, "Shift+="},
+        {SDL_SCANCODE_KP_1, SDLK_END, SDL_KMOD_CTRL, "Control+Kp1"},
+        {SDL_SCANCODE_KP_PERIOD, SDLK_DELETE, SDL_KMOD_NONE, "KpDecimal"}
+    };
+    for (size_t i = 0; i < sizeof(native_keys) / sizeof(native_keys[0]); ++i) {
+        char recorded[BONGO_CAT_SHORTCUT_CAP] = "";
+        bongo_cat_preferences_shortcut_begin(value, "test-native", recorded, sizeof(recorded));
+        SDL_Event input = {0};
+        input.type = SDL_EVENT_KEY_DOWN;
+        input.key.down = true;
+        input.key.scancode = native_keys[i].scan;
+        input.key.key = native_keys[i].key;
+        input.key.mod = native_keys[i].mod;
+        CHECK(bongo_cat_preferences_shortcut_event(value, &input));
+        CHECK(!strcmp(recorded, native_keys[i].binding));
+        input.type = SDL_EVENT_KEY_UP;
+        input.key.down = false;
+        CHECK(bongo_cat_preferences_shortcut_event(value, &input));
+        CHECK(!value->shortcut_recording);
+        CHECK(!strcmp(recorded, native_keys[i].binding));
+    }
     static const struct { SDL_Keycode key; const char *binding; } punctuation[] = {
         {SDLK_EQUALS, "Alt+="}, {SDLK_MINUS, "Alt+-"},
         {SDLK_LEFTBRACKET, "Alt+BracketLeft"}, {SDLK_RIGHTBRACKET, "Alt+BracketRight"},
@@ -210,6 +241,43 @@ static void shortcut_chord_capture(BongoCatPreferences *value) {
     CHECK(!strcmp(small, "F1"));
 }
 
+static void model_visibility_after_empty_catalog(BongoCatApp *app) {
+    size_t count = app->models.count;
+    bool multiple = app->settings.model.multiple_pets;
+    CHECK(count > 0);
+    if (!count) return;
+    char id[BONGO_CAT_ID_CAP];
+    snprintf(id, sizeof(id), "%s", app->models.entries[0].id);
+    for (int mode = 0; mode < 2; ++mode) {
+        app->settings.model.multiple_pets = mode != 0;
+        app->models.count = 0;
+        bongo_cat_model_catalog_reconcile(app);
+        CHECK(!app->loaded_model[0]);
+        CHECK(!app->session.active_model_id[0]);
+        CHECK(!app->session.window.visible);
+        app->models.count = 1;
+        bongo_cat_model_catalog_reconcile(app);
+        CHECK(!bongo_cat_app_model_active(app, id));
+        CHECK(bongo_cat_app_active_model_count(app) == 0);
+        BongoCatError error = {0};
+        CHECK(!bongo_cat_app_select_model_with_error(app, "", &error));
+        CHECK(!app->loaded_model[0]);
+        CHECK(!app->session.window.visible);
+        CHECK(bongo_cat_app_set_model_active(app, id, true, &error));
+        CHECK(!strcmp(app->loaded_model, id));
+        CHECK(app->session.window.visible);
+        CHECK(!(SDL_GetWindowFlags(app->window) & SDL_WINDOW_HIDDEN));
+        bongo_cat_window_set_visible(app, false);
+        unsigned serial = app->model_selection_serial;
+        CHECK(bongo_cat_app_select_model_with_error(app, id, &error));
+        CHECK(app->model_selection_serial == serial);
+        CHECK(app->session.window.visible);
+        CHECK(!(SDL_GetWindowFlags(app->window) & SDL_WINDOW_HIDDEN));
+    }
+    app->models.count = count;
+    app->settings.model.multiple_pets = multiple;
+}
+
 int main(int argc, char **argv) {
     BongoCatApp *app = calloc(1, sizeof(*app));
     BongoCatError error = {0};
@@ -276,6 +344,7 @@ int main(int argc, char **argv) {
         close_over_scrolled_models(value);
         bongo_cat_preferences_close(value);
     }
+    model_visibility_after_empty_catalog(app);
     bongo_cat_app_shutdown(app, "test:complete", failures != 0);
     free(app);
     printf("Preferences lifecycle: %d failures\n", failures);

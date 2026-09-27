@@ -1,6 +1,7 @@
 #include "preferences_state.h"
 #include "preferences_text_edit.h"
 #include "preferences_notice.h"
+#include "bongo_cat/utf8.h"
 
 #include <SDL3/SDL.h>
 #include <stdio.h>
@@ -44,7 +45,7 @@ void bongo_cat_preferences_behavior_rename_finish(
             const char *label = entry && !strcmp(session->text, entry->label) ?
                 "" : session->text;
             label_changed = strcmp(binding->label, label) != 0;
-            snprintf(binding->label, sizeof(binding->label), "%s", label);
+            bongo_cat_utf8_copy(binding->label, sizeof(binding->label), label);
         } else bongo_cat_preferences_notice_show(value->app,
             bongo_cat_i18n_get(value->app->i18n,
                 "pages.preference.model.hints.behaviorRenameLimit",

@@ -106,6 +106,7 @@ static void log_receiver(WindowsInputState *state, const char *phase) {
         "background_keys=%llu filtered_keys=%llu duplicate_keys=%llu "
         "queued_keys=%llu queue_failures=%llu wake_failures=%llu "
         "invalid=%llu device_drops=%llu read_failures=%llu device_changes=%llu "
+        "alt_raw=%llu alt_filtered=%llu alt_duplicate=%llu alt_transitions=%llu "
         "owned=%u mouse_flags=%lu keyboard_flags=%lu desktop_unavailable=%d "
         "query_error=%lu recovery_error=%lu last_read_error=%lu devices=%u "
         "monitors=%d foreground_pid=%lu foreground_monitor_known=%d "
@@ -117,7 +118,10 @@ static void log_receiver(WindowsInputState *state, const char *phase) {
         state->diagnostic_queued_keys, state->diagnostic_queue_failures,
         state->diagnostic_wake_failures, state->diagnostic_invalid,
         state->diagnostic_device_drops, state->diagnostic_read_failures,
-        state->diagnostic_device_changes, state->ownership,
+        state->diagnostic_device_changes,
+        state->diagnostic_alt_raw, state->diagnostic_alt_filtered,
+        state->diagnostic_alt_duplicate, state->diagnostic_alt_transitions,
+        state->ownership,
         (unsigned long)state->mouse_registration_flags,
         (unsigned long)state->keyboard_registration_flags,
         state->desktop_unavailable, (unsigned long)state->registration_error,

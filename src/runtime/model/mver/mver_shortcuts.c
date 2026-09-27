@@ -3,6 +3,7 @@
 #include "model_import.h"
 #include "bongo_cat/json.h"
 #include "bongo_cat/path.h"
+#include "bongo_cat/utf8.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -166,7 +167,8 @@ bool bongo_cat_mver_shortcuts_load(BongoCatApp *app, const BongoCatModelEntry *m
         }
         value->shortcut_disabled = !value->shortcut[0];
         const char *label = index >= 0 ? bongo_cat_mver_label(labels, field, (size_t)index) : NULL;
-        if (label && !value->label[0]) snprintf(value->label, sizeof(value->label), "%s", label);
+        if (label && !value->label[0])
+            bongo_cat_utf8_copy(value->label, sizeof(value->label), label);
     }
     if (ok) ok = commit_bindings(app, model->id, parsed, error);
     else free_nodes(parsed);

@@ -33,7 +33,8 @@ static bool clear_binding(yyjson_mut_doc *output, yyjson_mut_val *items,
 
 bool bongo_cat_mver_effects(void *raw_output, void *raw_items, void *raw_root,
     void *raw_mode,
-    const BongoCatImportCandidate *candidate, const char *target) {
+    const BongoCatImportCandidate *candidate, const BongoCatMverLabels *labels,
+    const char *target) {
     yyjson_mut_doc *output = raw_output;
     yyjson_mut_val *items = raw_items;
     yyjson_val *root = raw_root;
@@ -60,12 +61,14 @@ bool bongo_cat_mver_effects(void *raw_output, void *raw_items, void *raw_root,
         if (!bongo_cat_path_join(destination, sizeof(destination), target_effects, name) ||
             !bongo_cat_path_copy_file(source, destination)) return false;
         yyjson_mut_val *item = yyjson_mut_arr_add_obj(output, items);
+        const char *label = bongo_cat_mver_label(labels, "face", index);
         char relative[BONGO_CAT_PATH_CAP];
         snprintf(relative, sizeof(relative), "resources/effects/%s", name);
         if (!item || !yyjson_mut_obj_add_str(output, item, "kind", "effect") ||
             !yyjson_mut_obj_add_int(output, item, "index", (int)index) ||
             !yyjson_mut_obj_add_strcpy(output, item, "shortcut", shortcut) ||
             !yyjson_mut_obj_add_strcpy(output, item, "effect", relative) ||
+            (label && !yyjson_mut_obj_add_strcpy(output, item, "label", label)) ||
             (momentary && !yyjson_mut_obj_add_bool(output, item, "momentary", true))) return false;
         emitted++;
     }

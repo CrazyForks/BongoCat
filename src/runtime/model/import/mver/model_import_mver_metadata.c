@@ -160,7 +160,7 @@ bool bongo_cat_import_adapter_metadata(const BongoCatImportCandidate *candidate,
         bongo_cat_mver_add_behaviors(output, items, config, candidate, labels, error) &&
         bongo_cat_mver_add_audio(output, items, config, yyjson_obj_get(mode, "sounds"),
             candidate, labels, target) &&
-        bongo_cat_mver_effects(output, items, config, mode, candidate, target);
+        bongo_cat_mver_effects(output, items, config, mode, candidate, labels, target);
     else if (ok) ok = add_native_render(output, root);
     if (ok && mver) {
         /* Adapter data describes assets/rendering only. Mver config owns keys. */

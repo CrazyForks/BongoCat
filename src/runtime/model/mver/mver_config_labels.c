@@ -6,22 +6,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-static bool line_label(TextSpan row, char *output, size_t capacity) {
+static bool line_label(TextSpan row, bool block_label, char *output, size_t capacity) {
     const char *cursor = row.begin;
     while (cursor + 1 < row.end) {
         if (*cursor == '"' || *cursor == '\'') cursor = mver_text_skip_string(cursor, row.end);
-        else if (cursor[0] == '/' && cursor[1] == '*') {
-            cursor += 2;
-            while (cursor + 1 < row.end && !(cursor[0] == '*' && cursor[1] == '/'))
-                cursor++;
-            if (cursor + 1 < row.end) cursor += 2;
-        } else if (cursor[0] == '/' && cursor[1] == '/') {
+        else if (cursor[0] == '/' && (cursor[1] == '/' || cursor[1] == '*')) {
+            bool block = cursor[1] == '*';
             const char *begin = cursor + 2, *end = begin;
-            while (end < row.end && *end != '\n' && *end != '\r') end++;
+            if (block) {
+                while (end + 1 < row.end && !(end[0] == '*' && end[1] == '/')) end++;
+                if (end + 1 >= row.end) return false;
+                cursor = end + 2;
+            } else {
+                while (end < row.end && *end != '\n' && *end != '\r') end++;
+                cursor = end;
+            }
+            if (block != block_label) continue;
             while (begin < end && isspace((unsigned char)*begin)) begin++;
             while (end > begin && isspace((unsigned char)end[-1])) end--;
             size_t length = (size_t)(end - begin);
-            if (!length) return false;
+            if (!length) continue;
             if (length >= capacity) {
                 length = capacity - 1;
                 while (length &&
@@ -33,6 +37,25 @@ static bool line_label(TextSpan row, char *output, size_t capacity) {
     return false;
 }
 
+static const char *row_label_end(const char *cursor, const char *end) {
+    bool comma = false;
+    while (cursor < end) {
+        if (*cursor == ' ' || *cursor == '\t') cursor++;
+        else if (*cursor == ',' && !comma) { comma = true; cursor++; }
+        else if (cursor + 1 < end && cursor[0] == '/' && cursor[1] == '/') {
+            cursor += 2;
+            while (cursor < end && *cursor != '\n' && *cursor != '\r') cursor++;
+            return cursor;
+        } else if (cursor + 1 < end && cursor[0] == '/' && cursor[1] == '*') {
+            cursor += 2;
+            while (cursor + 1 < end && !(cursor[0] == '*' && cursor[1] == '/')) cursor++;
+            if (cursor + 1 >= end) return end;
+            cursor += 2;
+        } else break;
+    }
+    return cursor;
+}
+
 static bool collect_field(BongoCatMverLabels *labels, TextSpan mode,
     const char *field) {
     TextSpan rows;
@@ -42,9 +65,15 @@ static bool collect_field(BongoCatMverLabels *labels, TextSpan mode,
     size_t index = 0;
     while ((cursor = mver_text_skip_space(cursor, rows.end)) < rows.end && *cursor != ']') {
         const char *after = mver_text_skip_value(cursor, rows.end);
-        TextSpan row = {cursor, after};
+        if (after <= cursor) return false;
+        TextSpan row = {cursor, row_label_end(after, rows.end)};
+        TextSpan inside = {cursor, after}, trailing = {after, row.end};
         char label[BONGO_CAT_ID_CAP], normalized[BONGO_CAT_ID_CAP];
-        if (line_label(row, label, sizeof(label)) &&
+        bool named = line_label(inside, false, label, sizeof(label)) ||
+            line_label(trailing, false, label, sizeof(label)) ||
+            line_label(trailing, true, label, sizeof(label)) ||
+            line_label(inside, true, label, sizeof(label));
+        if (named &&
             bongo_cat_utf8_normalize_mver(label, normalized,
                 sizeof(normalized))) {
             if (labels->count == BONGO_CAT_BEHAVIOR_LIMIT) return false;
@@ -60,7 +89,7 @@ static bool collect_field(BongoCatMverLabels *labels, TextSpan mode,
             snprintf(entry->label, sizeof(entry->label), "%s", normalized);
             entry->index = index;
         }
-        index++; cursor = mver_text_skip_space(after, rows.end);
+        index++; cursor = mver_text_skip_space(row.end, rows.end);
         if (cursor < rows.end && *cursor == ',') cursor++;
     }
     return true;
@@ -83,7 +112,7 @@ bool bongo_cat_mver_labels_load(const char *path, const char *mode,
     bool found = mver_text_member(root, mode, &selected);
     if (found) {
         static const char *fields[] = {
-            "l2d_expression", "l2d_motion", "l2d_motion_lockhand", "sounds"
+            "l2d_expression", "l2d_motion", "l2d_motion_lockhand", "sounds", "face"
         };
         for (size_t i = 0; i < sizeof(fields) / sizeof(fields[0]); ++i) {
             TextSpan source;

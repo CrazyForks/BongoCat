@@ -174,7 +174,7 @@ bool bongo_cat_preferences_open_window(BongoCatPreferences *value) {
     bongo_cat_preferences_assets_load(value);
     bongo_cat_memory_policy_ui_loaded();
     value->style_theme = -1;
-    value->font_language = value->app->settings.app.language;
+    value->font_language = bongo_cat_i18n_language(value->app->i18n);
     int pixel_width = 0, pixel_height = 0;
     SDL_GetWindowSizeInPixels(value->window, &pixel_width, &pixel_height);
     SDL_Log("Preferences GL ready: dedicated=%d transparent=%d pixels=%dx%d layout=%.2f raster=%.2f",

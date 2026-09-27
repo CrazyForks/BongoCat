@@ -7,6 +7,8 @@ typedef struct BongoCatI18n BongoCatI18n;
 
 BongoCatI18n *bongo_cat_i18n_create(const char *root, BongoCatLanguage language, BongoCatError *error);
 void bongo_cat_i18n_destroy(BongoCatI18n *i18n);
+/* The loaded language, which may differ from a pending settings change. */
+BongoCatLanguage bongo_cat_i18n_language(const BongoCatI18n *i18n);
 BongoCatResult bongo_cat_i18n_reload(BongoCatI18n *i18n, BongoCatLanguage language,
     BongoCatError *error);
 const char *bongo_cat_i18n_get(const BongoCatI18n *i18n, const char *key,

@@ -147,7 +147,7 @@ static bool shortcut_editor(BongoCatPreferences *value,
     struct nk_rect clear = nk_rect(bounds.x + bounds.w - 25,
         bounds.y + 8, 17, 20);
     if (bongo_cat_pref_shortcut_clear(context, canvas, id, clear, p,
-        opacity, enabled && !active && shortcut->shortcut[0])) {
+        opacity, hover && !active && shortcut->shortcut[0])) {
         BongoCatError error = {0};
         if (!bongo_cat_model_shortcut_save(value->app, shortcut->id, "", &error)) {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
