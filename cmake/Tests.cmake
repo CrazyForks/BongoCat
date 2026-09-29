@@ -1,6 +1,7 @@
 if(BUILD_TESTING)
   include(${CMAKE_CURRENT_LIST_DIR}/UpdateTests.cmake)
   include(${CMAKE_CURRENT_LIST_DIR}/PlatformInputTests.cmake)
+  include(${CMAKE_CURRENT_LIST_DIR}/PointerTests.cmake)
   add_executable(bongo_cat_config_hash_tests tests/core/test_config_hash.c)
   target_include_directories(bongo_cat_config_hash_tests PRIVATE
     src/runtime/lifecycle tests/support include "${BONGO_CAT_GENERATED_INCLUDE_DIR}")

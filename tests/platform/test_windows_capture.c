@@ -69,6 +69,35 @@ static void test_click_through_does_not_refresh_frame(void) {
     CHECK(SendMessageW(window, WM_NCHITTEST, 0, 0) == HTTRANSPARENT);
     bongo_cat_windows_borderless_set_click_through(window, false, false);
     CHECK((GetWindowLongPtrW(window, GWL_EXSTYLE) & WS_EX_TRANSPARENT) == 0);
+    /* Capture ordinary model clicks before animation can clear the pixel. */
+    SendMessageW(window, WM_RBUTTONDOWN, MK_RBUTTON, 0);
+    CHECK(GetCapture() == window);
+    SendMessageW(window, WM_RBUTTONUP, 0, 0);
+    CHECK(GetCapture() != window);
+    /* Windows delivers a double-click message in place of the second down. */
+    SendMessageW(window, WM_RBUTTONDBLCLK, MK_RBUTTON, 0);
+    CHECK(GetCapture() == window);
+    SendMessageW(window, WM_RBUTTONUP, 0, 0);
+    CHECK(GetCapture() != window);
+    /* Releasing either button first must preserve capture for the other. */
+    SendMessageW(window, WM_RBUTTONDOWN, MK_LBUTTON | MK_RBUTTON, 0);
+    SendMessageW(window, WM_RBUTTONUP, MK_LBUTTON, 0);
+    CHECK(GetCapture() == window);
+    SendMessageW(window, WM_LBUTTONUP, 0, 0);
+    CHECK(GetCapture() != window);
+    SendMessageW(window, WM_RBUTTONDOWN, MK_LBUTTON | MK_RBUTTON, 0);
+    SendMessageW(window, WM_LBUTTONUP, MK_RBUTTON, 0);
+    CHECK(GetCapture() == window);
+    SendMessageW(window, WM_RBUTTONUP, 0, 0);
+    CHECK(GetCapture() != window);
+    SendMessageW(window, WM_RBUTTONDOWN, MK_RBUTTON, 0);
+    CHECK(GetCapture() == window);
+    bongo_cat_windows_borderless_set_click_through(window, true, false);
+    CHECK(GetCapture() != window);
+    SendMessageW(window, WM_RBUTTONDOWN, MK_RBUTTON, 0);
+    CHECK(GetCapture() != window);
+    SendMessageW(window, WM_RBUTTONUP, 0, 0);
+    bongo_cat_windows_borderless_set_click_through(window, false, false);
     CHECK(window_position_messages == 0);
     CHECK(nonclient_size_messages == 0);
     bongo_cat_windows_borderless_uninstall(window);

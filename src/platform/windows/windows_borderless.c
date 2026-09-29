@@ -111,9 +111,11 @@ static LRESULT CALLBACK borderless_window_proc(HWND window, UINT message,
                 click_through == BONGO_CAT_CLICK_THROUGH_TRANSPARENT_PIXEL,
                 bongo_cat_windows_right_button_down() ||
                     GetCapture() == window)) return HTTRANSPARENT;
-    } else if (message == WM_RBUTTONDOWN &&
-        (INT_PTR)GetPropW(window, click_through_property) ==
-            BONGO_CAT_CLICK_THROUGH_TRANSPARENT_PIXEL) {
+    } else if ((message == WM_RBUTTONDOWN || message == WM_RBUTTONDBLCLK) &&
+        (INT_PTR)GetPropW(window, click_through_property) !=
+            BONGO_CAT_CLICK_THROUGH_FORCED) {
+        /* Keep the release even if animation makes the pressed pixel clear
+           or the pointer leaves the layered proxy before SDL starts a drag. */
         SetCapture(window);
     } else if (message == WM_SYSCOMMAND &&
         (wparam & 0xFFF0u) == SC_MINIMIZE) {
@@ -152,7 +154,12 @@ static LRESULT CALLBACK borderless_window_proc(HWND window, UINT message,
     }
     LRESULT result = CallWindowProcW(original ? original : DefWindowProcW,
         window, message, wparam, lparam);
-    if (message == WM_RBUTTONUP && GetCapture() == window)
+    /* A right release must not drop capture while another button still owns
+       a drag. Release the native click capture when the last button is up. */
+    bool button_up = message == WM_LBUTTONUP || message == WM_RBUTTONUP ||
+        message == WM_MBUTTONUP || message == WM_XBUTTONUP;
+    if (button_up && !(wparam & (MK_LBUTTON | MK_RBUTTON | MK_MBUTTON |
+            MK_XBUTTON1 | MK_XBUTTON2)) && GetCapture() == window)
         ReleaseCapture();
     /* Move messages keep frames flowing when the low-priority timer is starved. */
     if (drag && (message == WM_MOUSEMOVE || message == WM_NCMOUSEMOVE))
@@ -244,6 +251,7 @@ void bongo_cat_windows_borderless_set_click_through(HWND window,
         pointer_transparent ? BONGO_CAT_CLICK_THROUGH_TRANSPARENT_PIXEL : 0;
     if (mode) SetPropW(window, click_through_property, (HANDLE)mode);
     else RemovePropW(window, click_through_property);
+    if (forced && GetCapture() == window) ReleaseCapture();
     LONG_PTR style = GetWindowLongPtrW(window, GWL_EXSTYLE);
     LONG_PTR next = (forced || bongo_cat_windows_layered_suppressed(window)) ? style | WS_EX_TRANSPARENT :
         style & ~WS_EX_TRANSPARENT;

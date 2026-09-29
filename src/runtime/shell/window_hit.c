@@ -67,10 +67,10 @@ void bongo_cat_window_mark_hit_dirty(BongoCatApp *app) {
 
 void bongo_cat_window_set_visible(BongoCatApp *app, bool visible) {
     if (!app || !app->window) return;
-    if (!visible) bongo_cat_window_resize_end(app);
     app->session.window.visible = visible;
-    if (!visible) bongo_cat_window_snapshot_discard(app);
     if (!visible) {
+        bongo_cat_window_snapshot_discard(app);
+        bongo_cat_window_cancel_pointer_interaction(app);
         app->startup_visibility_pending = false;
 #if defined(__linux__)
         /* Remember XWayland placement before unmapping the surface. */
@@ -136,7 +136,7 @@ void bongo_cat_window_schedule_hit_check(BongoCatApp *app) {
 void bongo_cat_window_sync_click_through(BongoCatApp *app) {
     if (!app || !app->window) return;
     bool forced = app->settings.window.pass_through || app->hover_hidden;
-    if (forced) bongo_cat_window_resize_end(app);
+    if (forced) bongo_cat_window_cancel_pointer_interaction(app);
     if (forced && app->window_snapshot) bongo_cat_window_snapshot_end(app);
     if (!forced && !needs_pointer_hit_sample(app)) {
         app->pointer_transparent = false;

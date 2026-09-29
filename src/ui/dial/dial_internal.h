@@ -59,7 +59,7 @@ typedef struct Dial {
     SDL_WindowID window_id;
     const BongoCatMenuLabels *labels;
     DialItem items[DIAL_ROOTS];
-    int count, active, child, page, pressed;
+    int count, active, child, page, pressed, pressed_root;
     bool done, dark, dirty, child_focus, shown, popup;
     uint64_t input_after_ns;
     BongoCatMenuAction result, preview;

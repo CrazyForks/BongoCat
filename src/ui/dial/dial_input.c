@@ -57,13 +57,16 @@ void dial_event(Dial *d, const SDL_Event *e) {
         pointer(d,e->button.x,e->button.y,true,&root,&child);
         if (root < 0) { d->done = true; break; }
         dial_select(d,root,child);
+        d->pressed_root = root;
         d->pressed = child >= 0 ? DIAL_ROOTS+child : root; d->dirty = true;
         break;
     case SDL_EVENT_MOUSE_BUTTON_UP: {
         if (e->button.button != SDL_BUTTON_LEFT) break;
-        int pressed = d->pressed; d->pressed = -1; d->dirty = true;
+        int pressed = d->pressed, pressed_root = d->pressed_root;
+        d->pressed = d->pressed_root = -1; d->dirty = true;
         pointer(d,e->button.x,e->button.y,true,&root,&child);
-        if (root >= 0 && pressed == (child >= 0 ? DIAL_ROOTS+child : root)) {
+        if (root >= 0 && root == pressed_root &&
+            pressed == (child >= 0 ? DIAL_ROOTS+child : root)) {
             dial_select(d,root,child); activate(d);
         }
         break;

@@ -130,12 +130,19 @@ void bongo_cat_window_resize_end(BongoCatApp *app) {
     }
 }
 
+void bongo_cat_window_resize_release(BongoCatApp *app) {
+    bool show_menu = app->resize_menu_pending && !app->resize_gesture;
+    bongo_cat_window_resize_end(app);
+    bongo_cat_window_mark_hit_dirty(app);
+    /* Open after the event batch, once capture and focus have settled. */
+    if (show_menu) app->context_menu_pointer_requested = true;
+}
+
 void bongo_cat_window_resize_by_pointer(BongoCatApp *app, const SDL_Event *event) {
     if (!app->resize_candidate && !app->resize_gesture) return;
-    if (!(event->motion.state & SDL_BUTTON_RMASK)) {
-        bongo_cat_window_resize_end(app);
-        return;
-    }
+    /* Focus/capture updates can report released motion before BUTTON_UP.
+       Only the release event (or the drained-queue recovery) ends the click. */
+    if (!(event->motion.state & SDL_BUTTON_RMASK)) return;
     /* Ignore vertical movement and small click jitter. Relative motion stays
        independent of the changing window dimensions during a resize. */
     app->resize_pointer_delta += event->motion.xrel;
@@ -270,6 +277,8 @@ bool bongo_cat_window_geometry_self_test(BongoCatApp *app) {
         &safe_scale, &safe_width, &safe_height) && safe_width == 8192 &&
         safe_height == 4096 && safe_scale < 103.0f;
     SDL_Keymod old_modifiers = SDL_GetModState();
+    bool menu_requested_backup = app->context_menu_pointer_requested;
+    app->context_menu_pointer_requested = false;
     SDL_SetModState(old_modifiers & ~SDL_KMOD_SHIFT);
     app->resize_gesture = false;
     app->resize_candidate = true;
@@ -328,13 +337,45 @@ bool bongo_cat_window_geometry_self_test(BongoCatApp *app) {
     bongo_cat_window_event(app, &released);
     gesture = gesture && !app->resize_gesture && !app->resize_candidate &&
         !app->resize_menu_pending && !app->resize_target_pending &&
-        app->session.window.scale_percent == 110.0f;
+        !app->context_menu_pointer_requested && app->session.window.scale_percent == 110.0f;
+    /* A capture/focus motion with no buttons must not consume the click. */
+    app->resize_candidate = app->resize_menu_pending = true;
+    motion.motion.windowID = SDL_GetWindowID(app->window);
+    motion.motion.state = 0;
+    motion.motion.xrel = 100.0f;
+    bongo_cat_window_event(app, &motion);
+    gesture = gesture && app->resize_candidate && app->resize_menu_pending &&
+        !app->resize_gesture && !app->context_menu_pointer_requested;
+    bongo_cat_window_event(app, &released);
+    gesture = gesture && app->context_menu_pointer_requested && !app->resize_candidate &&
+        !app->resize_menu_pending && app->session.window.scale_percent == 110.0f;
+    app->context_menu_pointer_requested = false;
+    bongo_cat_window_event(app, &released);
+    gesture = gesture && !app->context_menu_pointer_requested;
+    /* Menu-only clicks still accept a release routed away from the owner. */
+    app->resize_menu_pending = true;
+    released.button.windowID = 0;
+    bongo_cat_window_event(app, &released);
+    gesture = gesture && app->context_menu_pointer_requested && !app->resize_menu_pending;
+    app->context_menu_pointer_requested = false;
+    released.button.windowID = SDL_GetWindowID(app->window);
+    /* The drained-queue fallback must finish a lost release, not cancel it. */
+    app->resize_candidate = app->resize_menu_pending = true;
+    bongo_cat_window_resize_release(app);
+    gesture = gesture && app->context_menu_pointer_requested && !app->resize_candidate &&
+        !app->resize_menu_pending;
+    app->context_menu_pointer_requested = false;
+    app->resize_menu_pending = true;
+    bongo_cat_window_resize_release(app);
+    gesture = gesture && app->context_menu_pointer_requested && !app->resize_menu_pending;
+    app->context_menu_pointer_requested = false;
     app->resize_candidate = app->resize_menu_pending = true;
     SDL_Event focus_lost = {.type = SDL_EVENT_WINDOW_FOCUS_LOST};
     focus_lost.window.windowID = SDL_GetWindowID(app->window);
     bongo_cat_window_event(app, &focus_lost);
     gesture = gesture && !app->resize_candidate && !app->resize_menu_pending;
     bongo_cat_window_event(app, &released);
+    gesture = gesture && !app->context_menu_pointer_requested;
     app->pointer_known = true; app->model_pointer_anchor_ready = true;
     app->mver_pointer.initialized = true;
     SDL_Event display_scale = {.type = SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED};
@@ -346,10 +387,12 @@ bool bongo_cat_window_geometry_self_test(BongoCatApp *app) {
        even if SDL retains an unrelated modifier. */
     SDL_SetModState(old_modifiers | SDL_KMOD_SHIFT);
     float released_scale = app->session.window.scale_percent;
+    motion.motion.state = SDL_BUTTON_RMASK;
     bongo_cat_window_resize_by_pointer(app, &motion);
     gesture = gesture && !app->resize_gesture &&
         app->session.window.scale_percent == released_scale;
     SDL_SetModState(old_modifiers);
+    app->context_menu_pointer_requested = menu_requested_backup;
     bongo_cat_window_apply_geometry(app, original_x, original_y,
         state_backup.scale_percent, original_width, original_height);
     app->settings.window = preferences_backup;

@@ -209,10 +209,10 @@ void bongo_cat_app_loop(BongoCatApp *app) {
         bongo_cat_preferences_input_end(app->preferences);
         bongo_cat_window_resize_update(app, SDL_GetTicksNS());
         /* Recover if capture/focus changes swallowed the release event. */
-        if ((app->resize_candidate || app->resize_gesture) &&
-            !SDL_HasEvents(SDL_EVENT_MOUSE_MOTION, SDL_EVENT_MOUSE_BUTTON_UP) &&
-            !(SDL_GetGlobalMouseState(NULL, NULL) & SDL_BUTTON_RMASK))
-            bongo_cat_window_resize_end(app);
+        if ((app->drag_candidate || app->window_drag_active || app->resize_candidate ||
+                app->resize_gesture || app->resize_menu_pending) &&
+            !SDL_HasEvents(SDL_EVENT_WINDOW_FIRST, SDL_EVENT_MOUSE_BUTTON_UP))
+            bongo_cat_window_recover_pointer_buttons(app, SDL_GetGlobalMouseState(NULL, NULL));
         bongo_cat_diagnostics_phase("model-watch-and-refresh");
         uint64_t now = SDL_GetTicksNS();
         bongo_cat_preferences_update(app->preferences);
@@ -241,7 +241,10 @@ void bongo_cat_app_loop(BongoCatApp *app) {
         bongo_cat_app_refresh_texture_resolution(app, true);
         bongo_cat_resource_trace_poll();
         bongo_cat_app_drain_input(app, true);
-        if (app->context_menu_requested) {
+        bool pointer_menu_ready = app->context_menu_pointer_requested &&
+            !SDL_HasEvents(SDL_EVENT_WINDOW_FIRST, SDL_EVENT_MOUSE_BUTTON_UP) &&
+            !(SDL_GetGlobalMouseState(NULL, NULL) & (SDL_BUTTON_LMASK | SDL_BUTTON_RMASK));
+        if (app->running && (app->context_menu_requested || pointer_menu_ready)) {
             app->context_menu_requested = false;
             bongo_cat_diagnostics_phase(NULL); /* Modal menu owns its own loop. */
             bongo_cat_window_show_context_menu(app);

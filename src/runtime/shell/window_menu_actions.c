@@ -44,6 +44,8 @@ void bongo_cat_window_show_context_menu(BongoCatApp *app) {
     if (!app || app->context_menu_active) return;
     app->context_menu_requested = false;
     app->context_menu_close_requested = false;
+    /* Keyboard shortcuts may open the modal menu during a held gesture. */
+    bongo_cat_window_cancel_pointer_interaction(app);
     size_t capacity = app->behaviors.count ? app->behaviors.count : 1;
     char (*names)[BONGO_CAT_MENU_LABEL_CAP] = calloc(capacity * 3, sizeof(*names));
     bool *checked = calloc(capacity * 3, sizeof(*checked));

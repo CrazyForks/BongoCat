@@ -53,7 +53,9 @@ int bongo_cat_window_wait_timeout(const BongoCatApp *app, uint64_t now) {
         int resize_wait = remaining_ms(app->resize_next_ns, now);
         if (wait_ms > resize_wait) wait_ms = resize_wait;
     }
-    if ((app->resize_candidate || app->resize_gesture) && wait_ms > 16)
+    if ((app->drag_candidate || app->window_drag_active || app->resize_candidate ||
+        app->resize_gesture || app->resize_menu_pending ||
+        app->context_menu_pointer_requested) && wait_ms > 16)
         wait_ms = 16;
     if (app->window_snapshot && wait_ms > 16) wait_ms = 16;
     if (app->session.window.visible && !app->window_minimized &&
@@ -157,6 +159,18 @@ bool bongo_cat_window_wait_timeout_self_test(void) {
     app->window_minimized = false;
     app->session.window.visible = false;
     if (bongo_cat_window_wait_timeout(app, now) != 250) goto done;
+    app->resize_menu_pending = true;
+    if (bongo_cat_window_wait_timeout(app, now) != 16) goto done;
+    app->resize_menu_pending = false;
+    app->drag_candidate = true;
+    if (bongo_cat_window_wait_timeout(app, now) != 16) goto done;
+    app->drag_candidate = false;
+    app->window_drag_active = true;
+    if (bongo_cat_window_wait_timeout(app, now) != 16) goto done;
+    app->window_drag_active = false;
+    app->context_menu_pointer_requested = true;
+    if (bongo_cat_window_wait_timeout(app, now) != 16) goto done;
+    app->context_menu_pointer_requested = false;
     app->wheel_animation_active = true;
     app->wheel_animation_ns = now;
     if (bongo_cat_window_wait_timeout(app, now) != 8 ||

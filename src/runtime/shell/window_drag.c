@@ -75,3 +75,19 @@ void bongo_cat_window_drag_end(BongoCatApp *app) {
         bongo_cat_app_apply_mouse_position(app, pointer_x, pointer_y, 0.0f);
     }
 }
+
+void bongo_cat_window_recover_pointer_buttons(BongoCatApp *app,
+    SDL_MouseButtonFlags buttons) {
+    /* Call only after queued input is drained: physical state can be newer
+       than a queued press/release pair. Recovery must not depend on snapshots. */
+    if ((app->drag_candidate || app->window_drag_active) &&
+        !(buttons & SDL_BUTTON_LMASK)) bongo_cat_window_drag_end(app);
+    if ((app->resize_candidate || app->resize_gesture || app->resize_menu_pending) &&
+        !(buttons & SDL_BUTTON_RMASK)) bongo_cat_window_resize_release(app);
+}
+
+void bongo_cat_window_cancel_pointer_interaction(BongoCatApp *app) {
+    app->context_menu_pointer_requested = false;
+    bongo_cat_window_resize_end(app);
+    bongo_cat_window_drag_end(app);
+}

@@ -169,7 +169,7 @@ BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
     d->owner = platform->window; d->labels = labels; d->dark = labels->dark_theme;
     d->previous_window = SDL_GL_GetCurrentWindow();
     d->previous_context = SDL_GL_GetCurrentContext();
-    d->active = d->child = d->pressed = -1;
+    d->active = d->child = d->pressed = d->pressed_root = -1;
     dial_items(d);
     bool ready = create(d);
     trace_menu(d, ready ? "ready" : "create-failed");
