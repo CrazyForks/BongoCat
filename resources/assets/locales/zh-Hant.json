@@ -32,6 +32,7 @@
           "randomExpression": "隨機表情",
           "randomMotion": "隨機動作",
           "randomAudio": "隨機音訊",
+          "audioVolume": "音量",
           "secondsUnit": "秒",
           "obsBackground": "純色背景",
           "hideOnHover": "滑鼠游標移入隱藏",

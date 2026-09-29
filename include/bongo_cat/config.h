@@ -12,6 +12,7 @@
 #define BONGO_CAT_DEFAULT_RANDOM_EXPRESSION_SECONDS 5.0f
 #define BONGO_CAT_DEFAULT_RANDOM_MOTION_SECONDS 5.0f
 #define BONGO_CAT_DEFAULT_RANDOM_AUDIO_SECONDS 30.0f
+#define BONGO_CAT_DEFAULT_AUDIO_VOLUME_PERCENT 100.0f
 #define BONGO_CAT_DEFAULT_WINDOW_CORNER_PERCENT 6.0f
 #define BONGO_CAT_DEFAULT_HIDE_FADE_SECONDS 0.3f
 #define BONGO_CAT_MAX_HIDE_FADE_SECONDS 3.0f
@@ -73,6 +74,7 @@ typedef struct BongoCatWindowPreferences {
     float random_expression_interval_seconds;
     float random_motion_interval_seconds;
     float random_audio_interval_seconds;
+    float audio_volume_percent;
     float corner_radius_percent;
 } BongoCatWindowPreferences;
 

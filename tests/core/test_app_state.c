@@ -1,15 +1,14 @@
 #include "test.h"
 #include "bongo_cat/app.h"
 #include "bongo_cat/overlay.h"
-
 #include <stdio.h>
 #include <string.h>
+#include "test_app_state_held.h"
 
 typedef struct ParameterValue {
     char id[BONGO_CAT_ID_CAP];
     float value;
 } ParameterValue;
-
 static ParameterValue parameters[128];
 static size_t parameter_count;
 static bool left_hand, right_hand, left_trigger, right_trigger, left_thumb;
@@ -18,7 +17,6 @@ static int active_expression = -1;
 static int restored_motion_count;
 static size_t overlay_key_calls;
 int bongo_cat_test_failures;
-
 static float parameter(const char *id) {
     for (size_t i = parameter_count; i > 0; --i)
         if (strcmp(parameters[i - 1].id, id) == 0) return parameters[i - 1].value;
@@ -97,6 +95,11 @@ bool bongo_cat_live2d_set_expression(BongoCatLive2D *live2d, int index) {
     (void)live2d;
     active_expression = index;
     return true;
+}
+
+bool bongo_cat_live2d_expression_selected(const BongoCatLive2D *live2d, int index) {
+    (void)live2d;
+    return index >= 0 && active_expression == index;
 }
 
 int bongo_cat_live2d_expression(const BongoCatLive2D *live2d) {
@@ -421,6 +424,7 @@ int main(void) {
     BongoCatInputEvent event = input(BONGO_CAT_INPUT_MOUSE_DOWN, "Middle", 1.0f);
     bongo_cat_app_apply_input(&app, &event);
     CHECK(parameter_count == 0);
+    check_mouse_held_replay(&app);
     event = input(BONGO_CAT_INPUT_MOUSE_DOWN, "Left", 1.0f);
     bongo_cat_app_apply_input(&app, &event);
     CHECK(app.left_mouse_down);
@@ -433,6 +437,7 @@ int main(void) {
     bongo_cat_app_apply_input(&app, &event);
     CHECK(!app.right_mouse_down && app.pointer_hit_dirty);
     CHECK(parameter("ParamMouseRightDown") == 0.0f);
+    CHECK(!strcmp(native_held_key, "Right") && !native_held_down);
 
     event = input(BONGO_CAT_INPUT_MOUSE_DOWN, "Back", 1.0f);
     bongo_cat_app_apply_input(&app, &event);

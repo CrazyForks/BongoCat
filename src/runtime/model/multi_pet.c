@@ -1,4 +1,5 @@
 #include "runtime.h"
+#include "bongo_cat/audio.h"
 #include "bongo_cat/file.h"
 #include "bongo_cat/path.h"
 
@@ -199,6 +200,8 @@ static void reload_secondary_settings(BongoCatApp *app) {
             app->settings.window.random_motion_interval_seconds ||
         settings.window.random_audio_interval_seconds !=
             app->settings.window.random_audio_interval_seconds ||
+        settings.window.audio_volume_percent !=
+            app->settings.window.audio_volume_percent ||
         settings.window.corner_radius_percent !=
             app->settings.window.corner_radius_percent;
     bool pointer_orientation_changed = settings.model.vertical_flip !=
@@ -234,6 +237,8 @@ static void reload_secondary_settings(BongoCatApp *app) {
         app->dirty = true;
         bongo_cat_platform_set_always_on_top(&app->platform,
             app->settings.window.always_on_top);
+        bongo_cat_audio_set_volume(app->audio,
+            app->settings.window.audio_volume_percent / 100.0f);
         bongo_cat_window_mark_hit_dirty(app);
         bongo_cat_window_sync_click_through(app);
     }

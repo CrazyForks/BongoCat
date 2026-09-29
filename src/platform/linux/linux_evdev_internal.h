@@ -8,7 +8,6 @@
 #define EVDEV_MAX_DEVICES 32
 #define EVDEV_NODE_CAP 32
 #define EVDEV_SCAN_INTERVAL_NS 2000000000ull
-#define EVDEV_POLL_MS 250
 
 typedef struct EvdevDevice {
     int fd;
@@ -27,6 +26,7 @@ struct LinuxEvdevState {
     atomic_bool running;
     atomic_bool pointer_active;
     int epoll_fd;
+    int stop_fd;
     EvdevDevice devices[EVDEV_MAX_DEVICES];
     size_t device_count;
     size_t reported_count;

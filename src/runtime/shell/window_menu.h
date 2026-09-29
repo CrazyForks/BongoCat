@@ -6,7 +6,7 @@
 typedef struct BongoCatWindowMenuPreview {
     BongoCatApp *app;
     float scale, opacity;
-    int expression;
+    bool expressions[BONGO_CAT_BEHAVIOR_LIMIT];
     BongoCatMenuAction last, applied;
     BongoCatModalFrame modal_frame;
 } BongoCatWindowMenuPreview;
@@ -24,7 +24,7 @@ void bongo_cat_window_behavior_labels(BongoCatApp *app,
     char motions[][BONGO_CAT_MENU_LABEL_CAP], bool *motion_checked,
     size_t *motion_count, char expressions[][BONGO_CAT_MENU_LABEL_CAP],
     size_t *expression_count,
-    size_t *current_expression);
+    size_t *current_expression, bool *expression_checked);
 bool bongo_cat_window_behavior_menu_action(BongoCatMenuAction action);
 bool bongo_cat_window_behavior_action(BongoCatApp *app,
     BongoCatMenuAction action);

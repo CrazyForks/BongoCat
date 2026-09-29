@@ -83,6 +83,12 @@ void NativeModel::prepare_frame_bounds() {
 
 bool NativeModel::measure_frame(BongoCatLive2DFrame *required) {
     if (!_model || !required) return false;
+    if (!held_parameters_.empty() && render_options_.mver_projection) {
+        required_frame_ = frame_;
+        *required = required_frame_;
+        update_viewport();
+        return true;
+    }
     ModelBounds envelope;
     auto include = [](ModelBounds &bounds, float x, float y) {
         if (!std::isfinite(x) || !std::isfinite(y)) return;

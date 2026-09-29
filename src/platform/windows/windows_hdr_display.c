@@ -50,18 +50,28 @@ int bongo_cat_windows_display_hdr(SDL_Window *window) {
         SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
     HMONITOR monitor = handle ? MonitorFromWindow(handle, MONITOR_DEFAULTTONEAREST) : NULL;
     if (!monitor) return -1;
-    /* Shared by the pet and its UI on the main thread. Avoid querying display
-       topology for every animated frame; moving monitors bypasses the cache. */
-    static HMONITOR cached_monitor;
-    static Uint64 expires;
-    static int cached = -1;
+    /* Main-thread only. Keep independent entries so a pet and an animated UI
+       on different monitors cannot evict each other's result every frame.
+       Retain the same short TTL for HDR changes and recycled monitor handles. */
+    typedef struct MonitorCache {
+        HMONITOR monitor;
+        Uint64 expires;
+        int result;
+    } MonitorCache;
+    static MonitorCache cache[16];
     Uint64 now = SDL_GetTicks();
-    if (monitor != cached_monitor || now >= expires) {
-        const char *previous = bongo_cat_diagnostics_phase("hdr-monitor-query");
-        cached = monitor_hdr(monitor);
-        bongo_cat_diagnostics_phase(previous);
-        cached_monitor = monitor;
-        expires = now + 250;
+    MonitorCache *entry = &cache[0];
+    for (size_t i = 0; i < SDL_arraysize(cache); ++i) {
+        if (cache[i].monitor == monitor) {
+            if (now < cache[i].expires) return cache[i].result;
+            entry = &cache[i];
+            break;
+        }
+        if (cache[i].expires < entry->expires) entry = &cache[i];
     }
-    return cached;
+    const char *previous = bongo_cat_diagnostics_phase("hdr-monitor-query");
+    int result = monitor_hdr(monitor);
+    bongo_cat_diagnostics_phase(previous);
+    *entry = (MonitorCache){monitor, now + 250, result};
+    return result;
 }

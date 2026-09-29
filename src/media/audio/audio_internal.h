@@ -27,6 +27,7 @@ struct BongoCatAudio {
     uint64_t sequence;
     uint64_t last_play;
     uint64_t next_collect;
+    float volume;
     bool initialized;
     bool enabled;
 };

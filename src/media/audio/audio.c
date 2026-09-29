@@ -21,6 +21,7 @@ BongoCatAudio *bongo_cat_audio_create(BongoCatError *error) {
         return NULL;
     }
     audio->enabled = true;
+    audio->volume = 1.0f;
     return audio;
 }
 
@@ -85,6 +86,14 @@ void bongo_cat_audio_set_enabled(BongoCatAudio *audio, bool enabled) {
     if (!audio) return;
     audio->enabled = enabled;
     if (!enabled) bongo_cat_audio_reset(audio);
+}
+
+void bongo_cat_audio_set_volume(BongoCatAudio *audio, float volume) {
+    if (!audio) return;
+    if (!(volume >= 0.0f)) volume = 0.0f;
+    else if (volume > 1.0f) volume = 1.0f;
+    audio->volume = volume;
+    if (audio->initialized) ma_engine_set_volume(&audio->engine, volume);
 }
 
 void bongo_cat_audio_destroy(BongoCatAudio *audio) {

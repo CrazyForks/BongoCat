@@ -12,6 +12,16 @@ static bool south, dpad, keyboard, effect;
 static unsigned shortcut_calls;
 static float left_hand, right_hand;
 
+bool bongo_cat_live2d_set_held_key(BongoCatLive2D *live2d, const char *key, bool down) {
+    (void)live2d; (void)key; (void)down; return false;
+}
+bool bongo_cat_live2d_clear_expression_shortcut(BongoCatLive2D *live2d, const char *key, bool down) {
+    (void)live2d; (void)key; (void)down; return false;
+}
+bool bongo_cat_live2d_set_expression(BongoCatLive2D *live2d, int index) {
+    (void)live2d; (void)index; return false;
+}
+
 bool bongo_cat_live2d_set_parameter(BongoCatLive2D *live2d,
     const char *id, float value) {
     (void)live2d;

@@ -202,17 +202,36 @@ static int preset_model_order(const BongoCatModelEntry *entry) {
     return 3;
 }
 
+static int compare_model_order(const BongoCatSettings *settings,
+    const BongoCatModelEntry *left, const BongoCatModelEntry *right) {
+    int order = preset_model_order(left) - preset_model_order(right);
+    if (order) return order;
+    order = SDL_strcasecmp(bongo_cat_model_name(settings, left),
+        bongo_cat_model_name(settings, right));
+    return order ? order : strcmp(left->id, right->id);
+}
+
 static void draw_models(BongoCatPreferences *value,
     struct nk_context *context, bool managed, bool storage_busy) {
-    for (int order = 0; order <= 3; ++order) {
-        for (size_t i = 0; i < value->app->models.count; ++i) {
-            const BongoCatModelEntry *entry = &value->app->models.entries[i];
-            if (entry->managed != managed || preset_model_order(entry) != order)
-                continue;
-            bongo_cat_preferences_model_card(value, context, entry,
-                storage_busy);
+    const BongoCatModelEntry *entries[BONGO_CAT_MODEL_CAP];
+    size_t count = 0;
+    /* Sort the view so newly imported models appear in name order immediately,
+       without moving catalog entries referenced by the runtime. */
+    for (size_t i = 0; i < value->app->models.count; ++i) {
+        const BongoCatModelEntry *entry = &value->app->models.entries[i];
+        if (entry->managed != managed) continue;
+        size_t position = count;
+        while (position && compare_model_order(&value->app->settings,
+                entries[position - 1], entry) > 0) {
+            entries[position] = entries[position - 1];
+            --position;
         }
+        entries[position] = entry;
+        ++count;
     }
+    for (size_t i = 0; i < count; ++i)
+        bongo_cat_preferences_model_card(value, context, entries[i],
+            storage_busy);
 }
 
 void bongo_cat_preferences_page_model(BongoCatPreferences *value,

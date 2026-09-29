@@ -32,9 +32,27 @@ void bongo_cat_window_menu_preview_init(BongoCatWindowMenuPreview *state,
     *state = (BongoCatWindowMenuPreview){.app = app,
         .scale = app ? app->session.window.scale_percent : 100.0f,
         .opacity = app ? app->session.window.opacity_percent : 100.0f,
-        .expression = app ? bongo_cat_live2d_expression(app->live2d) : -1,
         .last = BONGO_CAT_MENU_NONE, .applied = BONGO_CAT_MENU_NONE};
+    if (app) for (size_t i = 0; i < app->behaviors.count &&
+        i < BONGO_CAT_BEHAVIOR_LIMIT; ++i) {
+        const BongoCatBehaviorEntry *entry = &app->behaviors.entries[i];
+        state->expressions[i] = entry->kind == BONGO_CAT_BEHAVIOR_EXPRESSION &&
+            bongo_cat_live2d_expression_selected(app->live2d, entry->index);
+    }
     bongo_cat_modal_frame_init(&state->modal_frame, app);
+}
+
+static bool restore_expressions(BongoCatWindowMenuPreview *state) {
+    BongoCatApp *app = state->app;
+    bool changed = false;
+    for (size_t i = 0; i < app->behaviors.count && i < BONGO_CAT_BEHAVIOR_LIMIT; ++i) {
+        const BongoCatBehaviorEntry *entry = &app->behaviors.entries[i];
+        if (entry->kind == BONGO_CAT_BEHAVIOR_EXPRESSION &&
+            bongo_cat_live2d_expression_selected(app->live2d, entry->index) != state->expressions[i])
+            changed = bongo_cat_live2d_enable_expression(app->live2d,
+                entry->index, state->expressions[i]) || changed;
+    }
+    return changed;
 }
 
 void bongo_cat_window_menu_preview(void *userdata, BongoCatMenuAction action) {
@@ -75,9 +93,7 @@ void bongo_cat_window_menu_preview(void *userdata, BongoCatMenuAction action) {
         return;
     } else {
         bongo_cat_window_snapshot_end(app);
-        if (next_group == 5 &&
-            bongo_cat_live2d_expression(app->live2d) != state->expression)
-            bongo_cat_live2d_set_expression(app->live2d, state->expression);
+        if (next_group == 5) restore_expressions(state);
         if (!bongo_cat_window_behavior_preview(app, action)) {
             bongo_cat_app_render_now(app);
             return;
@@ -138,9 +154,7 @@ void bongo_cat_window_menu_restore(void *userdata, BongoCatMenuAction selected) 
         }
         changed = true;
     }
-    if (!keep_expression &&
-        bongo_cat_live2d_expression(app->live2d) != state->expression &&
-        bongo_cat_live2d_set_expression(app->live2d, state->expression)) {
+    if (!keep_expression && restore_expressions(state)) {
         bongo_cat_app_step_live2d(app, 1.0f / 60.0f);
         changed = true;
     }

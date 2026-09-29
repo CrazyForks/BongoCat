@@ -47,9 +47,9 @@ static bool run_behavior_loaded(BongoCatApp *app,
             bongo_cat_audio_play(app->audio, behavior->sound, &error);
         }
     } else {
-        int expression = bongo_cat_live2d_expression(app->live2d) ==
-            behavior->index ? -1 : behavior->index;
-        if (!bongo_cat_live2d_set_expression(app->live2d, expression)) return false;
+        if (!bongo_cat_live2d_enable_expression(app->live2d, behavior->index,
+            !bongo_cat_live2d_expression_selected(app->live2d, behavior->index)))
+            return false;
     }
     bongo_cat_app_capture_behavior_state(app);
     app->input_diagnostics.visual_actions++;

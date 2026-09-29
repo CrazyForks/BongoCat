@@ -256,21 +256,22 @@ void bongo_cat_preferences_behavior_row_draw(BongoCatPreferences *value,
     bool play_enabled = enabled;
     bool play_hover = play_enabled && nk_input_is_mouse_hovering_rect(
         &context->input, play);
-    nk_fill_rect(canvas, play, 10, alpha(play_hover ? p.hover : p.field, opacity));
-    nk_stroke_rect(canvas, play, 10, 1, alpha(play_hover ? p.accent :
-        p.border_subtle, opacity));
     bool playing = entry->kind == BONGO_CAT_BEHAVIOR_SOUND &&
         bongo_cat_audio_is_playing(value->app->audio, entry->sound);
+    if (entry->kind == BONGO_CAT_BEHAVIOR_EXPRESSION)
+        playing = bongo_cat_preferences_behavior_model_loaded(value) &&
+            bongo_cat_live2d_expression_selected(value->app->live2d, entry->index);
     if (playing)
         nk_fill_rect(canvas, nk_rect(play.x + 12, play.y + 12, 12, 12), 2,
-            alpha(!play_enabled ? p.muted : play_hover ? p.accent : p.text, opacity));
+            alpha(nk_rgb(84, 174, 255), opacity));
     else bongo_cat_preferences_icon_draw(value, canvas, BONGO_CAT_UI_ICON_PLAY,
         nk_rect(play.x + 10, play.y + 10, 16, 16),
-        alpha(!play_enabled ? p.muted : play_hover ? p.accent : p.text, opacity));
+        alpha(nk_rgb(84, 174, 255), opacity));
     if (play_hover) bongo_cat_ui_cursor_hover_rect(context, play,
         BONGO_CAT_UI_CURSOR_POINTER);
     if (hit(context, play, play_enabled)) {
-        if (playing) bongo_cat_audio_stop_path(value->app->audio, entry->sound);
+        if (playing && entry->kind == BONGO_CAT_BEHAVIOR_SOUND)
+            bongo_cat_audio_stop_path(value->app->audio, entry->sound);
         else bongo_cat_app_run_behavior(value->app, entry);
         value->render_dirty = true;
     }

@@ -34,15 +34,19 @@ static void active_input_update(BongoCatApp *app,
     if (!app || !event || !event->name[0]) return;
     bool tracked = event->kind == BONGO_CAT_INPUT_KEY_DOWN ||
         event->kind == BONGO_CAT_INPUT_KEY_UP ||
+        event->kind == BONGO_CAT_INPUT_MOUSE_DOWN ||
+        event->kind == BONGO_CAT_INPUT_MOUSE_UP ||
         event->kind == BONGO_CAT_INPUT_GAMEPAD_BUTTON ||
         event->kind == BONGO_CAT_INPUT_GAMEPAD_AXIS;
     if (!tracked) return;
     bool active = event->kind == BONGO_CAT_INPUT_KEY_DOWN ||
+        event->kind == BONGO_CAT_INPUT_MOUSE_DOWN ||
         (event->kind == BONGO_CAT_INPUT_GAMEPAD_BUTTON && event->value > 0.5f) ||
         (event->kind == BONGO_CAT_INPUT_GAMEPAD_AXIS && fabsf(event->value) > .001f);
     BongoCatInputKind kind = event->kind == BONGO_CAT_INPUT_KEY_DOWN ||
         event->kind == BONGO_CAT_INPUT_KEY_UP
         ? BONGO_CAT_INPUT_KEY_DOWN : event->kind;
+    if (kind == BONGO_CAT_INPUT_MOUSE_UP) kind = BONGO_CAT_INPUT_MOUSE_DOWN;
     size_t index = active_input_index(app, kind, event->name);
     if (!active) { active_input_remove(app, index); return; }
     if (index == app->active_input_count) {
@@ -228,7 +232,13 @@ void bongo_cat_app_apply_input(BongoCatApp *app, const BongoCatInputEvent *event
             app->input_diagnostics.mode_blocked_keys++;
             break;
         }
-        if (apply_key(app, event->name, event->kind == BONGO_CAT_INPUT_KEY_DOWN)) {
+        bool native_held = bongo_cat_live2d_set_held_key(app->live2d, event->name,
+            event->kind == BONGO_CAT_INPUT_KEY_DOWN);
+        if (bongo_cat_live2d_clear_expression_shortcut(app->live2d, event->name,
+                event->kind == BONGO_CAT_INPUT_KEY_DOWN) &&
+            bongo_cat_live2d_set_expression(app->live2d, -1)) app->dirty = true;
+        if (native_held) app->dirty = true;
+        if (native_held || apply_key(app, event->name, event->kind == BONGO_CAT_INPUT_KEY_DOWN)) {
             app->input_diagnostics.mapped_keys++;
             if (event->kind == BONGO_CAT_INPUT_KEY_DOWN)
                 app->input_diagnostics.keyboard_overlays++;
@@ -236,13 +246,17 @@ void bongo_cat_app_apply_input(BongoCatApp *app, const BongoCatInputEvent *event
         break;
     case BONGO_CAT_INPUT_MOUSE_DOWN:
     case BONGO_CAT_INPUT_MOUSE_UP: {
+        bool down = event->kind == BONGO_CAT_INPUT_MOUSE_DOWN;
+        if (bongo_cat_live2d_set_held_key(app->live2d, event->name, down))
+            app->dirty = true;
+        if (bongo_cat_live2d_clear_expression_shortcut(app->live2d, event->name, down) &&
+            bongo_cat_live2d_set_expression(app->live2d, -1)) app->dirty = true;
         bool left = strcmp(event->name, "Left") == 0;
         bool right = strcmp(event->name, "Right") == 0;
         bool side = strcmp(event->name, "Back") == 0 ||
             strcmp(event->name, "Forward") == 0;
         if (!left && !right && !side)
             break;
-        bool down = event->kind == BONGO_CAT_INPUT_MOUSE_DOWN;
         bool changed;
         if (left) {
             changed = app->left_mouse_down != down;
@@ -282,6 +296,11 @@ void bongo_cat_app_reapply_input(BongoCatApp *app) {
     if (!app || !app->live2d) return;
     app->input_diagnostics.replays++;
     app->input_diagnostics.pending = true;
+    for (size_t i = 0; i < app->active_input_count; ++i) {
+        const BongoCatInputEvent *event = &app->active_inputs[i];
+        if (event->kind == BONGO_CAT_INPUT_KEY_DOWN || event->kind == BONGO_CAT_INPUT_MOUSE_DOWN)
+            bongo_cat_live2d_set_held_key(app->live2d, event->name, false);
+    }
     bongo_cat_live2d_set_parameter(app->live2d, "ParamMouseLeftDown",
         app->left_mouse_down ? 1.0f : 0.0f);
     bongo_cat_live2d_set_parameter(app->live2d, "ParamMouseRightDown",
@@ -297,6 +316,13 @@ void bongo_cat_app_reapply_input(BongoCatApp *app) {
             apply_gamepad(app, event);
     }
     update_hands(app);
+    // Native gestures must win over the default hand parameters written above.
+    for (size_t i = 0; i < app->active_input_count; ++i) {
+        const BongoCatInputEvent *event = &app->active_inputs[i];
+        if (event->kind == BONGO_CAT_INPUT_MOUSE_DOWN ||
+            (event->kind == BONGO_CAT_INPUT_KEY_DOWN && keyboard_hands_enabled(app)))
+            bongo_cat_live2d_set_held_key(app->live2d, event->name, true);
+    }
     app->dirty = true;
 }
 

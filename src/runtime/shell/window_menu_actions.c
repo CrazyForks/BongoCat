@@ -46,7 +46,7 @@ void bongo_cat_window_show_context_menu(BongoCatApp *app) {
     app->context_menu_close_requested = false;
     size_t capacity = app->behaviors.count ? app->behaviors.count : 1;
     char (*names)[BONGO_CAT_MENU_LABEL_CAP] = calloc(capacity * 3, sizeof(*names));
-    bool *checked = calloc(capacity * 2, sizeof(*checked));
+    bool *checked = calloc(capacity * 3, sizeof(*checked));
     if (!names || !checked) { free(names); free(checked); return; }
     bool dark_theme = app->settings.app.theme == BONGO_CAT_THEME_DARK ||
         (app->settings.app.theme == BONGO_CAT_THEME_AUTO &&
@@ -66,10 +66,11 @@ void bongo_cat_window_show_context_menu(BongoCatApp *app) {
     char (*motion_names)[BONGO_CAT_MENU_LABEL_CAP] = names;
     char (*expression_names)[BONGO_CAT_MENU_LABEL_CAP] = names + capacity;
     bool *motion_checked = checked;
+    bool *expression_checked = checked + capacity * 2;
     size_t motion_count, expression_count, current_expression;
     bongo_cat_window_behavior_labels(app, motion_names, motion_checked,
         &motion_count, expression_names, &expression_count,
-        &current_expression);
+        &current_expression, expression_checked);
     char clear_motions[BONGO_CAT_MENU_LABEL_CAP], clear_expression[BONGO_CAT_MENU_LABEL_CAP];
     clear_label(app, 0, tr(app,
         "pages.preference.model.behaviorModal.labels.clearMotions", "Clear all motions"),
@@ -111,6 +112,7 @@ void bongo_cat_window_show_context_menu(BongoCatApp *app) {
         app->settings.model.vertical_flip};
     char (*audio_names)[BONGO_CAT_MENU_LABEL_CAP] = names + capacity * 2;
     bool *audio_checked = checked + capacity;
+    labels.expression_checked = expression_checked;
     labels.audio = tr(app, "pages.preference.model.behaviorModal.labels.audio", "Audio");
     labels.audio_names = audio_names;
     labels.audio_checked = audio_checked;

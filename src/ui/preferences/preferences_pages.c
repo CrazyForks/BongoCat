@@ -166,6 +166,13 @@ static void page_display(BongoCatApp *app, struct nk_context *context) {
         &window->random_audio, 1.0f,
         &window->random_audio_interval_seconds, 3600.0f, 1.0f,
         BONGO_CAT_DEFAULT_RANDOM_AUDIO_SECONDS);
+    bongo_cat_pref_row_icon(context, BONGO_CAT_PREF_ICON_RANDOM_AUDIO);
+    if (bongo_cat_pref_slider(context, "audio-volume", tr(app,
+        "pages.preference.cat.labels.audioVolume", "Audio Volume"), "",
+        0.0f, &window->audio_volume_percent, 100.0f, 1.0f,
+        BONGO_CAT_DEFAULT_AUDIO_VOLUME_PERCENT))
+        bongo_cat_audio_set_volume(app->audio,
+            window->audio_volume_percent / 100.0f);
 
     section_gap(context, 10);
     bongo_cat_pref_section_icon(context, tr(app,

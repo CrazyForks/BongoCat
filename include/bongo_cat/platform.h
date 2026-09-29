@@ -96,6 +96,7 @@ typedef struct BongoCatMenuLabels {
     /* Optional cancellation flag, read after the modal input tick. */
     const bool *close_requested;
     bool vertical_flip_checked;
+    const bool *expression_checked;
 } BongoCatMenuLabels;
 
 typedef void (*BongoCatTrayClick)(void *userdata);

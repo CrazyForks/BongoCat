@@ -32,6 +32,7 @@
           "randomExpression": "무작위 표정",
           "randomMotion": "무작위 동작",
           "randomAudio": "무작위 오디오",
+          "audioVolume": "오디오 볼륨",
           "secondsUnit": "초",
           "obsBackground": "단색 배경",
           "hideOnHover": "마우스를 올리면 숨기기",

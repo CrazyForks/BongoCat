@@ -32,6 +32,7 @@
           "randomExpression": "Random Expressions",
           "randomMotion": "Random Motions",
           "randomAudio": "Random Audio",
+          "audioVolume": "Audio Volume",
           "secondsUnit": "s",
           "obsBackground": "Solid Background",
           "hideOnHover": "Hide on Hover",

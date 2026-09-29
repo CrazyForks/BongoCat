@@ -88,7 +88,7 @@ void bongo_cat_window_behavior_labels(BongoCatApp *app,
     char motions[][BONGO_CAT_MENU_LABEL_CAP], bool *motion_checked,
     size_t *motion_count, char expressions[][BONGO_CAT_MENU_LABEL_CAP],
     size_t *expression_count,
-    size_t *current_expression) {
+    size_t *current_expression, bool *expression_checked) {
     if (!motion_count || !expression_count) return;
     *motion_count = 0; *expression_count = 0;
     if (current_expression) *current_expression = BONGO_CAT_BEHAVIOR_LIMIT;
@@ -107,6 +107,8 @@ void bongo_cat_window_behavior_labels(BongoCatApp *app,
         } else if (entry->kind == BONGO_CAT_BEHAVIOR_EXPRESSION && expressions) {
             if (current_expression && entry->index == active_expression)
                 *current_expression = *expression_count;
+            if (expression_checked) expression_checked[*expression_count] =
+                bongo_cat_live2d_expression_selected(app->live2d, entry->index);
             menu_label(expressions[*expression_count], app, entry);
             (*expression_count)++;
         }
@@ -182,9 +184,8 @@ bool bongo_cat_window_behavior_preview(BongoCatApp *app,
         const BongoCatBehaviorEntry *entry = nth_behavior(app,
             BONGO_CAT_BEHAVIOR_EXPRESSION, position);
         if (!entry) return false;
-        int target = bongo_cat_live2d_expression(app->live2d) == entry->index ?
-            -1 : entry->index;
-        return bongo_cat_live2d_set_expression(app->live2d, target);
+        return bongo_cat_live2d_enable_expression(app->live2d, entry->index,
+            !bongo_cat_live2d_expression_selected(app->live2d, entry->index));
     }
     return false;
 }

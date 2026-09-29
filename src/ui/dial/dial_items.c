@@ -89,7 +89,8 @@ DialItem dial_child_item(const Dial *d, int child, char *text, size_t capacity) 
         }
         item.label = l->expression_names[i];
         item.command = (BongoCatMenuAction)(BONGO_CAT_MENU_EXPRESSION_FIRST + i);
-        item.checked = i == l->current_expression;
+        item.checked = l->expression_checked ? l->expression_checked[i] :
+            i == l->current_expression;
         break;
     case 8:
         item.label = l->audio_names[i];

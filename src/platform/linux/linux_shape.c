@@ -89,11 +89,21 @@ void bongo_cat_linux_shape_capture(BongoCatPlatform *platform, int width, int he
     for (int y = 0; y < logical_height; ++y) {
         int y0 = (int)((int64_t)y * height / logical_height);
         int y1 = (int)(((int64_t)(y + 1) * height + logical_height - 1) / logical_height);
+        const unsigned char *row = shape->rgba +
+            (size_t)(height - 1 - y0) * (size_t)width * 4;
         for (size_t column = 0; column < stride; ++column) {
             unsigned char bits = 0;
             for (int bit = 0; bit < 8; ++bit) {
                 int x = (int)(column * 8) + bit;
                 if (x >= logical_width) break;
+                /* The common 1:1 path needs one alpha read, not per-pixel
+                   coordinate divisions and a nested coverage scan. Keep the
+                   coverage rule below for scaled/high-DPI windows. */
+                if (width == logical_width && height == logical_height) {
+                    if (row[(size_t)x * 4 + 3] > 8)
+                        bits |= (unsigned char)(1u << bit);
+                    continue;
+                }
                 int x0 = (int)((int64_t)x * width / logical_width);
                 int x1 = (int)(((int64_t)(x + 1) * width + logical_width - 1) / logical_width);
                 bool visible = false;

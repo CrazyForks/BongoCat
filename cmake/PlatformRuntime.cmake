@@ -54,10 +54,11 @@ elseif(APPLE)
     src/platform/macos/macos.m
     src/platform/macos/macos_preferences.m
     src/platform/macos/macos_input.m
+    src/platform/macos/macos_input_wait.c
     src/platform/macos/macos_keys.m
     src/platform/macos/macos_tray.m)
   target_link_libraries(bongo_cat_runtime PRIVATE "-framework Cocoa"
-    "-framework ApplicationServices" CURL::libcurl)
+    "-framework ApplicationServices" "-framework CoreFoundation" CURL::libcurl)
 else()
   find_package(CURL REQUIRED)
   find_package(X11 REQUIRED)
@@ -67,6 +68,7 @@ else()
   endif()
   target_sources(bongo_cat_runtime PRIVATE
     src/platform/linux/linux.c
+    src/platform/linux/linux_input_wait.c
     src/platform/linux/linux_evdev.c
     src/platform/linux/linux_evdev_devices.c
     src/platform/linux/linux_evdev_events.c

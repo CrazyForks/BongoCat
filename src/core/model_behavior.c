@@ -56,6 +56,7 @@ bool bongo_cat_behaviors_copy(BongoCatBehaviorCatalog *target,
     for (size_t i = 0; i < copy.count; ++i) {
         copy.entries[i].shortcut_active = false;
         copy.entries[i].audio_playing = false;
+        copy.entries[i].expression_selected = false;
     }
     bongo_cat_behaviors_move(target, &copy);
     return true;

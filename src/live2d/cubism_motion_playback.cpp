@@ -2,6 +2,7 @@
 
 #include <Motion/CubismMotionQueueEntry.hpp>
 #include <Motion/CubismMotionManager.hpp>
+#include <algorithm>
 #include <utility>
 
 namespace bongo_cat {
@@ -57,6 +58,9 @@ void NativeModel::stop_motion_runs(const std::string &key) {
         auto *entry = _motionManager->GetCubismMotionQueueEntry(run.handle);
         if (entry) entry->IsFinished(true);
     }
+    // A cancelled run must never commit its old endpoint on the next update.
+    motion_runs_.erase(std::remove_if(motion_runs_.begin(), motion_runs_.end(),
+        [&key](const MotionRun &run) { return run.key == key; }), motion_runs_.end());
 }
 
 void NativeModel::expire_motion_runs() {

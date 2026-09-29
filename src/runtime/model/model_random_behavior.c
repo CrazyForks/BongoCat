@@ -65,27 +65,19 @@ static bool random_behavior_candidate(BongoCatApp *app,
 
 static void random_behavior_run(BongoCatApp *app, uint64_t now,
     BongoCatBehaviorKind kind) {
-    int current_expression = bongo_cat_live2d_expression(app->live2d);
     size_t count = 0;
-    size_t alternate_count = 0;
     for (size_t i = 0; i < app->behaviors.count; ++i) {
         const BongoCatBehaviorEntry *entry = &app->behaviors.entries[i];
         if (!random_behavior_candidate(app, entry, kind)) continue;
         count++;
-        if (entry->index != current_expression) alternate_count++;
     }
     if (!count) return;
 
-    /* Expressions prefer a different face. Motions must remain eligible when
-       selected: triggering a persistent motion again switches it off. */
-    bool choose_alternate = kind == BONGO_CAT_BEHAVIOR_EXPRESSION &&
-        alternate_count > 0;
-    size_t candidate_count = choose_alternate ? alternate_count : count;
-    size_t choice = random_behavior_next(app, now) % candidate_count;
+    /* Every eligible expression can be drawn, including enabled ones. */
+    size_t choice = random_behavior_next(app, now) % count;
     for (size_t i = 0; i < app->behaviors.count; ++i) {
         const BongoCatBehaviorEntry *entry = &app->behaviors.entries[i];
-        if (!random_behavior_candidate(app, entry, kind) ||
-            (choose_alternate && entry->index == current_expression)) continue;
+        if (!random_behavior_candidate(app, entry, kind)) continue;
         if (choice--) continue;
         if (kind == BONGO_CAT_BEHAVIOR_MOTION || kind == BONGO_CAT_BEHAVIOR_SOUND) {
             if (kind == BONGO_CAT_BEHAVIOR_MOTION) {
@@ -123,8 +115,7 @@ static void random_behavior_run(BongoCatApp *app, uint64_t now,
                 }
             }
         }
-        else if (bongo_cat_live2d_set_expression(app->live2d, entry->index))
-            app->dirty = true;
+        else bongo_cat_app_run_behavior(app, entry);
         return;
     }
 }

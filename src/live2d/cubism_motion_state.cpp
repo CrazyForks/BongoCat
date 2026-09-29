@@ -332,7 +332,8 @@ bool NativeModel::restore_motion_defaults(const std::string &key) {
     for (const MotionRun &run : motion_runs_) {
         if (run.key != key) continue;
         auto *entry = _motionManager->GetCubismMotionQueueEntry(run.handle);
-        if (!entry || !entry->IsStarted() || entry->IsFinished()) continue;
+        if (!entry || entry->IsFinished()) continue;
+        if (!entry->IsStarted()) { source_time = 0.0f; break; }
         float elapsed = std::max(0.0f,
             entry->GetStateTime() - entry->GetStartTime());
         if (motion != motions_.end()) {
@@ -356,6 +357,9 @@ bool NativeModel::restore_motion_defaults(const std::string &key) {
     fade.key = key;
     fade.source_time = source_time;
     fade.reverse = source_time > 0.0f;
+    // Loops and constant poses have no authored path back to the baseline.
+    if (motion != motions_.end() && motion->second->GetDuration() < 0.0f)
+        fade.reverse = false;
     if (fade.reverse) fade.duration = source_time;
     fade.curves.reserve(state->second.curves.size());
     for (size_t i = 0; i < state->second.curves.size(); ++i) {
@@ -370,7 +374,8 @@ bool NativeModel::restore_motion_defaults(const std::string &key) {
         else continue;
         if (!fade.reverse && std::fabs(current - curve.normal) <= .0001f)
             continue;
-        if (curve.segments.empty()) fade.reverse = false;
+        if (curve.segments.empty() || std::fabs(curve.start - curve.normal) > .0001f)
+            fade.reverse = false;
         MotionFade::Curve playback;
         playback.index = i;
         playback.initial = current;
@@ -379,9 +384,9 @@ bool NativeModel::restore_motion_defaults(const std::string &key) {
     if (!fade.reverse) {
         fade.duration = 0.35f;
         if (motion != motions_.end()) {
-            float fade_in = motion->second->GetFadeInTime();
-            if (std::isfinite(fade_in) && fade_in > 0.0f)
-                fade.duration = fade_in;
+            float fade_out = motion->second->GetFadeOutTime();
+            if (std::isfinite(fade_out) && fade_out >= 0.0f)
+                fade.duration = fade_out;
         }
     }
     if (fade.curves.empty()) return had_run;
@@ -416,7 +421,8 @@ void NativeModel::update_motion_fades(float delta_seconds) {
             continue;
         }
         fade.elapsed = std::min(fade.elapsed + delta_seconds, fade.duration);
-        float remaining = 1.0f - fade.elapsed / fade.duration;
+        float remaining = fade.duration > 0.0f ?
+            1.0f - fade.elapsed / fade.duration : 0.0f;
         float time = std::max(0.0f, fade.source_time - fade.elapsed);
         for (auto &playback : fade.curves) {
             const auto &curve = state->second.curves[playback.index];

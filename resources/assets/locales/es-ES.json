@@ -32,6 +32,7 @@
           "randomExpression": "Expresiones aleatorias",
           "randomMotion": "Movimientos aleatorios",
           "randomAudio": "Audio aleatorio",
+          "audioVolume": "Volumen de audio",
           "secondsUnit": "s",
           "obsBackground": "Fondo sólido",
           "hideOnHover": "Ocultar al pasar el ratón",

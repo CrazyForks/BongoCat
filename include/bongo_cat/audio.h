@@ -18,5 +18,7 @@ bool bongo_cat_audio_any_playing(const BongoCatAudio *audio);
 bool bongo_cat_audio_is_playing(const BongoCatAudio *audio, const char *path);
 void bongo_cat_audio_stop_path(BongoCatAudio *audio, const char *path);
 void bongo_cat_audio_set_enabled(BongoCatAudio *audio, bool enabled);
+/* Set the master playback volume as a linear value in the range [0, 1]. */
+void bongo_cat_audio_set_volume(BongoCatAudio *audio, float volume);
 
 #endif

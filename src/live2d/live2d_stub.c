@@ -205,6 +205,18 @@ bool bongo_cat_live2d_motion_same_toggle(const BongoCatLive2D *value,
 bool bongo_cat_live2d_set_expression(BongoCatLive2D *value, int index) {
     (void)value; (void)index; return false;
 }
+bool bongo_cat_live2d_set_held_key(BongoCatLive2D *value, const char *key, bool down) {
+    (void)value; (void)key; (void)down; return false;
+}
+bool bongo_cat_live2d_clear_expression_shortcut(BongoCatLive2D *value, const char *key, bool down) {
+    (void)value; (void)key; (void)down; return false;
+}
+bool bongo_cat_live2d_enable_expression(BongoCatLive2D *value, int index, bool enabled) {
+    (void)value; (void)index; (void)enabled; return false;
+}
+bool bongo_cat_live2d_expression_selected(const BongoCatLive2D *value, int index) {
+    (void)value; (void)index; return false;
+}
 int bongo_cat_live2d_expression(const BongoCatLive2D *value) {
     (void)value; return -1;
 }

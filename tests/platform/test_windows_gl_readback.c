@@ -69,6 +69,7 @@ static GLenum fake_error(void) { return read_error; }
 #define glPixelStorei fake_store
 #define glReadPixels fake_read
 #define glGetError fake_error
+#include "../../src/platform/common/gl_readback.c"
 #include "../../src/platform/windows/windows_gl_readback.c"
 
 static void reset(void) {

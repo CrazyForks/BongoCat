@@ -1,5 +1,6 @@
 #include "linux_internal.h"
 #include "linux_shape.h"
+#include "linux_input_wait.h"
 #include "bongo_cat/common.h"
 #include "bongo_cat/log.h"
 
@@ -17,12 +18,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 typedef struct LinuxX11State {
     BongoCatPlatform *platform;
     Display *display;
     Window window;
     SDL_Thread *thread;
+    int stop_fd;
     bool key_down[BONGO_CAT_INPUT_KEY_STATE_CAP];
     bool xwayland;
     atomic_bool running;
@@ -149,15 +152,29 @@ static int SDLCALL input_thread(void *userdata) {
     XISelectEvents(display, DefaultRootWindow(display), &mask, 1); XFlush(display);
     atomic_store(&state->supported, true);
     while (atomic_load(&state->running)) {
-        while (XPending(display)) {
+        bool processed = false;
+        while (atomic_load(&state->running) && XPending(display)) {
             XEvent next; XNextEvent(display, &next);
+            processed = true;
             if (next.xcookie.type != GenericEvent || next.xcookie.extension != opcode ||
                 !XGetEventData(display, &next.xcookie)) continue;
             raw_event(state, display, next.xcookie.data);
             XFreeEventData(display, &next.xcookie);
         }
-        SDL_Delay(8);
+        if (!atomic_load(&state->running)) break;
+        /* Preserve the existing batching interval under high-rate input. Only
+           a batch that actually consumed events needs this cooldown. */
+        if (processed) SDL_Delay(8);
+        /* Drain Xlib's queue before sleeping on its connection. The stop fd
+           lets shutdown interrupt the wait without periodic idle wakes. */
+        int ready = bongo_cat_linux_input_wait(ConnectionNumber(display), state->stop_fd);
+        if (ready <= 0) {
+            if (ready < 0) SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
+                "X11 input connection wait failed");
+            break;
+        }
     }
+    atomic_store(&state->supported, false);
     XCloseDisplay(display); return 0;
 }
 
@@ -176,6 +193,7 @@ bool bongo_cat_linux_x11_start(BongoCatPlatform *platform, BongoCatError *error)
         return false;
     }
     state->platform = platform; state->display = display; state->window = window;
+    state->stop_fd = -1;
     atomic_init(&state->running, true); atomic_init(&state->supported, false);
     LinuxPlatformState *native = platform->native;
     native->x11 = state;
@@ -190,9 +208,17 @@ bool bongo_cat_linux_x11_start(BongoCatPlatform *platform, BongoCatError *error)
     /* Select one input backend for the session. Device hotplug must not
        switch producers midway through a held key or mouse button. */
     if (!display || !window || native->evdev_selected) return true;
+    state->stop_fd = bongo_cat_linux_input_stop_create();
+    if (state->stop_fd < 0) {
+        bongo_cat_error_set(error, BONGO_CAT_ERROR_PLATFORM,
+            "Cannot create X11 input shutdown event");
+        return false;
+    }
     state->thread = SDL_CreateThread(input_thread,
         BONGO_CAT_SLUG "-x11-input", state);
     if (!state->thread) {
+        close(state->stop_fd);
+        state->stop_fd = -1;
         bongo_cat_error_set(error, BONGO_CAT_ERROR_PLATFORM, "Cannot start X11 input listener");
         return false;
     }
@@ -203,7 +229,9 @@ void bongo_cat_linux_x11_stop(BongoCatPlatform *platform) {
     LinuxX11State *state = x11_state(platform);
     if (!state) return;
     atomic_store(&state->running, false);
+    bongo_cat_linux_input_stop_signal(state->stop_fd);
     if (state->thread) SDL_WaitThread(state->thread, NULL);
+    if (state->stop_fd >= 0) close(state->stop_fd);
     free(state);
     ((LinuxPlatformState *)platform->native)->x11 = NULL;
 }

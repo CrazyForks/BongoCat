@@ -32,6 +32,7 @@
           "randomExpression": "Expressions aléatoires",
           "randomMotion": "Mouvements aléatoires",
           "randomAudio": "Audio aléatoire",
+          "audioVolume": "Volume audio",
           "secondsUnit": "s",
           "obsBackground": "Arrière-plan uni",
           "hideOnHover": "Masquer au survol",

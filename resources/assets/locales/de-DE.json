@@ -32,6 +32,7 @@
           "randomExpression": "Zufällige Ausdrücke",
           "randomMotion": "Zufällige Bewegungen",
           "randomAudio": "Zufällige Audiowiedergabe",
+          "audioVolume": "Audio-Lautstärke",
           "secondsUnit": "s",
           "obsBackground": "Einfarbiger Hintergrund",
           "hideOnHover": "Beim Darüberfahren ausblenden",

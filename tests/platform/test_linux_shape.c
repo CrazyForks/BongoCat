@@ -105,6 +105,28 @@ int main(void) {
     bongo_cat_linux_shape_capture(&platform, frame_width, frame_height);
     CHECK(shape->valid && shape->applied);
     CHECK(applied_mask[0] == 0 && applied_mask[1] == 0);
+    /* Native pixel sizes take the fast path; preserve thresholding, row
+       orientation, the final partial byte and forced-through restoration. */
+    logical_width = frame_width = 7;
+    logical_height = frame_height = 2;
+    memset(frame, 0, sizeof(frame));
+    alpha_at(0, 0, 9);
+    alpha_at(1, 0, 8);
+    alpha_at(6, 1, 255);
+    bongo_cat_linux_shape_capture(&platform, frame_width, frame_height);
+    CHECK(applied_mask[0] == 0x01 && applied_mask[1] == 0x40);
+    unsigned native_updates = updates;
+    frame[0] = 127;
+    bongo_cat_linux_shape_capture(&platform, frame_width, frame_height);
+    CHECK(updates == native_updates);
+    bongo_cat_linux_shape_force(&platform, true);
+    CHECK(applied_empty);
+    alpha_at(6, 1, 8);
+    alpha_at(2, 1, 9);
+    bongo_cat_linux_shape_capture(&platform, frame_width, frame_height);
+    CHECK(updates == native_updates + 1);
+    bongo_cat_linux_shape_force(&platform, false);
+    CHECK(!applied_empty && applied_mask[0] == 0x01 && applied_mask[1] == 0x04);
     bongo_cat_linux_shape_reset(&platform);
     CHECK(!shape->valid && !shape->applied && applied_rectangle);
     bongo_cat_linux_shape_destroy(&platform);

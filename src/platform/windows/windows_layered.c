@@ -1,5 +1,6 @@
 #include "windows_layered.h"
 #include "windows_layered_internal.h"
+#include "windows_layered_pixels.h"
 #include "windows_capture.h"
 #include "windows_gl_readback.h"
 #include "windows_hdr.h"
@@ -324,10 +325,7 @@ static bool present_layered(BongoCatPlatform *platform, int width, int height,
        including pixels introduced by resizing, without another GPU readback. */
     if (value->pixel_hit_test) {
         size_t count = (size_t)value->width * (size_t)value->height;
-        for (size_t i = 0; i < count; ++i) {
-            unsigned char *pixel = value->pixels + i * 4;
-            if (pixel[3] <= 8) memset(pixel, 0, 4);
-        }
+        bongo_cat_windows_layered_filter_pixels(value->pixels, count);
     }
     /* Keep WGL presentation alive, including GL_FRONT consumers. Never
        change the original window to WS_EX_NOREDIRECTIONBITMAP. */

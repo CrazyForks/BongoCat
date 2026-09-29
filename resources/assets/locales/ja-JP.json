@@ -32,6 +32,7 @@
           "randomExpression": "ランダム表情",
           "randomMotion": "ランダムモーション",
           "randomAudio": "ランダム音声",
+          "audioVolume": "音量",
           "secondsUnit": "秒",
           "obsBackground": "単色背景",
           "hideOnHover": "ホバー時に非表示",

@@ -85,6 +85,7 @@ bool bongo_cat_preferences_needs_frame(BongoCatPreferences *value) {
     if (value->behavior_dialog && value->app) {
         BongoCatBehaviorCatalog *catalog = value->behavior_catalog ?
             value->behavior_catalog : &value->app->behaviors;
+        bool model_loaded = bongo_cat_preferences_behavior_model_loaded(value);
         for (size_t i = 0; i < catalog->count; ++i) {
             BongoCatBehaviorEntry *entry = &catalog->entries[i];
             bool playing = entry->kind == BONGO_CAT_BEHAVIOR_SOUND &&
@@ -92,6 +93,13 @@ bool bongo_cat_preferences_needs_frame(BongoCatPreferences *value) {
                 bongo_cat_audio_is_playing(value->app->audio, entry->sound));
             if (entry->audio_playing != playing) {
                 entry->audio_playing = playing;
+                value->render_dirty = true;
+            }
+            bool selected = model_loaded &&
+                entry->kind == BONGO_CAT_BEHAVIOR_EXPRESSION &&
+                bongo_cat_live2d_expression_selected(value->app->live2d, entry->index);
+            if (entry->expression_selected != selected) {
+                entry->expression_selected = selected;
                 value->render_dirty = true;
             }
         }

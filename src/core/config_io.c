@@ -89,6 +89,8 @@ static bool read_window(yyjson_val *object, BongoCatWindowPreferences *value,
             &value->random_motion_interval_seconds, error) ||
         !read_float(object, "randomAudioIntervalSeconds",
             &value->random_audio_interval_seconds, error) ||
+        !read_float(object, "audioVolumePercent",
+            &value->audio_volume_percent, error) ||
         !read_float(object, "randomExpressionIntervalSeconds",
             &value->random_expression_interval_seconds,
             error)) return false;

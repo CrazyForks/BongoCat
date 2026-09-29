@@ -1,5 +1,6 @@
 #include "macos_internal.h"
 #include "macos_keys.h"
+#include "macos_input_wait.h"
 
 #ifdef __APPLE__
 #include <ApplicationServices/ApplicationServices.h>
@@ -15,7 +16,7 @@ typedef struct MacInputState {
     SDL_Semaphore *ready;
     CFMachPortRef tap;
     CFRunLoopSourceRef source;
-    CFRunLoopRef loop;
+    BongoCatMacInputWait wait;
     bool key_down[BONGO_CAT_INPUT_KEY_STATE_CAP];
     atomic_bool supported;
     atomic_bool stop_requested;
@@ -26,6 +27,7 @@ static atomic_bool global_supported = ATOMIC_VAR_INIT(false);
 
 static void release_state(MacInputState *state) {
     if (atomic_fetch_sub(&state->references, 1) != 1) return;
+    bongo_cat_macos_input_wait_destroy(&state->wait);
     SDL_DestroySemaphore(state->ready);
     free(state);
 }
@@ -55,6 +57,7 @@ static CGEventRef event_tap(CGEventTapProxy proxy, CGEventType type,
     CGEventRef event, void *userdata) {
     (void)proxy;
     MacInputState *state = userdata;
+    if (atomic_load(&state->stop_requested)) return event;
     if (type == kCGEventTapDisabledByTimeout || type == kCGEventTapDisabledByUserInput) {
         /* Release tracked keys before restarting the tap; their key-up may be lost. */
         for (unsigned code = 0; code < BONGO_CAT_INPUT_KEY_STATE_CAP; ++code) {
@@ -125,9 +128,9 @@ static int SDLCALL input_thread(void *userdata) {
         if (state->tap) {
             state->source = CFMachPortCreateRunLoopSource(NULL, state->tap, 0);
         }
-        if (state->source && !atomic_load(&state->stop_requested)) {
-            state->loop = CFRunLoopGetCurrent(); CFRetain(state->loop);
-            CFRunLoopAddSource(state->loop, state->source, kCFRunLoopCommonModes);
+        if (state->source && !atomic_load(&state->stop_requested) &&
+            bongo_cat_macos_input_wait_init(&state->wait)) {
+            CFRunLoopAddSource(state->wait.loop, state->source, kCFRunLoopCommonModes);
             CGEventTapEnable(state->tap, true);
             atomic_store(&state->supported, true);
             atomic_store(&global_supported, true);
@@ -143,15 +146,17 @@ static int SDLCALL input_thread(void *userdata) {
                 SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "macOS input "
                     "monitoring permission is required for global keyboard input");
         }
-        while (atomic_load(&state->supported) &&
+        if (atomic_load(&state->supported) &&
             !atomic_load(&state->stop_requested))
-            CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.1, true);
-        if (state->loop && state->source)
-            CFRunLoopRemoveSource(state->loop, state->source, kCFRunLoopCommonModes);
+            bongo_cat_macos_input_wait_run(&state->wait);
+        if (state->wait.loop && state->source)
+            CFRunLoopRemoveSource(state->wait.loop, state->source, kCFRunLoopCommonModes);
+        bongo_cat_macos_input_wait_detach(&state->wait);
         if (state->tap) CFMachPortInvalidate(state->tap);
         if (state->source) CFRelease(state->source);
         if (state->tap) CFRelease(state->tap);
-        if (state->loop) CFRelease(state->loop);
+        /* Retain the stop source/loop until both owners release_state: the
+           main thread may still be signaling after the worker has exited. */
         atomic_store(&global_supported, false);
     }
     release_state(state);
@@ -198,6 +203,7 @@ void bongo_cat_macos_input_stop(BongoCatPlatform *platform) {
         release_state(state);
         return;
     }
+    bongo_cat_macos_input_wait_signal(&state->wait);
     if (state->thread) SDL_WaitThread(state->thread, NULL);
     platform->native = NULL;
     release_state(state);

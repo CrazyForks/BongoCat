@@ -69,6 +69,7 @@ typedef struct BongoCatBehaviorEntry {
     bool sound_overlap;
     bool sound_clear;
     bool shortcut_active, audio_playing; /* Runtime state owned by this entry. */
+    bool expression_selected;
 } BongoCatBehaviorEntry;
 
 typedef struct BongoCatBehaviorCatalog {
@@ -221,6 +222,8 @@ void bongo_cat_live2d_prepare_viewer_audit(BongoCatLive2D *live2d);
 /* Synchronize drawables from the current state before a cover-only frame. */
 bool bongo_cat_live2d_prepare_cover_capture(BongoCatLive2D *live2d);
 bool bongo_cat_live2d_set_parameter(BongoCatLive2D *live2d, const char *id, float value);
+bool bongo_cat_live2d_set_held_key(BongoCatLive2D *live2d, const char *key, bool down);
+bool bongo_cat_live2d_clear_expression_shortcut(BongoCatLive2D *live2d, const char *key, bool down);
 bool bongo_cat_live2d_parameter(BongoCatLive2D *live2d, const char *id,
     BongoCatParameterRange *range);
 bool bongo_cat_live2d_start_motion(BongoCatLive2D *live2d, const char *group, int index);
@@ -240,7 +243,11 @@ bool bongo_cat_live2d_motion_visible(const BongoCatLive2D *live2d,
 bool bongo_cat_live2d_motion_same_toggle(const BongoCatLive2D *live2d,
     const char *left_group, int left_index,
     const char *right_group, int right_index);
+/* Set enables one expression without clearing others; -1 clears all. */
 bool bongo_cat_live2d_set_expression(BongoCatLive2D *live2d, int index);
+bool bongo_cat_live2d_enable_expression(BongoCatLive2D *live2d, int index, bool enabled);
+bool bongo_cat_live2d_expression_selected(const BongoCatLive2D *live2d, int index);
+/* Compatibility: one selected expression, or -1 when none. */
 int bongo_cat_live2d_expression(const BongoCatLive2D *live2d);
 bool bongo_cat_live2d_visual_state(const BongoCatLive2D *live2d,
     BongoCatLive2DVisualState *state);

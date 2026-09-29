@@ -1,10 +1,21 @@
 if(BUILD_TESTING)
   include(${CMAKE_CURRENT_LIST_DIR}/UpdateTests.cmake)
+  include(${CMAKE_CURRENT_LIST_DIR}/PlatformInputTests.cmake)
+  add_executable(bongo_cat_config_hash_tests tests/core/test_config_hash.c)
+  target_include_directories(bongo_cat_config_hash_tests PRIVATE
+    src/runtime/lifecycle tests/support include "${BONGO_CAT_GENERATED_INCLUDE_DIR}")
+  target_link_libraries(bongo_cat_config_hash_tests PRIVATE bongo_cat_warnings)
+  add_test(NAME config-change-hash COMMAND bongo_cat_config_hash_tests)
   add_executable(bongo_cat_window_corner_tests tests/platform/test_window_corners.c)
   target_include_directories(bongo_cat_window_corner_tests PRIVATE
     src/runtime/shell tests/support)
   target_link_libraries(bongo_cat_window_corner_tests PRIVATE bongo_cat_warnings)
   add_test(NAME window-corner-policy COMMAND bongo_cat_window_corner_tests)
+  add_executable(bongo_cat_layered_pixel_tests tests/platform/test_windows_layered_pixels.c)
+  target_include_directories(bongo_cat_layered_pixel_tests PRIVATE
+    src/platform/windows tests/support)
+  target_link_libraries(bongo_cat_layered_pixel_tests PRIVATE bongo_cat_warnings)
+  add_test(NAME windows-layered-pixels COMMAND bongo_cat_layered_pixel_tests)
   add_executable(bongo_cat_gl_readback_tests tests/platform/test_gl_readback.c)
   target_include_directories(bongo_cat_gl_readback_tests PRIVATE tests/support)
   target_link_libraries(bongo_cat_gl_readback_tests PRIVATE SDL3::SDL3-static bongo_cat_warnings)
@@ -310,6 +321,25 @@ if(BUILD_TESTING)
       bongo_cat_runtime bongo_cat_warnings)
     add_test(NAME live2d-render-resources COMMAND bongo_cat_render_resources_tests)
     set_tests_properties(live2d-render-resources PROPERTIES TIMEOUT 30)
+
+    add_executable(bongo_cat_mouse_bindings_tests tests/live2d/test_mouse_bindings.cpp)
+    target_include_directories(bongo_cat_mouse_bindings_tests PRIVATE src/live2d)
+    target_link_libraries(bongo_cat_mouse_bindings_tests PRIVATE
+      bongo_cat_runtime bongo_cat_warnings)
+    target_compile_definitions(bongo_cat_mouse_bindings_tests PRIVATE
+      BONGO_CAT_NATIVE_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+    bongo_cat_stage_cubism_assets(bongo_cat_mouse_bindings_tests)
+    add_test(NAME live2d-mouse-bindings COMMAND bongo_cat_mouse_bindings_tests)
+    set_tests_properties(live2d-mouse-bindings PROPERTIES TIMEOUT 30)
+
+    add_executable(bongo_cat_transition_timing_tests tests/live2d/test_transition_timing.cpp)
+    target_include_directories(bongo_cat_transition_timing_tests PRIVATE src/live2d)
+    target_link_libraries(bongo_cat_transition_timing_tests PRIVATE bongo_cat_runtime bongo_cat_warnings)
+    target_compile_definitions(bongo_cat_transition_timing_tests PRIVATE
+      BONGO_CAT_NATIVE_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+    bongo_cat_stage_cubism_assets(bongo_cat_transition_timing_tests)
+    add_test(NAME live2d-transition-timing COMMAND bongo_cat_transition_timing_tests)
+    set_tests_properties(live2d-transition-timing PROPERTIES TIMEOUT 30)
 
     add_executable(bongo_cat_model_lifetime_tests tests/live2d/test_model_lifetime.cpp)
     target_include_directories(bongo_cat_model_lifetime_tests PRIVATE src/live2d)

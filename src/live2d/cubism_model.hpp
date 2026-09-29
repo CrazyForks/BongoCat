@@ -78,6 +78,8 @@ public:
     void prepare_viewer_audit();
     bool prepare_cover_capture();
     bool set_parameter(const char *id, float value);
+    bool set_held_key(const char *key, bool down);
+    bool clear_expression_shortcut(const char *key, bool down);
     bool parameter(const char *id, float *minimum, float *maximum, float *value);
     bool start_motion(const char *group, int index);
     bool restore_motion_state(const char *group, int index);
@@ -90,7 +92,9 @@ public:
     bool motion_same_toggle(const char *left_group, int left_index,
         const char *right_group, int right_index) const;
     bool set_expression(int index);
-    int expression() const { return expression_index_; }
+    bool enable_expression(int index, bool enabled);
+    bool expression_selected(int index) const;
+    int expression() const;
     bool visual_state(BongoCatLive2DVisualState *state) const;
 
 public:
@@ -122,6 +126,7 @@ public:
     };
 private:
     friend class ParameterOverrideUpdater;
+    friend class ExpressionUpdater;
     struct MotionRun {
         Csm::CubismMotionQueueEntryHandle handle =
             Csm::InvalidMotionQueueEntryHandleValue;
@@ -143,11 +148,11 @@ private:
         float source_time = 0.0f;
         bool reverse = false;
     };
-    struct ExpressionFade {
-        std::vector<int> parameters;
-        std::vector<float> initial;
-        float elapsed = 0.0f;
-        float duration = 0.35f;
+    struct ExpressionLayer {
+        int index = -1;
+        bool selected = false;
+        float weight = 0.0f, initial = 0.0f;
+        float elapsed = 0.0f, duration = 0.0f;
     };
     struct ModelBounds {
         float min_x = 0.0f;
@@ -191,7 +196,8 @@ private:
     void clear_motion_runs();
     void update_motion_fades(float delta_seconds);
     void cancel_motion_fade(const std::string &key);
-    void update_expression_fade(float delta_seconds);
+    void update_expressions(float delta_seconds);
+    void add_expression_updater();
     void settle_pending_expression_for_cover();
     void capture_parameter_baseline();
     void save_parameters();
@@ -216,6 +222,28 @@ private:
     std::string path(const char *relative) const;
 
     Csm::CubismModelSettingJson *setting_ = nullptr;
+    struct MouseBinding {
+        int axis = 0, parameter = -1;
+        double input_low = -1.0, input_high = 1.0;
+        double output_low = -1.0, output_high = 1.0;
+        bool clamp_input = false, clamp_output = false;
+    };
+    bool load_mouse_bindings(const std::vector<unsigned char> &json, BongoCatError *error);
+    int mapped_mouse_axis(const char *id) const;
+    std::vector<MouseBinding> mouse_bindings_;
+    struct HeldParameter { std::string key, id, blend; float value = 0.0f; int hand = 0; int index = -1; };
+    std::vector<HeldParameter> held_parameters_;
+    std::map<std::string, std::vector<size_t>> held_bindings_by_key_;
+    std::map<std::string, std::vector<std::string>> held_shortcut_keys_;
+    std::map<std::string, int> held_hands_by_key_;
+    std::set<int> held_parameter_indices_;
+    std::set<std::string> held_keys_;
+    std::vector<std::string> held_key_order_;
+    bool load_held_bindings(const std::vector<unsigned char> &json);
+    std::vector<std::string> clear_expression_keys_;
+    std::set<std::string> clear_expression_held_;
+    bool clear_expression_active_ = false;
+    std::array<float, 2> mouse_input_{{0.0f, 0.0f}};
     MotionMap motions_;
     MotionSignatures motion_signatures_;
     std::map<std::string, MotionState> motion_states_;
@@ -256,10 +284,9 @@ private:
     int viewport_y_ = 0;
     int viewport_width_ = 612;
     int viewport_height_ = 354;
+    std::vector<ExpressionLayer> expression_layers_;
     int expression_index_ = -1;
-    bool expression_clearing_ = false;
     bool expression_frame_pending_ = false;
-    ExpressionFade expression_fade_;
     BongoCatLive2DFrame frame_{};
     BongoCatLive2DFrame required_frame_{};
     float frame_fit_scale_ = 1.0f;

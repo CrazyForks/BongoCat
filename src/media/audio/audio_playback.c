@@ -27,7 +27,10 @@ ma_result bongo_cat_audio_initialize(BongoCatAudio *audio) {
     config.pProcessUserData = audio;
 #endif
     ma_result result = ma_engine_init(&config, &audio->engine);
-    if (result == MA_SUCCESS) audio->initialized = true;
+    if (result == MA_SUCCESS) {
+        audio->initialized = true;
+        ma_engine_set_volume(&audio->engine, audio->volume);
+    }
     return result;
 }
 

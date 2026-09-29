@@ -209,6 +209,8 @@ void bongo_cat_settings_defaults(BongoCatSettings *config) {
         BONGO_CAT_DEFAULT_RANDOM_MOTION_SECONDS;
     config->window.random_audio_interval_seconds =
         BONGO_CAT_DEFAULT_RANDOM_AUDIO_SECONDS;
+    config->window.audio_volume_percent =
+        BONGO_CAT_DEFAULT_AUDIO_VOLUME_PERCENT;
     config->app.tray_visible = true;
     config->app.game_compatibility = false;
     config->app.theme = BONGO_CAT_THEME_AUTO;
@@ -245,6 +247,9 @@ void bongo_cat_settings_validate(BongoCatSettings *config) {
     config->window.random_audio_interval_seconds = clampf_or(
         config->window.random_audio_interval_seconds, 1.0f, 3600.0f,
         BONGO_CAT_DEFAULT_RANDOM_AUDIO_SECONDS);
+    config->window.audio_volume_percent = clampf_or(
+        config->window.audio_volume_percent, 0.0f, 100.0f,
+        BONGO_CAT_DEFAULT_AUDIO_VOLUME_PERCENT);
     if ((unsigned)config->window.obs_background_color >=
         BONGO_CAT_OBS_BACKGROUND_COLOR_COUNT)
         config->window.obs_background_color = BONGO_CAT_OBS_BACKGROUND_GREEN;

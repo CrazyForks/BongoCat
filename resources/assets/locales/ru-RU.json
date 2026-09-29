@@ -32,6 +32,7 @@
           "randomExpression": "Случайные выражения",
           "randomMotion": "Случайные движения",
           "randomAudio": "Случайное аудио",
+          "audioVolume": "Громкость аудио",
           "secondsUnit": "с",
           "obsBackground": "Однотонный фон",
           "hideOnHover": "Скрывать при наведении",

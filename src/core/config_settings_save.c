@@ -63,7 +63,9 @@ static bool write_window(yyjson_mut_doc *doc, yyjson_mut_val *object,
         yyjson_mut_obj_add_real(doc, object, "randomMotionIntervalSeconds",
             value->random_motion_interval_seconds) &&
         yyjson_mut_obj_add_real(doc, object, "randomAudioIntervalSeconds",
-            value->random_audio_interval_seconds);
+            value->random_audio_interval_seconds) &&
+        yyjson_mut_obj_add_real(doc, object, "audioVolumePercent",
+            value->audio_volume_percent);
 }
 
 static bool write_app(yyjson_mut_doc *doc, yyjson_mut_val *object,

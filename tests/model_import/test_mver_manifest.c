@@ -120,11 +120,13 @@ static void many_behaviors(const char *directory) {
         CHECK(catalog.entries[catalog.count - 1].index == (int)catalog.count - 1);
         catalog.entries[0].shortcut_active = true;
         catalog.entries[0].audio_playing = true;
+        catalog.entries[0].expression_selected = true;
         bool copied = bongo_cat_behaviors_copy(&copy, &catalog, &error);
         CHECK(copied);
         if (!copied) break;
         CHECK(copy.entries != catalog.entries && copy.count == catalog.count);
         CHECK(!copy.entries[0].shortcut_active && !copy.entries[0].audio_playing);
+        CHECK(!copy.entries[0].expression_selected);
         copy.entries[0].label[0] = 'X';
         CHECK(catalog.entries[0].label[0] == 'E');
         BongoCatBehaviorEntry *allocation = copy.entries;

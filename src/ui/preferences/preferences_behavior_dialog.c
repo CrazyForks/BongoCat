@@ -15,6 +15,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+static const int behavior_tab_order[] = {1, 0, 2};
+
 static const char *tr(BongoCatPreferences *value, const char *key,
     const char *fallback) {
     return bongo_cat_i18n_get(value->app->i18n, key, fallback);
@@ -138,6 +140,7 @@ void bongo_cat_preferences_behavior_dialog_open_model(
     snprintf(value->behavior_model_id, sizeof(value->behavior_model_id), "%s", model->id);
     memset(value->behavior_scroll, 0, sizeof(value->behavior_scroll));
     bongo_cat_preferences_scrollbar_reset(&value->behavior_scrollbar);
+    value->behavior_tab = behavior_tab_order[0];
     value->behavior_tab_transition_ns = 0;
     SDL_Log("Preferences behavior dialog opened with %llu behaviors",
         (unsigned long long)bongo_cat_preferences_behavior_catalog(value)->count);
@@ -196,7 +199,8 @@ static void draw_segments(BongoCatPreferences *value,
     for (int i = 0; i < 3; ++i) count += tab_available(value, i);
     if (!count) return;
     float width = (wrapper.w - 6) / count;
-    for (int i = 0; i < 3; ++i) {
+    for (int order = 0; order < 3; ++order) {
+        int i = behavior_tab_order[order];
         if (!tab_available(value, i)) continue;
         struct nk_rect button = nk_rect(wrapper.x + 3 + width * position++,
             wrapper.y + 3, width, 37);
@@ -279,16 +283,14 @@ static void draw_rows(BongoCatPreferences *value, struct nk_context *context,
         struct nk_rect button = nk_rect(row.x + row.w - 52, row.y + 10, 36, 36);
         struct nk_rect shortcut = nk_rect(button.x - 188, row.y + 10, 180, 36);
         bool hover = row_enabled && nk_input_is_mouse_hovering_rect(&context->input, button);
-        nk_fill_rect(canvas, row, 8, alpha(hover ? p.hover : p.field, content_opacity));
+        nk_fill_rect(canvas, row, 8, alpha(p.field, content_opacity));
         text(canvas, nk_rect(row.x + 12, row.y + 17, shortcut.x - row.x - 20, 22), label,
             value->ui.caption_font, alpha(p.text, content_opacity));
         bongo_cat_preferences_behavior_clear_shortcut_draw(value, context, canvas,
             shortcut, p, content_opacity, row_enabled);
-        nk_fill_rect(canvas, button, 10, alpha(hover ? p.hover_pink : p.field, content_opacity));
-        nk_stroke_rect(canvas, button, 10, 1, alpha(hover ? p.pink : p.border_subtle, content_opacity));
         bongo_cat_preferences_icon_draw(value, canvas, BONGO_CAT_UI_ICON_PLAY,
             nk_rect(button.x + 10, button.y + 10, 16, 16),
-            alpha(hover ? p.pink : p.text, content_opacity));
+            alpha(nk_rgb(84, 174, 255), content_opacity));
         if (hover) bongo_cat_ui_cursor_hover_rect(context, button, BONGO_CAT_UI_CURSOR_POINTER);
         if (hit(context, button, row_enabled)) {
             BongoCatError error = {0};
@@ -354,10 +356,15 @@ static void draw_random_pool_controls(BongoCatPreferences *value,
 void bongo_cat_preferences_behavior_dialog_draw(
     BongoCatPreferences *value, struct nk_context *context) {
     if (!bongo_cat_preferences_behavior_dialog_active(value)) return;
-    if (!tab_available(value, value->behavior_tab))
-        for (int i = 0; i < 3; ++i) if (tab_available(value, i)) {
-            value->behavior_tab = i; break;
+    if (!tab_available(value, value->behavior_tab)) {
+        for (int order = 0; order < 3; ++order) {
+            int tab = behavior_tab_order[order];
+            if (tab_available(value, tab)) {
+                value->behavior_tab = tab;
+                break;
+            }
         }
+    }
     bongo_cat_ui_cursor_reset(context);
     struct nk_rect region = nk_window_get_bounds(context);
     size_t count = row_count(value);

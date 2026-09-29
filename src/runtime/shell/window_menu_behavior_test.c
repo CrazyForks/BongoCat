@@ -32,6 +32,8 @@ static bool expression_self_test(BongoCatApp *app) {
     while (test_nth_behavior(app, BONGO_CAT_BEHAVIOR_EXPRESSION, count)) count++;
     if (!count) return true;
     int original = bongo_cat_live2d_expression(app->live2d);
+    BongoCatWindowMenuPreview original_state;
+    bongo_cat_window_menu_preview_init(&original_state, app);
     char (*motions)[BONGO_CAT_MENU_LABEL_CAP] = calloc(app->behaviors.count, sizeof(*motions));
     bool *motion_checked = calloc(app->behaviors.count, sizeof(*motion_checked));
     char (*expressions)[BONGO_CAT_MENU_LABEL_CAP] = calloc(app->behaviors.count, sizeof(*expressions));
@@ -42,7 +44,7 @@ static bool expression_self_test(BongoCatApp *app) {
     size_t motion_count, expression_count, current_expression;
     bool passed = bongo_cat_live2d_set_expression(app->live2d, -1);
     bongo_cat_window_behavior_labels(app, motions, motion_checked, &motion_count,
-        expressions, &expression_count, &current_expression);
+        expressions, &expression_count, &current_expression, NULL);
     passed = passed && expression_count == count &&
         current_expression == BONGO_CAT_BEHAVIOR_LIMIT;
     size_t selected_position = count > 2 ? 2 : count - 1;
@@ -52,7 +54,7 @@ static bool expression_self_test(BongoCatApp *app) {
         BONGO_CAT_MENU_EXPRESSION_FIRST + selected_position) &&
         bongo_cat_live2d_expression(app->live2d) == selected->index && passed;
     bongo_cat_window_behavior_labels(app, motions, motion_checked, &motion_count,
-        expressions, &expression_count, &current_expression);
+        expressions, &expression_count, &current_expression, NULL);
     passed = passed && expression_count == count &&
         current_expression == selected_position;
     if (passed && count > 1) {
@@ -74,10 +76,22 @@ static bool expression_self_test(BongoCatApp *app) {
         bongo_cat_window_menu_restore(&preview,
             BONGO_CAT_MENU_EXPRESSION_FIRST + alternate_position);
         passed = passed && bongo_cat_live2d_expression(app->live2d) ==
-            alternate->index && bongo_cat_window_menu_preview_applied(&preview,
+            alternate->index && bongo_cat_live2d_expression_selected(app->live2d,
+                selected->index) && bongo_cat_window_menu_preview_applied(&preview,
                 BONGO_CAT_MENU_EXPRESSION_FIRST + alternate_position);
     }
+    if (passed && count > 1) {
+        size_t alternate_position = selected_position ? 0 : 1;
+        const BongoCatBehaviorEntry *alternate = test_nth_behavior(app,
+            BONGO_CAT_BEHAVIOR_EXPRESSION, alternate_position);
+        // Toggling one enabled expression must leave the other selected.
+        passed = bongo_cat_window_behavior_action(app,
+            BONGO_CAT_MENU_EXPRESSION_FIRST + selected_position) &&
+            !bongo_cat_live2d_expression_selected(app->live2d, selected->index) &&
+            bongo_cat_live2d_expression_selected(app->live2d, alternate->index);
+    }
     if (passed) {
+        bongo_cat_live2d_set_expression(app->live2d, -1);
         bongo_cat_live2d_set_expression(app->live2d, selected->index);
         BongoCatWindowMenuPreview preview;
         bongo_cat_window_menu_preview_init(&preview, app);
@@ -89,7 +103,12 @@ static bool expression_self_test(BongoCatApp *app) {
         passed = passed && bongo_cat_live2d_expression(app->live2d) == -1 &&
             bongo_cat_window_menu_preview_applied(&preview, selected_action);
     }
-    bool restored = bongo_cat_live2d_set_expression(app->live2d, original);
+    bongo_cat_window_menu_restore(&original_state, BONGO_CAT_MENU_NONE);
+    bool restored = true;
+    for (size_t i = 0; i < app->behaviors.count && i < BONGO_CAT_BEHAVIOR_LIMIT; ++i)
+        if (app->behaviors.entries[i].kind == BONGO_CAT_BEHAVIOR_EXPRESSION)
+            restored = restored && bongo_cat_live2d_expression_selected(app->live2d,
+                app->behaviors.entries[i].index) == original_state.expressions[i];
     if (!passed || !restored) SDL_Log("Expression menu self-test failed: "
         "count=%llu mapped=%llu current=%llu original=%d restored=%d",
         (unsigned long long)count, (unsigned long long)expression_count,
@@ -173,7 +192,7 @@ bool bongo_cat_window_behavior_self_test(BongoCatApp *app) {
         }
         size_t motion_count, expression_count, current_expression;
         bongo_cat_window_behavior_labels(app, motions, checked, &motion_count,
-            expressions, &expression_count, &current_expression);
+            expressions, &expression_count, &current_expression, NULL);
         passed = motion_count > 0 && checked[0] && passed;
         bool initial_passed = passed;
         const char *first_shortcut = test_behavior_shortcut(app, first->id);
@@ -190,7 +209,7 @@ bool bongo_cat_window_behavior_self_test(BongoCatApp *app) {
         bongo_cat_window_menu_preview(&preview,
             BONGO_CAT_MENU_MOTION_FIRST + preview_position);
         bongo_cat_window_behavior_labels(app, motions, checked, &motion_count,
-            expressions, &expression_count, &current_expression);
+            expressions, &expression_count, &current_expression, NULL);
         bool preview_stable = memcmp(before, checked,
             motion_count * sizeof(before[0])) == 0;
         passed = preview_stable && passed;
@@ -200,7 +219,7 @@ bool bongo_cat_window_behavior_self_test(BongoCatApp *app) {
         passed = bongo_cat_window_behavior_action(app,
             BONGO_CAT_MENU_MOTION_FIRST + preview_position) && passed;
         bongo_cat_window_behavior_labels(app, motions, checked, &motion_count,
-            expressions, &expression_count, &current_expression);
+            expressions, &expression_count, &current_expression, NULL);
         passed = checked[preview_position] && passed;
         const BongoCatBehaviorEntry *preview_entry = test_nth_behavior(app,
             BONGO_CAT_BEHAVIOR_MOTION, preview_position);

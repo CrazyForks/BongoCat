@@ -1,4 +1,5 @@
 #include "runtime.h"
+#include "config_hash.h"
 #include "bongo_cat/path.h"
 #include "bongo_cat/preferences.h"
 
@@ -7,79 +8,6 @@
 
 #define SAVE_DELAY_NS 300000000ull
 #define RETRY_DELAY_NS 1000000000ull
-
-static uint64_t hash_bytes(uint64_t hash, const void *data, size_t size) {
-    const unsigned char *bytes = data;
-    for (size_t i = 0; i < size; ++i) {
-        hash ^= bytes[i];
-        hash *= 1099511628211ull;
-    }
-    return hash;
-}
-
-static uint64_t settings_hash(const BongoCatSettings *settings) {
-    uint64_t hash = 1469598103934665603ull;
-#define HASH_FIELD(field) hash = hash_bytes(hash, &(field), sizeof(field))
-    HASH_FIELD(settings->model);
-    HASH_FIELD(settings->window);
-    HASH_FIELD(settings->app);
-    HASH_FIELD(settings->shortcuts);
-    HASH_FIELD(settings->behavior_shortcut_count);
-    size_t behavior_count = settings->behavior_shortcut_count;
-    if (behavior_count > BONGO_CAT_BEHAVIOR_BINDING_CAP)
-        behavior_count = BONGO_CAT_BEHAVIOR_BINDING_CAP;
-    hash = hash_bytes(hash, settings->behavior_shortcuts,
-        behavior_count * sizeof(settings->behavior_shortcuts[0]));
-    HASH_FIELD(settings->model_label_count);
-    size_t model_count = settings->model_label_count;
-    if (model_count > BONGO_CAT_MODEL_CAP) model_count = BONGO_CAT_MODEL_CAP;
-    hash = hash_bytes(hash, settings->model_labels,
-        model_count * sizeof(settings->model_labels[0]));
-    HASH_FIELD(settings->removed_model_count);
-    size_t removed_count = settings->removed_model_count;
-    if (removed_count > BONGO_CAT_MODEL_CAP)
-        removed_count = BONGO_CAT_MODEL_CAP;
-    hash = hash_bytes(hash, settings->removed_models,
-        removed_count * sizeof(settings->removed_models[0]));
-    HASH_FIELD(settings->extensions_json);
-#undef HASH_FIELD
-    return hash;
-}
-
-static uint64_t session_hash(const BongoCatSessionState *session) {
-    uint64_t hash = 1469598103934665603ull;
-#define HASH_FIELD(field) hash = hash_bytes(hash, &(field), sizeof(field))
-    HASH_FIELD(session->window.visible);
-    HASH_FIELD(session->window.position_known);
-    HASH_FIELD(session->window.scale_percent);
-    HASH_FIELD(session->window.opacity_percent);
-    HASH_FIELD(session->window.x);
-    HASH_FIELD(session->window.y);
-    HASH_FIELD(session->window.width);
-    HASH_FIELD(session->window.height);
-    HASH_FIELD(session->window.content_width);
-    HASH_FIELD(session->window.content_height);
-    HASH_FIELD(session->window.content_left);
-    HASH_FIELD(session->window.content_top);
-    HASH_FIELD(session->active_model_id);
-    HASH_FIELD(session->last_update_check_day);
-    HASH_FIELD(session->last_update_check_version);
-    HASH_FIELD(session->available_update_version);
-    HASH_FIELD(session->additional_model_count);
-    size_t model_count = session->additional_model_count;
-    if (model_count > BONGO_CAT_ADDITIONAL_MODEL_CAP)
-        model_count = BONGO_CAT_ADDITIONAL_MODEL_CAP;
-    hash = hash_bytes(hash, session->additional_model_ids,
-        model_count * sizeof(session->additional_model_ids[0]));
-    HASH_FIELD(session->active_behavior_count);
-    size_t behavior_count = session->active_behavior_count;
-    if (behavior_count > BONGO_CAT_BEHAVIOR_BINDING_CAP)
-        behavior_count = BONGO_CAT_BEHAVIOR_BINDING_CAP;
-    hash = hash_bytes(hash, session->active_behaviors,
-        behavior_count * sizeof(session->active_behaviors[0]));
-#undef HASH_FIELD
-    return hash;
-}
 
 static bool reject_configuration(const char *path, char *rejected,
     size_t capacity) {
@@ -193,9 +121,8 @@ static bool save_session(BongoCatApp *app) {
 void bongo_cat_config_store_update(BongoCatApp *app, uint64_t now) {
     if (!app || app->smoke || !app->settings_path[0] || !app->session_path[0]) return;
     bongo_cat_window_store_content_origin(app);
-    uint64_t settings = settings_hash(&app->settings);
-    uint64_t session = session_hash(&app->session);
     if (!app->secondary_pet && !app->settings_store_blocked) {
+        uint64_t settings = settings_hash(&app->settings);
         if (settings != app->settings_observed_hash) {
             app->settings_observed_hash = settings;
             app->settings_save_due_ns = now + SAVE_DELAY_NS;
@@ -204,6 +131,7 @@ void bongo_cat_config_store_update(BongoCatApp *app, uint64_t now) {
             app->settings_save_due_ns = now + SAVE_DELAY_NS;
     }
     if (!app->session_store_blocked) {
+        uint64_t session = session_hash(&app->session);
         if (session != app->session_observed_hash) {
             app->session_observed_hash = session;
             app->session_save_due_ns = now + SAVE_DELAY_NS;

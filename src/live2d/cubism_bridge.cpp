@@ -294,6 +294,12 @@ extern "C" bool bongo_cat_live2d_prepare_cover_capture(
 extern "C" bool bongo_cat_live2d_set_parameter(BongoCatLive2D *runtime, const char *id, float value) {
     return runtime && runtime->model && runtime->model->set_parameter(id, value);
 }
+extern "C" bool bongo_cat_live2d_set_held_key(BongoCatLive2D *runtime, const char *key, bool down) {
+    return runtime && runtime->model && runtime->model->set_held_key(key, down);
+}
+extern "C" bool bongo_cat_live2d_clear_expression_shortcut(BongoCatLive2D *runtime, const char *key, bool down) {
+    return runtime && runtime->model && runtime->model->clear_expression_shortcut(key, down);
+}
 extern "C" bool bongo_cat_live2d_parameter(BongoCatLive2D *runtime, const char *id,
     BongoCatParameterRange *range) {
     return runtime && runtime->model && range && runtime->model->parameter(id,
@@ -326,5 +332,9 @@ extern "C" bool bongo_cat_live2d_motion_same_toggle(
         left_group, left_index, right_group, right_index); }
 extern "C" bool bongo_cat_live2d_set_expression(BongoCatLive2D *runtime, int index) {
     return runtime && runtime->model && runtime->model->set_expression(index); }
+extern "C" bool bongo_cat_live2d_enable_expression(BongoCatLive2D *runtime, int index, bool enabled) {
+    return runtime && runtime->model && runtime->model->enable_expression(index, enabled); }
+extern "C" bool bongo_cat_live2d_expression_selected(const BongoCatLive2D *runtime, int index) {
+    return runtime && runtime->model && runtime->model->expression_selected(index); }
 extern "C" int bongo_cat_live2d_expression(const BongoCatLive2D *runtime) {
     return runtime && runtime->model ? runtime->model->expression() : -1; }
