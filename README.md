@@ -12,17 +12,17 @@
 
 <!-- Project Description + Rocket Icon -->
 <p align="center"> 
- 💘C/C++ × SDL3 × OpenGL, stir it up, mash it together! Bong~ Bongo Cat!!! 
+ 💘C × SDL3 × OpenGL — Three Mysterious Forces, United as One! Bong~ Bongocat!!!
 </p>
 <p align="center">
-<a href="https://github.com/vladelaina/BongoCat/blob/main/README.md"><strong>English</strong></a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.zh-CN.md">简体中文</a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.zh-Hant.md">繁體中文</a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.fr-FR.md">Français</a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.de-DE.md">Deutsch</a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.ja-JP.md">日本語</a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.ko-KR.md">한국어</a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.pt-BR.md">Português</a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.ru-RU.md">Русский</a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.es-ES.md">Español</a>
+<a href="https://github.com/vladelaina/BongoCat/blob/main/README.md"><strong>English</strong></a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.zh-CN.md">简体中文</a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.zh-Hant.md">繁體中文</a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.fr-FR.md">Français</a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.de-DE.md">Deutsch</a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.ja-JP.md">日本語</a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.ko-KR.md">한국어</a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.pt-BR.md">Português</a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.ru-RU.md">Русский</a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.es-ES.md">Español</a> • <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/README.id-ID.md">Bahasa Indonesia</a>
 </p>
 <p align="center">
   <a href="https://github.com/vladelaina/BongoCat/blob/main/LICENSE"><img src="https://img.shields.io/badge/AGPL--3.0-1fa669?style=flat&logo=gnu&logoColor=white"></a>
-  <a href="https://github.com/vladelaina/BongoCat"><img src="https://img.shields.io/badge/C-A8B9CC?style=flat&logo=c&logoColor=white"></a>
-  <a href="https://discord.gg/vf8jqnattk"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Finvites%2Fvf8jqnattk%3Fwith_counts%3Dtrue&query=%24.approximate_member_count&suffix=%20members&logo=discord&logoColor=white&label=%20&color=7389D8&labelColor=6A7EC2"></a>
-  <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/wechat.png"><img src="https://img.shields.io/badge/WeChat-%2307C160?logo=wechat&logoColor=%2307C160&labelColor=FFFFFF"></a>
-  <a href="https://qm.qq.com/q/cYlRBbvuda"><img src="https://img.shields.io/badge/QQ-%2312B7F5?logo=qq&labelColor=FFFFFF"></a>
+  <a href="https://github.com/vladelaina/BongoCat"><img src="https://img.shields.io/badge/C-54AEFF?style=flat&logo=c&logoColor=white"></a>
+<a href="https://discord.gg/vf8jqnattk"><img src="https://img.shields.io/badge/Discord-F77DAA?logo=discord&logoColor=white"></a>
+  <a href="https://github.com/vladelaina/BongoCat/blob/main/docs/wechat.md"><img src="https://img.shields.io/badge/WeChat-%2307C160?logo=wechat&logoColor=%2307C160&labelColor=FFFFFF"></a>
+  <a href="https://qm.qq.com/q/cYlRBbvuda"><img src="https://img.shields.io/badge/422616922-12B7F5?logo=qq&logoColor=12B7F5&labelColor=FFFFFF"></a>
 </p>
 
 
@@ -33,11 +33,18 @@
 </div>
 
 
+<img width="1149" height="904" alt="image" src="https://github.com/user-attachments/assets/aa376965-539e-4bbd-827d-bb9a29006069" />
+
+
 > [!TIP]
 > The model featured in this demonstration is from [宇痕冫](https://space.bilibili.com/348616056).
 >
-> 🎁Looking for **free** models? Visit our official website: [bongocat.pet](https://bongocat.pet/models)
-
+> 🎁 Looking for **free** models? We work with talented model creators to bring you a wide variety of free models, while continuously exploring more fun desktop experiences! Visit our official website: [bongocat.pet](https://bongocat.pet/models)
+<p align="center">
+  <a href="https://bongocat.pet/models">
+    <img height="1080" src="https://github.com/user-attachments/assets/dedd83ca-742a-4f8c-a64a-69e659fca564" />
+  </a>
+</p>
 
 <p align="center">
     <img src="https://count.getloli.com/@bongocat?name=bongocat&theme=booru-qualityhentais&padding=7&offset=0&align=top&scale=1&pixelated=1&darkmode=auto" width="400">
@@ -75,7 +82,7 @@ Run the commands below from the project root (the directory containing
   ```bash
   sudo apt-get update
   sudo apt-get install -y build-essential cmake ninja-build \
-    libgl1-mesa-dev libx11-dev libxi-dev libxfixes-dev
+    libgl1-mesa-dev libx11-dev libxi-dev libxfixes-dev libfontconfig1-dev fonts-noto-cjk
   ```
 
 ### 🔧 Configure and Build
@@ -201,13 +208,17 @@ Platform listeners
   model update -> OpenGL composition -> platform presentation
 ```
 
-The Windows low-level hooks, macOS Quartz event tap, and Linux XInput2 listener
+The Windows Raw Input receiver, macOS Quartz event tap, and Linux XInput2 listener
 run outside the main loop. They publish timestamped key and mouse-button edges
-to the bounded atomic queue and publish pointer coordinates through a separate
-coalescing slot; a successful publish pushes a native SDL wake event. This
-keeps high-frequency motion from displacing ordered key and button edges. On
-Windows, DirectInput is used only through the platform pointer interface when a
-model requests relative movement. SDL3 window, preferences, and gamepad events
+to the bounded atomic queue and coalesce pointer motion separately, so frequent
+motion cannot displace ordered key and button edges. Native SDL wake events
+notify the main thread. Windows registers a message-only receiver for background
+keyboard and mouse input with `RIDEV_INPUTSINK | RIDEV_DEVNOTIFY`, preserving legacy
+window messages. Device motion drives the model when another application hides
+or locks the cursor; SDL supplies the desktop cursor position. The receiver
+tracks held inputs per device and clears them on device removal or desktop
+switches. It does not install input hooks, use DirectInput, or send input to games.
+SDL3 window, preferences, and gamepad events
 are handled on the main thread, where gamepad events are normalized before they
 reach model parameters or shortcuts. No platform listener calls Live2D,
 overlay, or UI code directly.
@@ -321,6 +332,24 @@ contains no ads, analytics tools, or user-tracking code. When an update check
 is performed, it only requests public release metadata; it does not send input,
 configuration, or usage data.
 
+### Linux Wayland Input
+
+X11 uses XInput2 by default. Experimental evdev input for Wayland is off by
+default. After reviewing [the input permission risks](SECURITY.md#linux-input),
+it can be explicitly selected for one launch:
+
+```sh
+BONGOCAT_ENABLE_EVDEV=1 ./build/BongoCat
+```
+
+This does not grant device permissions. Do not run the app as root or add
+your account to the `input` group to make it work. Raw input can include
+password keystrokes and is not paused on screen lock or session switching.
+Close the app to stop monitoring; hiding it does not stop input. Launch
+without the variable to return to the default backend. Evdev mouse following
+uses unaccelerated device motion; Wayland placement, click-through, and
+always-on-top support still depend on the compositor.
+
 ### 🖼️ Why OpenGL instead of Vulkan?
 
 We chose OpenGL not because Vulkan is bad, but because BongoCat does not need
@@ -338,16 +367,36 @@ we need.
 ## Project Status
 ![Alt](https://repobeats.axiom.co/api/embed/74334755a589dea40c5d31f8d2bcdc6c2bd39d87.svg "Repobeats analytics image")
 
+## Sponsors
+
+<div align="center">
+  <table align="center">
+    <tr>
+      <td style="vertical-align: middle; padding-right: 10px;">
+        <img alt="SignPath" src="https://signpath.org/assets/favicon-50x50.png" />
+      </td>
+      <td style="vertical-align: middle;">
+        Free code signing on Windows provided by
+        <a href="https://signpath.io">SignPath.io</a>, certificate by
+        <a href="https://signpath.org/">SignPath Foundation</a>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
 
 ## 🙏 Special Thanks
+> [!TIP]
+> Every step BongoCat takes is powered by the spirit of open source. We sincerely thank all our community contributors for their selfless contributions It is your support that makes desktop companionship more free and genuine.❤️‍🔥
 
-<a href="https://openomy.com/vladelaina/BongoCat" target="_blank" style="display: block; width: 100%;" align="center">
-  <img src="https://openomy.com/svg?repo=vladelaina/BongoCat&chart=bubble" alt="Contribution Leaderboard" style="display: block; width: 100%;" />
+
+<a href="https://bongocat.pet">
+    <img src="https://bongocat.pet/co" />
 </a>
 
 
-
-
+[linux.do](https://linux.do/t/topic/2845597)
 ---
 
 <div align="center">
